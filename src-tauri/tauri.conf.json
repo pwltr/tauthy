@@ -49,14 +49,31 @@
       "active": false
     },
     "allowlist": {
-      "all": true
+      "all": false,
+      "shell": {
+        "execute": false,
+        "open": false
+      },
+      "fs": {
+        "all": true,
+        "readTextFile": true,
+        "readBinaryFile": true,
+        "writeFile": true,
+        "writeBinaryFile": true,
+        "readDir": true,
+        "copyFile": true,
+        "createDir": true,
+        "removeDir": true,
+        "removeFile": true,
+        "renameFile": true
+      }
     },
     "windows": [
       {
         "title": "Tauthy",
-        "width": 800,
-        "height": 600,
-        "resizable": true,
+        "width": 400,
+        "height": 700,
+        "resizable": false,
         "fullscreen": false
       }
     ],
