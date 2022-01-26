@@ -1,5 +1,7 @@
 # Tauthy
 
+A cross-platform TOTP authentication client for desktop.
+
 ## Features
 - modern UI
 - cross-platform
