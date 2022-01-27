@@ -32,14 +32,14 @@ const Icon = styled("div")(
 `
 );
 
-const Name = styled("div")(
+const Name = styled("span")(
   ({ theme }) => `
   color: ${theme.palette.primary.main};
   font-size: 12px;
 `
 );
 
-const Token = styled("div")(
+const Token = styled("span")(
   ({ theme }) => `
   color: ${theme.palette.primary.main};
   font-size: 20px;
@@ -105,7 +105,19 @@ const List = ({ className, entries }: ListProps) => {
                         entry.group ? `(${entry.name})` : entry.name
                       }`}</Name>
                     }
-                    secondary={<Token>{entry.token}</Token>}
+                    // secondary={
+                    //   <Token>
+                    //     {String(entry.token).slice(0, 3)}{" "}
+                    //     {String(entry.token).slice(3, 6)}
+                    //   </Token>
+                    // }
+                    secondary={
+                      <Token>
+                        {String(entry.token).slice(0, 2)}{" "}
+                        {String(entry.token).slice(2, 4)}{" "}
+                        {String(entry.token).slice(4, 6)}
+                      </Token>
+                    }
                   />
                 </ListItemButton>
               </ListItem>

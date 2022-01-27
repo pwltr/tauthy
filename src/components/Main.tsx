@@ -1,22 +1,14 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { styled, css } from "@mui/material/styles";
-import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
-
-import { generateTOTP } from "~/utils";
-import ProgressBar from "./ProgressBar";
-import List from "./List";
 import { Typography } from "@mui/material";
 
-function usePrevious(value: string) {
-  const ref = useRef<string>();
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-}
+import { generateTOTP } from "~/utils";
+import useInterval from "~/hooks/useInterval";
+import ProgressBar from "~/components/ProgressBar";
+import List from "~/components/List";
 
 export type Entry = {
   type: "totp";
@@ -69,46 +61,47 @@ const Main = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState(entriesJSON);
   const [animate, setAnimate] = useState(true);
-  const prevToken = usePrevious(items.length > 0 ? items[0].token : "");
+  const [delay, setDelay] = useState<number>(1000);
 
-  const generateTokens = async () => {
-    console.info("generating tokens...");
-
+  const generateTokens = async (items: Entry[]) => {
     const promises = items.map((item) => generateTOTP(item.info.secret));
     const tokens = (await Promise.all(promises)) as string[];
-
     const itemsWithTokens = items.map((item, index) => ({
       ...item,
-      token: tokens[index],
+      // pad token with leading zeros
+      token: String(tokens[index]).padStart(6, "0"),
     }));
 
-    if (itemsWithTokens[0].token !== items[0].token) {
+    if (!items[0].token) {
       setItems(itemsWithTokens);
+    }
+
+    if (items[0].token && items[0].token !== itemsWithTokens[0].token) {
+      setItems(itemsWithTokens);
+      reset();
     }
   };
 
+  // get tokens on mount
   useEffect(() => {
-    generateTokens();
-
-    const tokenInterval = setInterval(generateTokens, 1000);
-
-    return () => {
-      clearInterval(tokenInterval);
-    };
+    generateTokens(items);
   }, []);
 
-  useEffect(() => {
-    if (items.length > 0) {
-      if (prevToken !== items[0].token) {
-        console.log("resetting animation");
-        setAnimate(false);
+  // and after specified delay
+  useInterval(() => {
+    generateTokens(items);
+  }, delay);
 
-        setTimeout(() => {
-          setAnimate(true);
-        }, 1000);
-      }
-    }
-  }, [items]);
+  const reset = () => {
+    // set slow interval
+    setDelay(30000);
+    // reset progressbar
+    setAnimate(false);
+
+    setTimeout(() => {
+      setAnimate(true);
+    }, 0);
+  };
 
   return (
     <>

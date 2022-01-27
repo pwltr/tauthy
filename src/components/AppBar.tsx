@@ -15,7 +15,7 @@ import MoreIcon from "@mui/icons-material/MoreVert";
 
 import { AppBarTitleContext } from "~/App";
 
-const Offset = styled("div")(({ theme }) => theme.mixins.toolbar);
+// const Offset = styled("div")(({ theme }) => theme.mixins.toolbar);
 
 const Toolbar = styled(MuiToolbar)`
   padding-right: 0;
@@ -31,28 +31,43 @@ const AppBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const handleSort = async (test: string) => {
+    console.log("changed sorting");
+    setSortAnchorEl(null);
+  };
+
   const handleNavigate = async (path: string) => {
     navigate(path);
     setMoreAnchorEl(null);
   };
 
+  const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
-  const isMenuOpen = Boolean(moreAnchorEl);
+  const isMenuSortOpen = Boolean(sortAnchorEl);
+  const isMenuMoreOpen = Boolean(moreAnchorEl);
 
-  const handleMenuOpen = (event: MouseEvent<HTMLElement>) => {
+  const handleMenuSortOpen = (event: MouseEvent<HTMLElement>) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuSortClose = () => {
+    setSortAnchorEl(null);
+  };
+
+  const handleMenuMoreOpen = (event: MouseEvent<HTMLElement>) => {
     setMoreAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
+  const handleMenuMoreClose = () => {
     setMoreAnchorEl(null);
   };
 
-  const menuId = "settings-menu";
-  const renderMenu = (
+  const menuMoreId = "menu-more";
+  const renderMenuMore = (
     <Menu
-      id={menuId}
+      id={menuMoreId}
       anchorEl={moreAnchorEl}
-      open={isMenuOpen}
+      open={isMenuMoreOpen}
       anchorOrigin={{
         vertical: "top",
         horizontal: "right",
@@ -62,11 +77,34 @@ const AppBar = () => {
         vertical: "top",
         horizontal: "right",
       }}
-      onClose={handleMenuClose}
+      onClose={handleMenuMoreClose}
     >
       <MenuItem onClick={() => handleNavigate("/lock")}>Lock</MenuItem>
       <MenuItem onClick={() => handleNavigate("/settings")}>Settings</MenuItem>
       <MenuItem onClick={() => handleNavigate("/about")}>About</MenuItem>
+    </Menu>
+  );
+
+  const menuSortId = "menu-sort";
+  const renderMenuSort = (
+    <Menu
+      id={menuSortId}
+      anchorEl={moreAnchorEl}
+      open={isMenuSortOpen}
+      anchorOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      keepMounted
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      onClose={handleMenuSortClose}
+    >
+      <MenuItem onClick={() => handleSort("custom")}>Custom</MenuItem>
+      <MenuItem onClick={() => handleSort("alphabetical")}>A-Z</MenuItem>
+      <MenuItem onClick={() => handleSort("alphabetical")}>Z-A</MenuItem>
     </Menu>
   );
 
@@ -100,7 +138,14 @@ const AppBar = () => {
             >
               <SearchIcon />
             </IconButton>
-            <IconButton size="large" aria-label="sort entries" color="inherit">
+            <IconButton
+              size="large"
+              aria-label="sort entries"
+              aria-controls={menuSortId}
+              aria-haspopup="true"
+              onClick={handleMenuSortOpen}
+              color="inherit"
+            >
               <SortIcon />
             </IconButton>
           </Box>
@@ -108,9 +153,9 @@ const AppBar = () => {
             <IconButton
               size="large"
               aria-label="show more"
-              aria-controls={menuId}
+              aria-controls={menuMoreId}
               aria-haspopup="true"
-              onClick={handleMenuOpen}
+              onClick={handleMenuMoreOpen}
               color="inherit"
             >
               <MoreIcon />
@@ -121,9 +166,8 @@ const AppBar = () => {
 
       {/* <Offset /> */}
 
-      {/* <ProgressBar percentage={percentage} /> */}
-
-      {renderMenu}
+      {renderMenuMore}
+      {renderMenuSort}
     </>
   );
 };

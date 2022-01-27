@@ -24,12 +24,13 @@ const Bar = styled("div")(
 );
 
 type ProgressBarProps = {
-  percentage?: number;
+  className?: string;
+  animate?: boolean;
 };
 
-const ProgressBar = ({ ...rest }: ProgressBarProps) => {
+const ProgressBar = ({ className }: ProgressBarProps) => {
   return (
-    <Wrapper {...rest}>
+    <Wrapper className={className}>
       <Bar />
     </Wrapper>
   );
