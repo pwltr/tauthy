@@ -5,20 +5,20 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
 
-import ThemeModal from "~/components/Theme";
-import LanguageModal from "~/components/Language";
-
 import {
   AppBarTitleContext,
-  ColorModeContext,
-  ListDensityContext,
-} from "~/App";
+  ThemeContext,
+  ListOptionsContext,
+} from "~/context";
+import { capitalize } from "~/utils";
+import ThemeModal from "~/components/Theme";
+import LanguageModal from "~/components/Language";
 import ListItem from "~/components/ListItem";
 
 const Appearance = () => {
   const { setAppBarTitle } = useContext(AppBarTitleContext);
-  const { colorMode } = useContext(ColorModeContext);
-  const { dense, setDense } = useContext(ListDensityContext);
+  const { theme } = useContext(ThemeContext);
+  const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext);
   const [openThemeModal, setOpenThemeModal] = useState(false);
   const [openLanguageModal, setOpenLanguageModal] = useState(false);
 
@@ -37,7 +37,7 @@ const Appearance = () => {
         <ListSubheader>App</ListSubheader>
         <ListItem disablePadding onClick={handleOpenThemeModal}>
           <ListItemButton>
-            <ListItemText primary="Theme" secondary={colorMode} />
+            <ListItemText primary="Theme" secondary={capitalize(theme)} />
           </ListItemButton>
         </ListItem>
 
@@ -50,7 +50,7 @@ const Appearance = () => {
         <ListSubheader>Entries</ListSubheader>
         <ListItem
           disablePadding
-          onClick={() => setDense(!dense)}
+          onClick={() => setListOptions({ dense: !dense, groupByTwos })}
           secondaryAction={<Switch checked={dense} />}
         >
           <ListItemButton>
@@ -60,15 +60,18 @@ const Appearance = () => {
 
         <ListItem
           disablePadding
-          onClick={() => setDense(!dense)}
-          secondaryAction={<Switch checked={dense} />}
+          onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
+          secondaryAction={<Switch checked={groupByTwos} />}
         >
           <ListItemButton>
             <ListItemText primary="Code grouping" />
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding onClick={() => setDense(!dense)}>
+        <ListItem
+          disablePadding
+          onClick={() => setListOptions({ dense: !dense, groupByTwos })}
+        >
           <ListItemButton>
             <ListItemText primary="Edit groups" />
           </ListItemButton>

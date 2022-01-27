@@ -10,17 +10,11 @@ import DraftsIcon from "@mui/icons-material/Drafts";
 import ThemeModal from "~/components/Theme";
 import LanguageModal from "~/components/Language";
 
-import {
-  AppBarTitleContext,
-  ColorModeContext,
-  ListDensityContext,
-} from "~/App";
+import { AppBarTitleContext } from "~/context";
 import ListItem from "~/components/ListItem";
 
 const About = () => {
   const { setAppBarTitle } = useContext(AppBarTitleContext);
-  const { colorMode } = useContext(ColorModeContext);
-  const { dense, setDense } = useContext(ListDensityContext);
   const [openThemeModal, setOpenThemeModal] = useState(false);
   const [openLanguageModal, setOpenLanguageModal] = useState(false);
 
@@ -63,7 +57,7 @@ const About = () => {
         </ListItem>
 
         <ListSubheader>Team</ListSubheader>
-        <ListItem disablePadding onClick={() => setDense(!dense)}>
+        <ListItem disablePadding>
           <ListItemButton>
             <ListItemIcon>
               <DraftsIcon color="primary" />
@@ -73,7 +67,7 @@ const About = () => {
         </ListItem>
 
         <ListSubheader>Support</ListSubheader>
-        <ListItem disablePadding onClick={() => setDense(!dense)}>
+        <ListItem disablePadding>
           <ListItemButton>
             <ListItemIcon>
               <DraftsIcon color="primary" />

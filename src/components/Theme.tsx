@@ -5,8 +5,8 @@ import ListItemText from "@mui/material/ListItemText";
 import Modal from "@mui/material/Modal";
 import Box from "@mui/material/Box";
 
-import { AppBarTitleContext, ColorModeContext } from "~/App";
 import { PaletteMode } from "~/theme";
+import { AppBarTitleContext, ThemeContext } from "~/context";
 import ListItem from "~/components/ListItem";
 
 const style = {
@@ -23,14 +23,14 @@ const style = {
 
 const Theme = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { setAppBarTitle } = useContext(AppBarTitleContext);
-  const { setColorMode } = useContext(ColorModeContext);
+  const { setTheme } = useContext(ThemeContext);
 
   useEffect(() => {
     setAppBarTitle("Select theme");
   }, []);
 
   const handleClick = (mode: PaletteMode) => {
-    setColorMode(mode);
+    setTheme(mode);
     onClose();
   };
 

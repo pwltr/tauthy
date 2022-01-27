@@ -6,7 +6,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { Typography } from "@mui/material";
 
 import { generateTOTP } from "~/utils";
-import useInterval from "~/hooks/useInterval";
+import { useInterval } from "~/hooks/useInterval";
 import ProgressBar from "~/components/ProgressBar";
 import List from "~/components/List";
 
@@ -52,7 +52,8 @@ const Button = styled(Fab)`
   right: 28px;
 `;
 
-// const PERIOD = 30;
+const INTERVAL_FAST = 1000;
+const INTERVAL_STANDARD = 30000;
 
 const Main = () => {
   const entries = localStorage.getItem("entries");
@@ -61,15 +62,14 @@ const Main = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState(entriesJSON);
   const [animate, setAnimate] = useState(true);
-  const [delay, setDelay] = useState<number>(1000);
+  const [delay, setDelay] = useState<number>(INTERVAL_FAST);
 
   const generateTokens = async (items: Entry[]) => {
     const promises = items.map((item) => generateTOTP(item.info.secret));
     const tokens = (await Promise.all(promises)) as string[];
     const itemsWithTokens = items.map((item, index) => ({
       ...item,
-      // pad token with leading zeros
-      token: String(tokens[index]).padStart(6, "0"),
+      token: tokens[index],
     }));
 
     if (!items[0].token) {
@@ -93,8 +93,8 @@ const Main = () => {
   }, delay);
 
   const reset = () => {
-    // set slow interval
-    setDelay(30000);
+    // set normal interval
+    setDelay(INTERVAL_STANDARD);
     // reset progressbar
     setAnimate(false);
 

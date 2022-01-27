@@ -6,7 +6,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import DraftsIcon from "@mui/icons-material/Drafts";
 
-import { AppBarTitleContext } from "~/App";
+import { AppBarTitleContext } from "~/context";
 // import { ListContext } from '~/components/List'
 import ListItem from "~/components/ListItem";
 

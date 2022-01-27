@@ -1,30 +1,21 @@
-import { useEffect, useState, useMemo, createContext } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { styled } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import useMediaQuery from "@mui/material/useMediaQuery";
 
-import { getDesignTokens, PaletteMode } from "./theme";
+import { getDesignTokens, PaletteMode } from "~/theme";
 import GlobalStyle from "~/styles/global";
+import { useLocalStorage, useMediaQuery } from "~/hooks";
 import AppBar from "~/components/AppBar";
 import AppRouter from "~/components/AppRouter";
-
-export const AppBarTitleContext = createContext({
-  appBarTitle: "Tauthy",
-  setAppBarTitle: (title: string) => {},
-});
-
-export const ColorModeContext = createContext({
-  colorMode: "light",
-  setColorMode: (mode: PaletteMode) => {},
-});
-
-export const ListDensityContext = createContext({
-  dense: false,
-  setDense: (dense: boolean) => {},
-});
+import {
+  AppBarTitleContext,
+  ThemeContext,
+  ListOptionsContext,
+  SortContext,
+} from "~/context";
 
 const Wrapper = styled("div")(
   ({ theme }) => `
@@ -39,23 +30,15 @@ const Wrapper = styled("div")(
 const App = () => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const [appBarTitle, setAppBarTitle] = useState("Tauthy");
-  const [dense, setDense] = useState(false);
-  const [mode, setMode] = useState<PaletteMode>(
+  const [sorting, setSorting] = useLocalStorage("sorting", "a-z");
+  const [mode, setMode] = useLocalStorage<PaletteMode>(
+    "theme",
     prefersDarkMode ? "dark" : "light"
   );
-
-  // System color-scheme
-  useEffect(() => {
-    setMode(prefersDarkMode ? "dark" : "light");
-  }, [prefersDarkMode]);
-
-  // const colorMode = useMemo(
-  //   () => ({
-  //     colorMode: mode,
-  //     setColorMode: (mode: PaletteMode) => setMode(mode),
-  //   }),
-  //   []
-  // );
+  const [listOptions, setListOptions] = useLocalStorage("listOptions", {
+    dense: false,
+    groupByTwos: false,
+  });
 
   // Update the theme only if the mode changes
   const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode]);
@@ -66,26 +49,28 @@ const App = () => {
       <GlobalStyle />
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
-        <ColorModeContext.Provider
-          value={{ colorMode: mode, setColorMode: setMode }}
-        >
-          <ListDensityContext.Provider value={{ dense, setDense }}>
-            <ThemeProvider theme={theme}>
-              <BrowserRouter>
-                <Wrapper>
-                  <AppBar />
-                  <AppRouter />
-                  <Toaster
-                    position="bottom-center"
-                    toastOptions={{
-                      duration: 1200,
-                    }}
-                  />
-                </Wrapper>
-              </BrowserRouter>
-            </ThemeProvider>
-          </ListDensityContext.Provider>
-        </ColorModeContext.Provider>
+        <ThemeContext.Provider value={{ theme: mode, setTheme: setMode }}>
+          <ListOptionsContext.Provider
+            value={{ ...listOptions, setListOptions }}
+          >
+            <SortContext.Provider value={{ sorting, setSorting }}>
+              <ThemeProvider theme={theme}>
+                <BrowserRouter>
+                  <Wrapper>
+                    <AppBar />
+                    <AppRouter />
+                    <Toaster
+                      position="bottom-center"
+                      toastOptions={{
+                        duration: 1200,
+                      }}
+                    />
+                  </Wrapper>
+                </BrowserRouter>
+              </ThemeProvider>
+            </SortContext.Provider>
+          </ListOptionsContext.Provider>
+        </ThemeContext.Provider>
       </AppBarTitleContext.Provider>
     </>
   );

@@ -15,7 +15,7 @@ import Grid from "@mui/material/Grid";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
-import { ListDensityContext } from "~/App";
+import { ListOptionsContext, SortContext } from "~/context";
 import type { Entry } from "~/components/Main";
 
 const ListItem = styled(MuiListItem)(
@@ -53,14 +53,25 @@ type ListProps = {
 };
 
 const List = ({ className, entries }: ListProps) => {
-  const { dense } = useContext(ListDensityContext);
+  const { sorting } = useContext(SortContext);
+  const { dense, groupByTwos } = useContext(ListOptionsContext);
+
+  const sortedEntries = [...entries].sort((a, b) => {
+    if (sorting === "a-z") {
+      return a.name < b.name ? -1 : 1;
+    }
+    if (sorting === "z-a") {
+      return a.name > b.name ? -1 : 1;
+    }
+    return 0;
+  });
 
   return (
     <Box className={className} sx={{ flexGrow: 1, maxWidth: 752 }}>
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <MuiList dense={dense}>
-            {entries.map((entry) => (
+            {sortedEntries.map((entry) => (
               <ListItem
                 key={entry.uuid}
                 disablePadding
@@ -105,17 +116,20 @@ const List = ({ className, entries }: ListProps) => {
                         entry.group ? `(${entry.name})` : entry.name
                       }`}</Name>
                     }
-                    // secondary={
-                    //   <Token>
-                    //     {String(entry.token).slice(0, 3)}{" "}
-                    //     {String(entry.token).slice(3, 6)}
-                    //   </Token>
-                    // }
                     secondary={
                       <Token>
-                        {String(entry.token).slice(0, 2)}{" "}
-                        {String(entry.token).slice(2, 4)}{" "}
-                        {String(entry.token).slice(4, 6)}
+                        {groupByTwos ? (
+                          <>
+                            {String(entry.token).slice(0, 2)}{" "}
+                            {String(entry.token).slice(2, 4)}{" "}
+                            {String(entry.token).slice(4, 6)}
+                          </>
+                        ) : (
+                          <>
+                            {String(entry.token).slice(0, 3)}{" "}
+                            {String(entry.token).slice(3, 6)}
+                          </>
+                        )}
                       </Token>
                     }
                   />

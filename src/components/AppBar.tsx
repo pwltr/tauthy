@@ -13,7 +13,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
 import MoreIcon from "@mui/icons-material/MoreVert";
 
-import { AppBarTitleContext } from "~/App";
+import { AppBarTitleContext, SortContext } from "~/context";
 
 // const Offset = styled("div")(({ theme }) => theme.mixins.toolbar);
 
@@ -28,11 +28,12 @@ const PageTitle = styled(Typography)`
 
 const AppBar = () => {
   const { appBarTitle } = useContext(AppBarTitleContext);
+  const { sorting, setSorting } = useContext(SortContext);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleSort = async (test: string) => {
-    console.log("changed sorting");
+  const handleSort = async (option: string) => {
+    setSorting(option);
     setSortAnchorEl(null);
   };
 
@@ -89,7 +90,7 @@ const AppBar = () => {
   const renderMenuSort = (
     <Menu
       id={menuSortId}
-      anchorEl={moreAnchorEl}
+      anchorEl={sortAnchorEl}
       open={isMenuSortOpen}
       anchorOrigin={{
         vertical: "top",
@@ -103,8 +104,8 @@ const AppBar = () => {
       onClose={handleMenuSortClose}
     >
       <MenuItem onClick={() => handleSort("custom")}>Custom</MenuItem>
-      <MenuItem onClick={() => handleSort("alphabetical")}>A-Z</MenuItem>
-      <MenuItem onClick={() => handleSort("alphabetical")}>Z-A</MenuItem>
+      <MenuItem onClick={() => handleSort("a-z")}>A-Z</MenuItem>
+      <MenuItem onClick={() => handleSort("z-a")}>Z-A</MenuItem>
     </Menu>
   );
 

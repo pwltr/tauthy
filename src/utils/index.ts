@@ -1,9 +1,9 @@
 import { ChangeEvent } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 
-export const generateTOTP = async (secretKey: string) => {
+export const generateTOTP = async (secret: string) => {
   try {
-    return await invoke("make_totp", { argument: secretKey });
+    return await invoke("make_totp", { argument: secret });
   } catch (err) {
     console.error("error from backend:", err);
   }
@@ -81,4 +81,8 @@ export const downloadFile = (file: Blob, name: string) => {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+};
+
+export const capitalize = (word: string) => {
+  return word.charAt(0).toUpperCase() + word.slice(1);
 };
