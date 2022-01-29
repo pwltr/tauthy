@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 
 export const generateTOTP = async (secret: string) => {
   try {
-    return await invoke("make_totp", { argument: secret });
+    return await invoke("generate_totp", { argument: secret });
   } catch (err) {
     console.error("error from backend:", err);
   }

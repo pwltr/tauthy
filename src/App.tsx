@@ -30,7 +30,7 @@ const Wrapper = styled("div")(
 const App = () => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const [appBarTitle, setAppBarTitle] = useState("Tauthy");
-  const [sorting, setSorting] = useLocalStorage("sorting", "a-z");
+  const [sorting, setSorting] = useLocalStorage("sorting", "custom");
   const [mode, setMode] = useLocalStorage<PaletteMode>(
     "theme",
     prefersDarkMode ? "dark" : "light"
