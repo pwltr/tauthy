@@ -61,9 +61,7 @@ const App = () => {
                     <AppRouter />
                     <Toaster
                       position="bottom-center"
-                      toastOptions={{
-                        duration: 1200,
-                      }}
+                      toastOptions={{ duration: 1200 }}
                     />
                   </Wrapper>
                 </BrowserRouter>

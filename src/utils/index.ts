@@ -1,6 +1,8 @@
 import { ChangeEvent } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 
+export type ImportFormat = "aegis" | "authy" | "google" | "tauthy";
+
 export const generateTOTP = async (secret: string) => {
   try {
     return await invoke("generate_totp", { argument: secret });
@@ -9,17 +11,69 @@ export const generateTOTP = async (secret: string) => {
   }
 };
 
-export const importCodes = (event: ChangeEvent<HTMLInputElement>) => {
+export const importCodes = (
+  event: ChangeEvent<HTMLInputElement>,
+  format: ImportFormat
+) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (() => {
       return function (event) {
         try {
-          // Aegis format
-          // TODO: support other formats
+          let entries;
+          const currentVault = localStorage.getItem("vault");
           const json = JSON.parse(event.target?.result as string);
-          localStorage.setItem("entries", JSON.stringify(json.db.entries));
-          resolve(json);
+
+          if (format === "aegis") {
+            const importedEntries = json.db.entries;
+            entries = importedEntries.map((entry: any) => ({
+              uuid: entry.uuid,
+              name: entry.name,
+              group: entry.group,
+              // issuer: entry.issuer,
+              secret: entry.info.secret,
+              icon: entry.icon,
+            }));
+          }
+
+          const array = new Uint32Array(10);
+          crypto.getRandomValues(array);
+
+          if (format === "authy") {
+            const importedEntries = json;
+            entries = importedEntries.map((entry: any) => ({
+              uuid: crypto.randomUUID(),
+              name: entry.name,
+              secret: entry.secret,
+            }));
+          }
+
+          // if (format === "google") {
+          //   entries = json;
+          // }
+
+          if (format === "tauthy") {
+            const importedEntries = json;
+            entries = importedEntries.map((entry: any) => ({
+              uuid: entry.uuid,
+              name: entry.name,
+              group: entry.group,
+              secret: entry.secret,
+              icon: entry.icon,
+            }));
+          }
+
+          const vault = currentVault
+            ? [...JSON.parse(currentVault), ...entries]
+            : entries;
+
+          if (entries) {
+            localStorage.setItem("vault", JSON.stringify(vault));
+            resolve(json);
+          } else {
+            console.error("no entries found");
+            reject("no entries found");
+          }
         } catch (err) {
           console.error("error when trying to parse json:", err);
           reject(err);
@@ -36,27 +90,14 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>) => {
 
 export const exportCodes = (): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const entries = localStorage.getItem("entries");
+    const entries = localStorage.getItem("vault");
     if (entries) {
       const entriesJSON = JSON.parse(entries);
 
-      // Aegis format
-      // TODO: support other formats
-      const json = {
-        version: 1,
-        header: {
-          slots: null,
-          params: null,
-        },
-        db: {
-          version: 2,
-          entries: entriesJSON,
-        },
-      };
-
-      const file = new Blob([JSON.stringify(json)], {
+      const file = new Blob([JSON.stringify(entriesJSON)], {
         type: "application/json",
       });
+
       const date = new Date(Date.now())
         .toLocaleDateString("en-US", {
           year: "2-digit",

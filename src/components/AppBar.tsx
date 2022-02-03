@@ -131,37 +131,42 @@ const AppBar = () => {
           </PageTitle>
 
           <Box sx={{ flexGrow: 1 }} />
-          <Box>
-            <IconButton
-              size="large"
-              aria-label="filter entries"
-              color="inherit"
-            >
-              <SearchIcon />
-            </IconButton>
-            <IconButton
-              size="large"
-              aria-label="sort entries"
-              aria-controls={menuSortId}
-              aria-haspopup="true"
-              onClick={handleMenuSortOpen}
-              color="inherit"
-            >
-              <SortIcon />
-            </IconButton>
-          </Box>
-          <Box>
-            <IconButton
-              size="large"
-              aria-label="show more"
-              aria-controls={menuMoreId}
-              aria-haspopup="true"
-              onClick={handleMenuMoreOpen}
-              color="inherit"
-            >
-              <MoreIcon />
-            </IconButton>
-          </Box>
+
+          {location.pathname === "/" && (
+            <>
+              <Box>
+                <IconButton
+                  size="large"
+                  aria-label="filter entries"
+                  color="inherit"
+                >
+                  <SearchIcon />
+                </IconButton>
+                <IconButton
+                  size="large"
+                  aria-label="sort entries"
+                  aria-controls={menuSortId}
+                  aria-haspopup="true"
+                  onClick={handleMenuSortOpen}
+                  color="inherit"
+                >
+                  <SortIcon />
+                </IconButton>
+              </Box>
+              <Box>
+                <IconButton
+                  size="large"
+                  aria-label="show more"
+                  aria-controls={menuMoreId}
+                  aria-haspopup="true"
+                  onClick={handleMenuMoreOpen}
+                  color="inherit"
+                >
+                  <MoreIcon />
+                </IconButton>
+              </Box>
+            </>
+          )}
         </Toolbar>
       </MuiAppBar>
 

@@ -16,7 +16,7 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
 import { ListOptionsContext, SortContext } from "~/context";
-import type { Entry } from "~/components/Main";
+import type { ListEntry } from "~/components/Main";
 
 const ListItem = styled(MuiListItem)(
   ({ theme }) => `
@@ -49,7 +49,7 @@ const Token = styled("span")(
 
 type ListProps = {
   className?: string;
-  entries: Entry[];
+  entries: ListEntry[];
 };
 
 const List = ({ className, entries }: ListProps) => {
@@ -88,7 +88,7 @@ const List = ({ className, entries }: ListProps) => {
                 //   </IconButton>
                 // }
                 onClick={() => {
-                  clipboard.writeText(entry.token.toString());
+                  clipboard.writeText(String(entry.token));
                   toast.success("Copied to clipboard", {
                     id: "clipboard",
                   });

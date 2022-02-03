@@ -5,27 +5,14 @@ import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
 import { Typography } from "@mui/material";
 
+import type { VaultEntry } from "~/types";
 import { generateTOTP } from "~/utils";
 import { useInterval } from "~/hooks/useInterval";
 import ProgressBar from "~/components/ProgressBar";
 import List from "~/components/List";
 
-export type Entry = {
-  type: "totp";
-  uuid: string;
-  name: string;
-  group: string;
-  issuer: string;
-  note: string;
-  icon: string;
-  icon_mime: "image/svg+xml";
-  info: {
-    secret: string;
-    algo: "SHA1";
-    digits: number;
-    period: number;
-  };
-  token: string;
+export type ListEntry = VaultEntry & {
+  token?: string;
 };
 
 const StyledProgressBar = styled(ProgressBar)<{ animate: boolean }>`
@@ -56,16 +43,16 @@ const INTERVAL_FAST = 1000;
 const INTERVAL_STANDARD = 30000;
 
 const Main = () => {
-  const entries = localStorage.getItem("entries");
-  const entriesJSON: Entry[] = entries ? JSON.parse(entries) : [];
+  const entries = localStorage.getItem("vault");
+  const entriesJSON: VaultEntry[] = entries ? JSON.parse(entries) : [];
 
   const navigate = useNavigate();
-  const [items, setItems] = useState(entriesJSON);
+  const [items, setItems] = useState<ListEntry[]>(entriesJSON);
   const [animate, setAnimate] = useState(true);
   const [delay, setDelay] = useState<number>(INTERVAL_FAST);
 
-  const generateTokens = async (items: Entry[]) => {
-    const promises = items.map((item) => generateTOTP(item.info.secret));
+  const generateTokens = async (items: ListEntry[]) => {
+    const promises = items.map((item) => generateTOTP(item.secret));
     const tokens = (await Promise.all(promises)) as string[];
     const itemsWithTokens = items.map((item, index) => ({
       ...item,
