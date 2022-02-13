@@ -11,7 +11,7 @@ export type VaultEntry = {
 //   // type: "totp";
 //   uuid: string;
 //   name: string;
-//   // group: string;
+//   group: string;
 //   // issuer: string;
 //   // note: string;
 //   icon: string;
@@ -22,7 +22,6 @@ export type VaultEntry = {
 //   //   digits: number;
 //   //   period: number;
 //   // };
-//   token: string;
 // };
 
 declare global {

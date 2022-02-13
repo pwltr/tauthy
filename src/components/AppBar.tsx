@@ -28,7 +28,7 @@ const PageTitle = styled(Typography)`
 
 const AppBar = () => {
   const { appBarTitle } = useContext(AppBarTitleContext);
-  const { sorting, setSorting } = useContext(SortContext);
+  const { setSorting } = useContext(SortContext);
   const location = useLocation();
   const navigate = useNavigate();
 
