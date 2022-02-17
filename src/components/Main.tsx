@@ -59,11 +59,11 @@ const Main = () => {
       token: tokens[index],
     }));
 
-    if (!items[0].token) {
+    if (!items[0]?.token) {
       setItems(itemsWithTokens);
     }
 
-    if (items[0].token && items[0].token !== itemsWithTokens[0].token) {
+    if (items[0]?.token && items[0].token !== itemsWithTokens[0].token) {
       setItems(itemsWithTokens);
       reset();
     }

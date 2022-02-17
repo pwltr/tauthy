@@ -9,6 +9,7 @@ export default defineConfig({
   root: PACKAGE_ROOT,
   resolve: {
     alias: {
+      '@mui/styled-engine': '@mui/styled-engine-sc',
       "~/": join(PACKAGE_ROOT, "src") + "/",
       "~/components/": join(PACKAGE_ROOT, "src") + "/components/",
       "~/hooks/": join(PACKAGE_ROOT, "src") + "/hooks/",
