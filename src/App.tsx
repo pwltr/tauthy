@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { styled } from "@mui/material/styles";
@@ -7,6 +7,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 import { getDesignTokens, PaletteMode } from "~/theme";
 import GlobalStyle from "~/styles/global";
+import { setupStronghold } from "~/utils";
 import { useLocalStorage, useMediaQuery } from "~/hooks";
 import AppBar from "~/components/AppBar";
 import AppRouter from "~/components/AppRouter";
@@ -16,6 +17,8 @@ import {
   ListOptionsContext,
   SortContext,
 } from "~/context";
+
+setupStronghold();
 
 const Wrapper = styled("div")(
   ({ theme }) => `

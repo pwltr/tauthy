@@ -6,7 +6,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { Typography } from "@mui/material";
 
 import type { VaultEntry } from "~/types";
-import { generateTOTP } from "~/utils";
+import { generateTOTP, readStronghold } from "~/utils";
 import { useInterval } from "~/hooks/useInterval";
 import ProgressBar from "~/components/ProgressBar";
 import List from "~/components/List";
@@ -32,6 +32,13 @@ const StyledList = styled(List)`
   overflow: auto;
 `;
 
+const Container = styled("div")`
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
 const Button = styled(Fab)`
   position: fixed;
   bottom: 16px;
@@ -43,11 +50,8 @@ const INTERVAL_FAST = 1000;
 const INTERVAL_STANDARD = 30000;
 
 const Main = () => {
-  const entries = localStorage.getItem("vault");
-  const entriesJSON: VaultEntry[] = entries ? JSON.parse(entries) : [];
-
   const navigate = useNavigate();
-  const [items, setItems] = useState<ListEntry[]>(entriesJSON);
+  const [items, setItems] = useState<ListEntry[]>([]);
   const [animate, setAnimate] = useState(true);
   const [delay, setDelay] = useState<number>(INTERVAL_FAST);
 
@@ -71,7 +75,17 @@ const Main = () => {
 
   // get tokens on mount
   useEffect(() => {
-    generateTokens(items);
+    const getEntries = async () => {
+      const entries = await readStronghold();
+      const entriesJSON = JSON.parse(entries);
+      // return entriesJSON;
+      // const entries = getEntries();
+
+      setItems(entriesJSON);
+      generateTokens(entriesJSON);
+    };
+
+    getEntries();
   }, []);
 
   // and after specified delay
@@ -100,7 +114,11 @@ const Main = () => {
       )}
 
       {items.length === 0 && (
-        <Typography color="primary">Add an entry or import a backup</Typography>
+        <Container>
+          <Typography color="primary">
+            Add an entry or import a backup
+          </Typography>
+        </Container>
       )}
 
       <Button

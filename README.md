@@ -9,5 +9,6 @@ A cross-platform TOTP authentication client for desktop.
 - cross-platform
 - import / export
 - multi-language
+- secure storage
 - password protection
 - all your favorite themes

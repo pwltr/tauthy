@@ -1,38 +1,98 @@
-import { useEffect, useContext } from "react";
-import { styled } from "@mui/material/styles";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
 
 import { AppBarTitleContext } from "~/context";
-// import { useElectron } from '/@/use/electron'
+import { readStronghold, saveStronghold } from "~/utils";
 
 const Create = () => {
+  const navigate = useNavigate();
   const { setAppBarTitle } = useContext(AppBarTitleContext);
+  const [name, setName] = useState("");
+  const [issuer, setIssuer] = useState("");
+  const [group, setGroup] = useState("");
+  const [secret, setSecret] = useState("");
 
   useEffect(() => {
-    setAppBarTitle("Add new entry");
+    setAppBarTitle("Add new account");
   }, []);
 
+  const handleSubmit = async () => {
+    // TODO: validate
+    // TODO: icon
+
+    let entry = {
+      uuid: crypto.randomUUID(),
+      name,
+      secret,
+      issuer,
+      group,
+      // icon,
+    };
+
+    const currentVault = await readStronghold();
+    const vault = currentVault ? [...JSON.parse(currentVault), entry] : [entry];
+
+    try {
+      await saveStronghold(JSON.stringify(vault));
+      navigate(-1);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
-    <Box
-      sx={{
-        position: "relative",
-      }}
-    >
-      Create
-      {/* <List entries={items} /> */}
+    <Box p={4}>
       <FormGroup row>
-        {/* <FormControlLabel
-          control={<Checkbox checked={dense} onChange={(event) => setDense(event.target.checked)} />}
-          label="Enable dense"
-        /> */}
-        {/* <FormControlLabel
-          control={<Checkbox checked={secondary} onChange={(event) => setSecondary(event.target.checked)} />}
-          label="Enable secondary text"
-        /> */}
+        <TextField
+          placeholder="Name"
+          variant="filled"
+          size="small"
+          fullWidth
+          margin="normal"
+          onChange={(event) => setName(event.target.value)}
+        />
+        <TextField
+          placeholder="Issuer"
+          variant="filled"
+          size="small"
+          fullWidth
+          margin="normal"
+          onChange={(event) => setIssuer(event.target.value)}
+        />
+        <TextField
+          placeholder="Group"
+          variant="filled"
+          size="small"
+          fullWidth
+          margin="normal"
+          onChange={(event) => setGroup(event.target.value)}
+        />
+        <TextField
+          placeholder="Secret"
+          variant="filled"
+          size="small"
+          fullWidth
+          margin="normal"
+          onChange={(event) => setSecret(event.target.value)}
+        />
       </FormGroup>
+
+      {/* TODO: move this to AppBar */}
+      <br />
+      <Button
+        aria-label="add account"
+        color="secondary"
+        size="medium"
+        variant="contained"
+        onClick={handleSubmit}
+      >
+        Add Account
+      </Button>
     </Box>
   );
 };

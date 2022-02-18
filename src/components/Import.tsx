@@ -5,7 +5,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 
 import { AppBarTitleContext } from "~/context";
-import { exportCodes } from "~/utils";
+import { exportCodes, removeStronghold } from "~/utils";
 import ListItem from "~/components/ListItem";
 import ImportModal from "~/components/modals/Import";
 
@@ -53,7 +53,7 @@ const Import = () => {
           disablePadding
           onClick={() => {
             try {
-              localStorage.removeItem("vault");
+              removeStronghold();
               toast.success("Vault resetted.");
             } catch (err) {
               console.error(err);

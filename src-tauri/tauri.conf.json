@@ -6,8 +6,8 @@
   "build": {
     "distDir": "../dist",
     "devPath": "http://localhost:3000",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "yarn build"
   },
   "tauri": {
     "bundle": {
@@ -56,10 +56,7 @@
       },
       "fs": {
         "all": true,
-        "readTextFile": true,
-        "readBinaryFile": true,
         "writeFile": true,
-        "writeBinaryFile": true,
         "readDir": true,
         "copyFile": true,
         "createDir": true,
