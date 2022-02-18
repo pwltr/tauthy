@@ -1,30 +1,27 @@
 import { Stronghold, Location } from "tauri-plugin-stronghold-api";
 
 const stronghold = new Stronghold("./vault.stronghold", "password");
-const store = stronghold.getStore("storeVault", []);
-const vault = stronghold.getVault("vault", []);
+const store = stronghold.getStore("vault", []);
+// const vault = stronghold.getVault("vault", []);
 const location = Location.generic("vault", "record");
 
-export const readStronghold = () => store.get(location);
-export const removeStronghold = () => store.remove(location);
-export const lockStronghold = () => stronghold.unload();
+export const getVault = () => store.get(location);
+export const deleteVault = () => store.remove(location);
+export const lockVault = () => stronghold.unload();
+export const unlockVault = (passwd: string) => stronghold.reload(passwd);
 
-export const unlockStronghold = (password: string) => {
-  stronghold.reload(password);
-};
-
-export async function saveStronghold(record: string) {
+export async function saveVault(record: string) {
   await store.insert(location, record);
   await stronghold.save();
 }
 
-export const setupStronghold = async () => {
+export const setupVault = async () => {
   const status = await stronghold.getStatus();
   console.log("stronghold status: ", status.snapshot.status);
 
   // check if we have a vault
   try {
-    const currentVault = await readStronghold();
+    const currentVault = await getVault();
     // console.log("found existing vault");
     console.log("found existing vault", currentVault);
   } catch (err) {
@@ -39,6 +36,6 @@ stronghold.onStatusChange((status) => {
   console.log("status change", status);
   console.log("stronghold", stronghold);
   console.log("store", store);
-  console.log("vault", vault);
+  // console.log("vault", vault);
   console.log("location", location);
 });

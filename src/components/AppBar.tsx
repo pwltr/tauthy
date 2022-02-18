@@ -13,6 +13,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
 import MoreIcon from "@mui/icons-material/MoreVert";
 
+import { lockVault } from "~/utils";
 import { AppBarTitleContext, SortContext } from "~/context";
 
 // const Offset = styled("div")(({ theme }) => theme.mixins.toolbar);
@@ -38,8 +39,8 @@ const AppBar = () => {
   };
 
   const handleNavigate = async (path: string) => {
-    navigate(path);
     setMoreAnchorEl(null);
+    navigate(path);
   };
 
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
@@ -63,6 +64,15 @@ const AppBar = () => {
     setMoreAnchorEl(null);
   };
 
+  const handleLock = async () => {
+    try {
+      await lockVault();
+      handleNavigate("unlock");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const menuMoreId = "menu-more";
   const renderMenuMore = (
     <Menu
@@ -80,7 +90,7 @@ const AppBar = () => {
       }}
       onClose={handleMenuMoreClose}
     >
-      <MenuItem onClick={() => handleNavigate("/lock")}>Lock</MenuItem>
+      <MenuItem onClick={handleLock}>Lock</MenuItem>
       <MenuItem onClick={() => handleNavigate("/settings")}>Settings</MenuItem>
       <MenuItem onClick={() => handleNavigate("/about")}>About</MenuItem>
     </Menu>

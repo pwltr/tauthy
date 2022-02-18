@@ -1,15 +1,12 @@
 import { useState, useMemo } from "react";
-import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { styled } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 import { getDesignTokens, PaletteMode } from "~/theme";
 import GlobalStyle from "~/styles/global";
-import { setupStronghold } from "~/utils";
+import { setupVault } from "~/utils";
 import { useLocalStorage, useMediaQuery } from "~/hooks";
-import AppBar from "~/components/AppBar";
 import AppRouter from "~/components/AppRouter";
 import {
   AppBarTitleContext,
@@ -18,17 +15,7 @@ import {
   SortContext,
 } from "~/context";
 
-setupStronghold();
-
-const Wrapper = styled("div")(
-  ({ theme }) => `
-  background: ${theme.palette.background.paper};
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding-top: 3.7rem;
-`
-);
+setupVault();
 
 const App = () => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -58,16 +45,11 @@ const App = () => {
           >
             <SortContext.Provider value={{ sorting, setSorting }}>
               <ThemeProvider theme={theme}>
-                <BrowserRouter>
-                  <Wrapper>
-                    <AppBar />
-                    <AppRouter />
-                    <Toaster
-                      position="bottom-center"
-                      toastOptions={{ duration: 1200 }}
-                    />
-                  </Wrapper>
-                </BrowserRouter>
+                <AppRouter />
+                <Toaster
+                  position="bottom-center"
+                  toastOptions={{ duration: 1200 }}
+                />
               </ThemeProvider>
             </SortContext.Provider>
           </ListOptionsContext.Provider>

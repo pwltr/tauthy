@@ -2,12 +2,11 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import FormGroup from "@mui/material/FormGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 
 import { AppBarTitleContext } from "~/context";
-import { readStronghold, saveStronghold } from "~/utils";
+import { getVault, saveVault } from "~/utils";
 
 const Create = () => {
   const navigate = useNavigate();
@@ -34,11 +33,11 @@ const Create = () => {
       // icon,
     };
 
-    const currentVault = await readStronghold();
+    const currentVault = await getVault();
     const vault = currentVault ? [...JSON.parse(currentVault), entry] : [entry];
 
     try {
-      await saveStronghold(JSON.stringify(vault));
+      await saveVault(JSON.stringify(vault));
       navigate(-1);
     } catch (err) {
       console.error(err);

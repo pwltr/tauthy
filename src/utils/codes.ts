@@ -1,7 +1,7 @@
 import { ChangeEvent } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 
-import { readStronghold, saveStronghold } from "~/utils";
+import { getVault, saveVault } from "~/utils";
 
 export type ImportFormat = "aegis" | "authy" | "google" | "tauthy";
 
@@ -22,7 +22,7 @@ export const importCodes = (
     reader.onload = (() => {
       return async function (event) {
         try {
-          const currentVault = await readStronghold();
+          const currentVault = await getVault();
           const json = JSON.parse(event.target?.result as string);
 
           let entries;
@@ -71,7 +71,7 @@ export const importCodes = (
             : entries;
 
           if (entries) {
-            saveStronghold(JSON.stringify(vault));
+            saveVault(JSON.stringify(vault));
             resolve(json);
           } else {
             console.error("no entries found");
@@ -93,7 +93,7 @@ export const importCodes = (
 
 export const exportCodes = (): Promise<string> => {
   return new Promise(async (resolve, reject) => {
-    const entries = await readStronghold();
+    const entries = await getVault();
 
     if (entries) {
       const entriesJSON = JSON.parse(entries);
