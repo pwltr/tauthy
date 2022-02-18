@@ -15,14 +15,12 @@ import Grid from "@mui/material/Grid";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
-import { ListOptionsContext, SortContext } from "~/context";
-import type { ListEntry } from "~/components/Main";
+import { ListOptionsContext, SearchContext, SortContext } from "~/context";
+import type { ListEntry } from "~/components/Codes";
 
-const ListItem = styled(MuiListItem)(
-  ({ theme }) => `
+const ListItem = styled(MuiListItem)`
   cursor: pointer;
-`
-);
+`;
 
 const Icon = styled("div")(
   ({ theme }) => `
@@ -53,10 +51,16 @@ type ListProps = {
 };
 
 const List = ({ className, entries }: ListProps) => {
+  const { searchTerm } = useContext(SearchContext);
   const { sorting } = useContext(SortContext);
   const { dense, groupByTwos } = useContext(ListOptionsContext);
 
-  const sortedEntries = [...entries].sort((a, b) => {
+  const filteredEntries = [...entries].filter(
+    (entry) =>
+      entry.name.includes(searchTerm) || entry.group?.includes(searchTerm)
+  );
+
+  const sortedEntries = [...filteredEntries].sort((a, b) => {
     if (sorting === "a-z") {
       return a.name < b.name ? -1 : 1;
     }

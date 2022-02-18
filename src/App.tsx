@@ -12,6 +12,7 @@ import {
   AppBarTitleContext,
   ThemeContext,
   ListOptionsContext,
+  SearchContext,
   SortContext,
 } from "~/context";
 
@@ -20,6 +21,7 @@ setupVault();
 const App = () => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const [appBarTitle, setAppBarTitle] = useState("Tauthy");
+  const [searchTerm, setSearch] = useState("");
   const [sorting, setSorting] = useLocalStorage("sorting", "custom");
   const [mode, setMode] = useLocalStorage<PaletteMode>(
     "theme",
@@ -43,15 +45,17 @@ const App = () => {
           <ListOptionsContext.Provider
             value={{ ...listOptions, setListOptions }}
           >
-            <SortContext.Provider value={{ sorting, setSorting }}>
-              <ThemeProvider theme={theme}>
-                <AppRouter />
-                <Toaster
-                  position="bottom-center"
-                  toastOptions={{ duration: 1200 }}
-                />
-              </ThemeProvider>
-            </SortContext.Provider>
+            <SearchContext.Provider value={{ searchTerm, setSearch }}>
+              <SortContext.Provider value={{ sorting, setSorting }}>
+                <ThemeProvider theme={theme}>
+                  <AppRouter />
+                  <Toaster
+                    position="bottom-center"
+                    toastOptions={{ duration: 1200 }}
+                  />
+                </ThemeProvider>
+              </SortContext.Provider>
+            </SearchContext.Provider>
           </ListOptionsContext.Provider>
         </ThemeContext.Provider>
       </AppBarTitleContext.Provider>

@@ -17,6 +17,11 @@ export const ListOptionsContext = createContext({
   setListOptions: (options: { dense: boolean; groupByTwos: boolean }) => {},
 });
 
+export const SearchContext = createContext({
+  searchTerm: "",
+  setSearch: (option: string) => {},
+});
+
 export const SortContext = createContext({
   sorting: "a-z",
   setSorting: (option: string) => {},

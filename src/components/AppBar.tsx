@@ -4,19 +4,19 @@ import { styled } from "@mui/material/styles";
 import MuiAppBar from "@mui/material/AppBar";
 import MuiToolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
+import InputBase from "@mui/material/InputBase";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
 import MoreIcon from "@mui/icons-material/MoreVert";
 
 import { lockVault } from "~/utils";
-import { AppBarTitleContext, SortContext } from "~/context";
-
-// const Offset = styled("div")(({ theme }) => theme.mixins.toolbar);
+import { AppBarTitleContext, SearchContext, SortContext } from "~/context";
 
 const Toolbar = styled(MuiToolbar)`
   padding-right: 0;
@@ -29,6 +29,7 @@ const PageTitle = styled(Typography)`
 
 const AppBar = () => {
   const { appBarTitle } = useContext(AppBarTitleContext);
+  const { setSearch } = useContext(SearchContext);
   const { setSorting } = useContext(SortContext);
   const location = useLocation();
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ const AppBar = () => {
     navigate(path);
   };
 
+  const [isSearching, setIsSearching] = useState(false);
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
   const isMenuSortOpen = Boolean(sortAnchorEl);
@@ -136,29 +138,56 @@ const AppBar = () => {
             </IconButton>
           )}
 
-          <PageTitle variant="h6" noWrap>
-            {location.pathname === "/" ? <b>Tauthy</b> : appBarTitle}
-          </PageTitle>
+          {isSearching ? (
+            <InputBase
+              autoFocus
+              placeholder="Search"
+              inputProps={{ "aria-label": "search" }}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          ) : (
+            <PageTitle variant="h6" noWrap>
+              {location.pathname === "/" ? <b>Tauthy</b> : appBarTitle}
+            </PageTitle>
+          )}
 
           <Box sx={{ flexGrow: 1 }} />
 
           {location.pathname === "/" && (
             <>
               <Box>
-                <IconButton
-                  size="large"
-                  aria-label="filter entries"
-                  color="inherit"
-                >
-                  <SearchIcon />
-                </IconButton>
+                {isSearching ? (
+                  <IconButton
+                    size="large"
+                    aria-label="filter entries"
+                    color="inherit"
+                    onClick={() => {
+                      setSearch("");
+                      setIsSearching(false);
+                    }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                ) : (
+                  <IconButton
+                    size="large"
+                    aria-label="filter entries"
+                    color="inherit"
+                    onClick={() => {
+                      setIsSearching(true);
+                    }}
+                  >
+                    <SearchIcon />
+                  </IconButton>
+                )}
+
                 <IconButton
                   size="large"
                   aria-label="sort entries"
                   aria-controls={menuSortId}
                   aria-haspopup="true"
-                  onClick={handleMenuSortOpen}
                   color="inherit"
+                  onClick={handleMenuSortOpen}
                 >
                   <SortIcon />
                 </IconButton>
@@ -179,8 +208,6 @@ const AppBar = () => {
           )}
         </Toolbar>
       </MuiAppBar>
-
-      {/* <Offset /> */}
 
       {renderMenuMore}
       {renderMenuSort}
