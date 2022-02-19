@@ -50,6 +50,9 @@
     },
     "allowlist": {
       "all": false,
+      "clipboard": {
+        "writeText": true
+      },
       "shell": {
         "execute": false,
         "open": false
@@ -57,7 +60,6 @@
       "fs": {
         "all": true,
         "writeFile": true,
-        "readDir": true,
         "copyFile": true,
         "createDir": true,
         "removeDir": true,

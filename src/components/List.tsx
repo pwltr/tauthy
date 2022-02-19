@@ -57,7 +57,9 @@ const List = ({ className, entries }: ListProps) => {
 
   const filteredEntries = [...entries].filter(
     (entry) =>
-      entry.name.includes(searchTerm) || entry.group?.includes(searchTerm)
+      entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.issuer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.group?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedEntries = [...filteredEntries].sort((a, b) => {

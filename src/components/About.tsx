@@ -52,7 +52,7 @@ const About = () => {
             <ListItemIcon>
               <DraftsIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="License" secondary="System default" />
+            <ListItemText primary="License" secondary="GPL-3.0 License" />
           </ListItemButton>
         </ListItem>
 

@@ -16,6 +16,26 @@ const Import = () => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
+  const handleExportVault = async () => {
+    try {
+      const response = await exportCodes();
+      toast.success(response);
+    } catch (err) {
+      console.error(err);
+      toast.error("Nothing to export.");
+    }
+  };
+
+  const handleResetVault = async () => {
+    try {
+      await deleteVault();
+      toast.success("Vault resetted.");
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occured");
+    }
+  };
+
   useEffect(() => {
     setAppBarTitle("Import & Export");
   }, []);
@@ -32,35 +52,13 @@ const Import = () => {
           </ListItemButton>
         </ListItem>
 
-        <ListItem
-          disablePadding
-          onClick={async () => {
-            try {
-              const response = await exportCodes();
-              toast.success(response);
-            } catch (err) {
-              console.error(err);
-              toast.error("Nothing to export.");
-            }
-          }}
-        >
+        <ListItem disablePadding onClick={handleExportVault}>
           <ListItemButton>
             <ListItemText primary="Export" secondary="Backup your vault." />
           </ListItemButton>
         </ListItem>
 
-        <ListItem
-          disablePadding
-          onClick={() => {
-            try {
-              deleteVault();
-              toast.success("Vault resetted.");
-            } catch (err) {
-              console.error(err);
-              toast.error("An error occured");
-            }
-          }}
-        >
+        <ListItem disablePadding onClick={handleResetVault}>
           <ListItemButton>
             <ListItemText
               primary="Reset Vault"
