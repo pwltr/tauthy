@@ -55,8 +55,9 @@ const Unlock = () => {
           placeholder="Password"
           variant="filled"
           size="small"
-          fullWidth
           margin="normal"
+          fullWidth
+          autoFocus
           onChange={(event) => setPassword(event.target.value)}
         />
 

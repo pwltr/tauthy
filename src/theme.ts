@@ -35,15 +35,20 @@ export const lightTheme = createTheme({
   },
   palette: {
     primary: {
-      main: blueGrey[800],
+      main: "#31363b",
       darker: "#053e85",
     },
-    secondary: amber,
+    secondary: {
+      main: "#31363b",
+    },
     neutral: {
       main: "#64748B",
-      contrastText: "#fff",
+      contrastText: "#ffffff",
     },
-    background: {},
+    background: {
+      default: "#232629",
+      paper: "#ffffff",
+    },
     text: {
       primary: grey[900],
       secondary: grey[800],
