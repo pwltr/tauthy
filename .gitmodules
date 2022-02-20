@@ -1,3 +1,6 @@
 [submodule "tauri-plugin-stronghold"]
 	path = tauri-plugin-stronghold
 	url = https://github.com/tauri-apps/tauri-plugin-stronghold
+[submodule "tauri-plugin-authenticator"]
+	path = tauri-plugin-authenticator
+	url = https://github.com/tauri-apps/tauri-plugin-authenticator

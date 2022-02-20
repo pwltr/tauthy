@@ -19,7 +19,8 @@
     "react-hot-toast": "^2.2.0",
     "react-router-dom": "^6.2.1",
     "styled-components": "^5.3.3",
-    "tauri-plugin-stronghold-api": "link:./tauri-plugin-stronghold"
+    "tauri-plugin-stronghold-api": "link:./tauri-plugin-stronghold",
+    "tauri-plugin-authenticator-api": "link:./tauri-plugin-authenticator"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.0.0-rc.5",
