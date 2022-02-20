@@ -8,6 +8,7 @@ import GlobalStyle from "~/styles/global";
 import { setupVault } from "~/utils";
 import { useLocalStorage, useMediaQuery } from "~/hooks";
 import AppRouter from "~/components/AppRouter";
+import AppDebugger from "~/components/AppDebugger";
 import {
   AppBarTitleContext,
   ThemeContext,
@@ -53,6 +54,8 @@ const App = () => {
                     position="bottom-center"
                     toastOptions={{ duration: 1200 }}
                   />
+
+                  {import.meta.env.DEV && <AppDebugger />}
                 </ThemeProvider>
               </SortContext.Provider>
             </SearchContext.Provider>

@@ -2,6 +2,7 @@ import { ChangeEvent } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 
 import { getVault, saveVault } from "~/utils";
+import { VaultEntry } from "~/types";
 
 export type ImportFormat = "aegis" | "authy" | "google" | "tauthy";
 
@@ -10,6 +11,47 @@ export const generateTOTP = async (secret: string) => {
     return await invoke("generate_totp", { argument: secret });
   } catch (err) {
     console.error("error from backend:", err);
+  }
+};
+
+export const createCode = async ({
+  name,
+  secret,
+  issuer,
+  group,
+}: {
+  name: string;
+  secret: string;
+  issuer: string;
+  group: string;
+}) => {
+  let entry = {
+    uuid: crypto.randomUUID(),
+    name,
+    secret,
+    issuer,
+    group,
+    // icon,
+  };
+
+  const currentVault = await getVault();
+  const vault = currentVault ? [...JSON.parse(currentVault), entry] : [entry];
+
+  try {
+    await saveVault(JSON.stringify(vault));
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+export const deleteCode = async (id: string) => {
+  const vaultJSON = JSON.parse(await getVault());
+  const vault = vaultJSON.filter((entry: VaultEntry) => entry.uuid !== id);
+
+  try {
+    await saveVault(JSON.stringify(vault));
+  } catch (err) {
+    console.error(err);
   }
 };
 

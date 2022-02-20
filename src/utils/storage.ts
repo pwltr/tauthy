@@ -1,4 +1,8 @@
-import { Stronghold, Location } from "tauri-plugin-stronghold-api";
+import {
+  Stronghold,
+  Location,
+  setPasswordClearInterval,
+} from "tauri-plugin-stronghold-api";
 
 const stronghold = new Stronghold("./vault.stronghold", "password");
 const store = stronghold.getStore("vault", []);
@@ -20,11 +24,14 @@ export const deleteVault = async () => {
 
 export const lockVault = async () => {
   console.log("locking vault...");
-  // TODO: can we lock the stronghold somehow?
-  return;
+  await setPasswordClearInterval({ secs: 1, nanos: 0 });
 };
 
-export const unlockVault = (passwd: string) => stronghold.reload(passwd);
+export const unlockVault = async (passwd: string) => {
+  stronghold.reload(passwd);
+  // NOTE: never lock automatically
+  await setPasswordClearInterval({ secs: 0, nanos: 0 });
+};
 
 export const setupVault = async () => {
   // check if we have a vault
@@ -41,8 +48,5 @@ export const setupVault = async () => {
 };
 
 stronghold.onStatusChange((status) => {
-  console.log("status change", status);
-  console.log("stronghold", stronghold);
-  console.log("store", store);
-  console.log("location", location);
+  console.info("Stronghold status changed: ", status);
 });

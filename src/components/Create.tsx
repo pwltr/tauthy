@@ -6,7 +6,7 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 
 import { AppBarTitleContext } from "~/context";
-import { getVault, saveVault } from "~/utils";
+import { createCode } from "~/utils";
 
 const Create = () => {
   const navigate = useNavigate();
@@ -25,7 +25,6 @@ const Create = () => {
     // TODO: icon
 
     let entry = {
-      uuid: crypto.randomUUID(),
       name,
       secret,
       issuer,
@@ -33,11 +32,8 @@ const Create = () => {
       // icon,
     };
 
-    const currentVault = await getVault();
-    const vault = currentVault ? [...JSON.parse(currentVault), entry] : [entry];
-
     try {
-      await saveVault(JSON.stringify(vault));
+      await createCode(entry);
       navigate(-1);
     } catch (err) {
       console.error(err);

@@ -15,6 +15,7 @@ import Grid from "@mui/material/Grid";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
+import { deleteCode } from "~/utils";
 import { ListOptionsContext, SearchContext, SortContext } from "~/context";
 import type { ListEntry } from "~/components/Codes";
 
@@ -98,6 +99,10 @@ const List = ({ className, entries }: ListProps) => {
                   toast.success("Copied to clipboard", {
                     id: "clipboard",
                   });
+                }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  deleteCode(entry.uuid);
                 }}
               >
                 <ListItemButton>
