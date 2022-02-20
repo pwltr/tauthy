@@ -6,7 +6,7 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 
 import { AppBarTitleContext } from "~/context";
-import { getVault, unlockVault } from "~/utils";
+import { getVault, getStatus, unlockVault } from "~/utils";
 import { Typography } from "@mui/material";
 
 const Container = styled("div")`
@@ -28,6 +28,24 @@ const Unlock = () => {
     setAppBarTitle("Unlock");
   }, []);
 
+  const handleGetStatus = async () => {
+    try {
+      const status = await getStatus();
+      console.log("status", status);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleGetVault = async () => {
+    try {
+      const currentVault = await getVault();
+      console.log("currentVault", currentVault);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       await unlockVault(password);
@@ -46,7 +64,7 @@ const Unlock = () => {
         Vault locked.
       </Typography>
       <Typography variant="h5" color="primary">
-        Enter password to unlock.
+        Enter "password" to unlock.
       </Typography>
 
       <FormGroup row>
@@ -77,6 +95,26 @@ const Unlock = () => {
       >
         Unlock
       </Button>
+
+      {/* <Button
+        aria-label="add account"
+        color="primary"
+        size="medium"
+        variant="contained"
+        onClick={handleGetStatus}
+      >
+        Get Status
+      </Button>
+
+      <Button
+        aria-label="add account"
+        color="primary"
+        size="medium"
+        variant="contained"
+        onClick={handleGetVault}
+      >
+        Get Vault
+      </Button> */}
     </Container>
   );
 };
