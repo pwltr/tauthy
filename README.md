@@ -30,7 +30,7 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
   <!-- <img src="./screenshots/light3.png" alt="light3" width="32%" /> -->
 </div>
 
-## Todos
+## Todo
 
 - [ ] support Yubikey
 - [ ] support other import files
