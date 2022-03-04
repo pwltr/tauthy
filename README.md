@@ -30,12 +30,15 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 ## Screenshots
 
 <div align="center">
+  <img src="./screenshots/light1.png" alt="light1" width="32%" />
+  <!-- <img src="./screenshots/light2.png" alt="light2" width="32%" /> -->
+  <!-- <img src="./screenshots/light3.png" alt="light3" width="32%" /> -->
   <img src="./screenshots/dark1.png" alt="dark1" width="32%" />
   <!-- <img src="./screenshots/dark2.png" alt="dark2" width="32%" /> -->
   <!-- <img src="./screenshots/dark3.png" alt="dark3" width="32%" /> -->
-  <!-- <img src="./screenshots/light1.png" alt="light1" width="32%" /> -->
-  <!-- <img src="./screenshots/light2.png" alt="light2" width="32%" /> -->
-  <!-- <img src="./screenshots/light3.png" alt="light3" width="32%" /> -->
+  <img src="./screenshots/black1.png" alt="black1" width="32%" />
+  <!-- <img src="./screenshots/black2.png" alt="black2" width="32%" /> -->
+  <!-- <img src="./screenshots/black3.png" alt="black3" width="32%" /> -->
 </div>
 
 ## Todo
