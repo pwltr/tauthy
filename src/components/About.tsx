@@ -1,89 +1,79 @@
-import { useEffect, useState, useContext } from "react";
-import Switch from "@mui/material/Switch";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListSubheader from "@mui/material/ListSubheader";
-import DraftsIcon from "@mui/icons-material/Drafts";
+import { useEffect, useContext } from 'react'
+import { open } from '@tauri-apps/api/shell'
+import List from '@mui/material/List'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemText from '@mui/material/ListItemText'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListSubheader from '@mui/material/ListSubheader'
+import CodeIcon from '@mui/icons-material/Code'
+import HistoryEduIcon from '@mui/icons-material/HistoryEdu'
+import GitHubIcon from '@mui/icons-material/GitHub'
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 
-import ThemeModal from "~/components/Theme";
-import LanguageModal from "~/components/Language";
-
-import { AppBarTitleContext } from "~/context";
-import ListItem from "~/components/ListItem";
+import { AppBarTitleContext } from '~/context'
+import ListItem from '~/components/ListItem'
 
 const About = () => {
-  const { setAppBarTitle } = useContext(AppBarTitleContext);
-  const [openThemeModal, setOpenThemeModal] = useState(false);
-  const [openLanguageModal, setOpenLanguageModal] = useState(false);
-
-  const handleOpenThemeModal = () => setOpenThemeModal(true);
-  const handleCloseThemeModal = () => setOpenThemeModal(false);
-  const handleOpenLanguageModal = () => setOpenLanguageModal(true);
-  const handleCloseLanguageModal = () => setOpenLanguageModal(false);
+  const { setAppBarTitle } = useContext(AppBarTitleContext)
 
   useEffect(() => {
-    setAppBarTitle("About");
-  }, []);
+    setAppBarTitle('About')
+  }, [])
 
   return (
     <>
       <List dense>
-        <ListItem onClick={handleOpenThemeModal}>
+        {/* <ListItem>
           <ListItemButton>
             <ListItemIcon>
               <DraftsIcon color="primary" />
             </ListItemIcon>
             <ListItemText primary="Tauthy" />
           </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding onClick={handleOpenThemeModal}>
+        </ListItem> */}
+        <ListItem disablePadding onClick={() => open('https://github.com/pwltr/tauthy/releases')}>
           <ListItemButton>
             <ListItemIcon>
-              <DraftsIcon color="primary" />
+              <CodeIcon color="primary" />
             </ListItemIcon>
             <ListItemText primary="Version" secondary="0.1.0" />
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding onClick={handleOpenLanguageModal}>
+        <ListItem
+          disablePadding
+          onClick={() => open('https://github.com/pwltr/tauthy/blob/master/LICENSE')}
+        >
           <ListItemButton>
             <ListItemIcon>
-              <DraftsIcon color="primary" />
+              <HistoryEduIcon color="primary" />
             </ListItemIcon>
             <ListItemText primary="License" secondary="GPL-3.0 License" />
           </ListItemButton>
         </ListItem>
 
-        <ListSubheader>Team</ListSubheader>
-        <ListItem disablePadding>
+        <ListSubheader>Open Source</ListSubheader>
+        <ListItem disablePadding onClick={() => open('https://github.com/pwltr/tauthy')}>
           <ListItemButton>
             <ListItemIcon>
-              <DraftsIcon color="primary" />
+              <GitHubIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="GitHub" />
+            <ListItemText primary="GitHub" secondary="pwltr/tauthy" />
           </ListItemButton>
         </ListItem>
 
         <ListSubheader>Support</ListSubheader>
-        <ListItem disablePadding>
+        <ListItem disablePadding onClick={() => open('https://github.com/pwltr/tauthy')}>
           <ListItemButton>
             <ListItemIcon>
-              <DraftsIcon color="primary" />
+              <VolunteerActivismIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="GitHub" />
+            <ListItemText primary="Buy me a coffee" />
           </ListItemButton>
         </ListItem>
       </List>
-
-      <ThemeModal open={openThemeModal} onClose={handleCloseThemeModal} />
-      <LanguageModal
-        open={openLanguageModal}
-        onClose={handleCloseLanguageModal}
-      />
     </>
-  );
-};
+  )
+}
 
-export default About;
+export default About
