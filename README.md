@@ -30,7 +30,7 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 <div align="center">
   <img src="./screenshots/light1.png" alt="light1" width="32%" />
-  <img src="./screenshots/dark1.png" alt="dark1" width="32%" />
+  <img src="./screenshots/dark1.png" alt="dark1" width="31.9%" />
   <img src="./screenshots/black1.png" alt="black1" width="32%" />
 </div>
 
