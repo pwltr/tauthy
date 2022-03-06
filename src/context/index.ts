@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { PaletteMode } from "~/theme";
+import { PaletteMode } from "~/styles/theme";
 
 export const AppBarTitleContext = createContext({
   appBarTitle: "Tauthy",

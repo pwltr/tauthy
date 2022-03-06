@@ -1,93 +1,70 @@
-import { styled } from "@mui/material/styles";
-// import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
+import { styled } from '@mui/material/styles'
+import Button from '@mui/material/Button'
 
-import { getVault, getStatus, unlockVault, lockVault } from "~/utils";
+import { vault } from '~/App'
 
-const Container = styled("div")`
-  background: #efefef;
-  padding: 0.5rem 1rem;
+const Container = styled('div')`
   position: fixed;
   bottom: 1rem;
   left: 1rem;
-`;
+`
 
-const Row = styled("div")`
+const Row = styled('div')`
   display: flex;
   grid-gap: 0.5rem;
-`;
+`
 
 const Unlock = () => {
   const handleGetStatus = async () => {
     try {
-      const status = await getStatus();
-      console.log("status", status);
+      const status = await vault.getStatus()
+      console.log('status', status)
     } catch (err) {
-      console.error(err);
+      console.error(err)
     }
-  };
+  }
 
   const handleGetVault = async () => {
     try {
-      const currentVault = await getVault();
-      console.log("currentVault", currentVault);
+      const currentVault = await vault.getVault()
+      console.log('currentVault', currentVault)
     } catch (err) {
-      console.error(err);
+      console.error(err)
     }
-  };
+  }
 
-  // const handleSubmit = async () => {
-  //   try {
-  //     await unlockVault(password);
-  //     const currentVault = await getVault();
-  //     console.log("currentVault", currentVault);
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // };
+  const handleClearAll = async () => {
+    await vault.debug_deleteVault()
+    localStorage.clear()
+  }
+
+  const handleDebugVault = async () => {
+    try {
+      const result = await vault.debug()
+      console.log('result', result)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <Container>
-      {/* <TextField
-        type="password"
-        placeholder="Password"
-        variant="filled"
-        size="small"
-        margin="normal"
-        fullWidth
-        autoFocus
-        onChange={(event) => setPassword(event.target.value)}
-      /> */}
-      {/* <Button
-        aria-label="add account"
-        color="primary"
-        size="small"
-        variant="contained"
-        onClick={handleSubmit}
-      >
-        Unlock Vault
-      </Button> */}
-      <Row>Vault</Row>
       <Row>
         <Button size="small" variant="contained" onClick={handleGetStatus}>
           Status
         </Button>
         <Button size="small" variant="contained" onClick={handleGetVault}>
           Value
+        </Button>
+        <Button color="warning" size="small" variant="contained" onClick={handleDebugVault}>
+          Debug
+        </Button>
+        <Button color="error" size="small" variant="contained" onClick={handleClearAll}>
+          Clear
         </Button>
       </Row>
-      {/* <br />
-      <Row>Password</Row>
-      <Row>
-        <Button size="small" variant="contained" onClick={handleGetStatus}>
-          Status
-        </Button>
-        <Button size="small" variant="contained" onClick={handleGetVault}>
-          Value
-        </Button>
-      </Row> */}
     </Container>
-  );
-};
+  )
+}
 
-export default Unlock;
+export default Unlock

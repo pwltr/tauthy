@@ -5,16 +5,20 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 
 import { AppBarTitleContext } from "~/context";
-import { exportCodes, deleteVault } from "~/utils";
+import { exportCodes } from "~/utils";
 import ListItem from "~/components/ListItem";
 import ImportModal from "~/components/modals/Import";
+import ResetModal from "~/components/modals/Reset";
 
 const Import = () => {
   const { setAppBarTitle } = useContext(AppBarTitleContext);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
+  const handleOpenImportModal = () => setIsImportModalOpen(true);
+  const handleCloseImportModal = () => setIsImportModalOpen(false);
+  const handleOpenResetModal = () => setIsResetModalOpen(true);
+  const handleCloseResetModal = () => setIsResetModalOpen(false);
 
   const handleExportVault = async () => {
     try {
@@ -26,16 +30,6 @@ const Import = () => {
     }
   };
 
-  const handleResetVault = async () => {
-    try {
-      await deleteVault();
-      toast.success("Vault resetted.");
-    } catch (err) {
-      console.error(err);
-      toast.error("An error occured");
-    }
-  };
-
   useEffect(() => {
     setAppBarTitle("Import & Export");
   }, []);
@@ -43,32 +37,33 @@ const Import = () => {
   return (
     <>
       <List>
-        <ListItem disablePadding onClick={handleOpenModal}>
+        <ListItem disablePadding onClick={handleOpenImportModal}>
           <ListItemButton>
             <ListItemText
               primary="Import"
-              secondary="Import backups from other apps."
+              secondary="Import backups from other apps"
             />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding onClick={handleExportVault}>
           <ListItemButton>
-            <ListItemText primary="Export" secondary="Backup your vault." />
+            <ListItemText primary="Export" secondary="Backup your vault" />
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding onClick={handleResetVault}>
+        <ListItem disablePadding onClick={handleOpenResetModal}>
           <ListItemButton>
             <ListItemText
               primary="Reset Vault"
-              secondary="Delete your vault."
+              secondary="Delete your vault"
             />
           </ListItemButton>
         </ListItem>
       </List>
 
-      <ImportModal open={isModalOpen} onClose={handleCloseModal} />
+      <ImportModal open={isImportModalOpen} onClose={handleCloseImportModal} />
+      <ResetModal open={isResetModalOpen} onClose={handleCloseResetModal} />
     </>
   );
 };

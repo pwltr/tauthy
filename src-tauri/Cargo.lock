@@ -89,9 +89,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.53"
+version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94a45b455c14666b85fc40a019e8ab9eb75e3a124e05494f5397122bc9eb06e0"
+checksum = "159bb86af3a200e19a068f4224eae4c8bb2d0fa054c7e5d1cacd5cef95e684cd"
 
 [[package]]
 name = "app"
@@ -3125,6 +3125,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
+name = "open"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a82915836ef43159bb6a3c64d884c42329ccd0b8afdca737cf1e3dd701709dc"
+dependencies = [
+ "pathdiff",
+ "winapi",
+]
+
+[[package]]
 name = "openssl"
 version = "0.10.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3250,6 +3260,12 @@ name = "paste"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
+
+[[package]]
+name = "pathdiff"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8835116a5c179084a830efb3adc117ab007512b535bc1a21c991d3b32a6b44dd"
 
 [[package]]
 name = "pbkdf2"
@@ -4690,9 +4706,11 @@ dependencies = [
  "http",
  "ignore",
  "once_cell",
+ "open",
  "percent-encoding",
  "rand 0.8.4",
  "raw-window-handle",
+ "regex",
  "semver 1.0.4",
  "serde 1.0.136",
  "serde_json",
@@ -4735,6 +4753,7 @@ dependencies = [
  "blake3",
  "proc-macro2 1.0.36",
  "quote 1.0.15",
+ "regex",
  "serde 1.0.136",
  "serde_json",
  "sha2 0.10.2",

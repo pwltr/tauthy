@@ -1,84 +1,80 @@
-import { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { styled } from "@mui/material/styles";
-import FormGroup from "@mui/material/FormGroup";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { styled } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
+import TextField from '@mui/material/TextField'
+import MuiButton from '@mui/material/Button'
 
-import { AppBarTitleContext } from "~/context";
-import { getVault, unlockVault } from "~/utils";
-import { Typography } from "@mui/material";
+import { vault } from '~/App'
 
-const Container = styled("div")`
+const Container = styled('div')`
   display: flex;
   flex-direction: column;
   flex: 1;
   justify-content: center;
   align-items: center;
-  padding: 4;
-`;
+  padding: 3rem;
+`
+
+const Button = styled(MuiButton)`
+  margin-top: 2.2rem;
+`
 
 const Unlock = () => {
-  const navigate = useNavigate();
-  const { setAppBarTitle } = useContext(AppBarTitleContext);
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setAppBarTitle("Unlock");
-  }, []);
+  const navigate = useNavigate()
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(false)
 
   const handleSubmit = async () => {
     try {
-      await unlockVault(password);
-      const currentVault = await getVault();
-      console.log("currentVault", currentVault);
-      navigate("/");
+      await vault.unlock(password)
+      // try to read to check if password is valid
+      // const status = await vault.getStatus()
+      // console.log('status', status)
+      setError(false)
+      navigate('/')
     } catch (err) {
-      console.error(err);
-      setError("Wrong password");
+      console.error(err)
+      setError(true)
     }
-  };
+  }
+
+  useEffect(() => {
+    const getStatus = async () => {
+      const status = await vault.getStatus()
+      console.log('status', status)
+    }
+
+    getStatus()
+  }, [])
 
   return (
     <Container>
-      <Typography variant="h4" color="primary">
+      <Typography variant="h4" color="primary" mb={0}>
         Vault locked.
       </Typography>
-      <Typography variant="h5" color="primary">
-        Enter "password" to unlock.
+      <Typography variant="h5" color="primary" mb={2}>
+        Enter password to unlock
       </Typography>
 
-      <FormGroup row>
-        <TextField
-          type="password"
-          placeholder="Password"
-          variant="filled"
-          size="small"
-          margin="normal"
-          fullWidth
-          autoFocus
-          onChange={(event) => setPassword(event.target.value)}
-        />
+      <TextField
+        type="password"
+        placeholder="Password"
+        variant="filled"
+        size="small"
+        margin="normal"
+        helperText={error && 'Invalid password'}
+        error={error}
+        fullWidth
+        autoFocus
+        onChange={(event) => setPassword(event.target.value)}
+      />
 
-        {error && (
-          <Typography variant="body2" color="primary">
-            {error}
-          </Typography>
-        )}
-      </FormGroup>
-      <br />
-      <Button
-        aria-label="add account"
-        color="primary"
-        size="medium"
-        variant="contained"
-        onClick={handleSubmit}
-      >
+      <Button aria-label="add account" color="primary" variant="contained" onClick={handleSubmit}>
         Unlock
       </Button>
     </Container>
-  );
-};
+  )
+}
 
-export default Unlock;
+export default Unlock

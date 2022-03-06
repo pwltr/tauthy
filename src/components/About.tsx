@@ -64,7 +64,7 @@ const About = () => {
             <ListItemIcon>
               <CodeIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Version" secondary="0.1.0" />
+            <ListItemText primary="Version" secondary="1.0.0" />
           </ListItemButton>
         </ListItem>
 
@@ -80,15 +80,15 @@ const About = () => {
           </ListItemButton>
         </ListItem>
 
-        <ListSubheader>Support</ListSubheader>
+        {/* <ListSubheader>Support</ListSubheader>
         <ListItem disablePadding onClick={() => open('https://github.com/pwltr/tauthy')}>
           <ListItemButton>
             <ListItemIcon>
               <VolunteerActivismIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Buy me a coffee" />
+            <ListItemText primary="Buy Me a Coffee" />
           </ListItemButton>
-        </ListItem>
+        </ListItem> */}
       </List>
     </>
   )

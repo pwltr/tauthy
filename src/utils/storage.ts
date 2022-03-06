@@ -1,52 +1,161 @@
-import {
-  Stronghold,
-  Location,
-  setPasswordClearInterval,
-} from "tauri-plugin-stronghold-api";
+import { dataDir } from '@tauri-apps/api/path'
+import { createDir, copyFile, removeFile, Dir } from '@tauri-apps/api/fs'
+import { Stronghold, Store, Location, setPasswordClearInterval } from 'tauri-plugin-stronghold-api'
 
-const stronghold = new Stronghold("./vault.stronghold", "password");
-const store = stronghold.getStore("vault", []);
-const location = Location.generic("vault", "record");
+import { VaultEntry } from '~/types'
 
-export const getVault = () => store.get(location);
-export const getStatus = () => stronghold.getStatus();
-
-export const saveVault = async (record: string) => {
-  await store.insert(location, record);
-  await stronghold.save();
-};
-
-export const deleteVault = async () => {
-  // NOTE: just reset to initial state
-  await store.insert(location, "[]");
-  await stronghold.save();
-};
-
-export const lockVault = async () => {
-  console.log("locking vault...");
-  await setPasswordClearInterval({ secs: 1, nanos: 0 });
-};
-
-export const unlockVault = async (passwd: string) => {
-  stronghold.reload(passwd);
-  // NOTE: never lock automatically
-  await setPasswordClearInterval({ secs: 0, nanos: 0 });
-};
+const appName = 'tauthy'
+const dataDirectory = `${await dataDir()}${appName}`
+const vaultName = 'vault.stronghold'
+const vaultPath = `${dataDirectory}/${vaultName}`
 
 export const setupVault = async () => {
-  // check if we have a vault
-  try {
-    const currentVault = await getVault();
-    // console.log("found existing vault");
-    console.log("found existing vault", currentVault);
-  } catch (err) {
-    console.log("no vault found. initializing...");
-    // if not initialize with empty array
-    await store.insert(location, "[]");
-    await stronghold.save();
-  }
-};
+  // create dataDirectory if it doesn't exist
+  await createDir(appName, { dir: Dir.Data, recursive: true })
 
-stronghold.onStatusChange((status) => {
-  console.info("Stronghold status changed: ", status);
-});
+  const vault = new Vault('')
+  // await vault.setup()
+
+  return vault
+}
+
+export class Vault {
+  stronghold: Stronghold
+  store: Store
+  location: Location
+
+  constructor(password: string) {
+    this.stronghold = new Stronghold(vaultPath, password)
+    this.store = this.stronghold.getStore('vault', [])
+    this.location = Location.generic('vault', 'record')
+  }
+
+  async checkVault() {
+    return await this.store.get(this.location)
+  }
+
+  async getVault() {
+    // TODO: add error handling
+    const vault = await this.store.get(this.location)
+    const vaultJSON: VaultEntry[] = JSON.parse(vault)
+    return vaultJSON
+  }
+
+  async save(record: string) {
+    console.log('save: record', record)
+
+    const recordJSON = JSON.parse(record)
+    console.log('save: recordJSON', recordJSON)
+
+    await this.store.insert(this.location, record)
+    await this.stronghold.save()
+  }
+
+  async reset() {
+    await this.store.insert(this.location, '[]')
+    await this.stronghold.save()
+  }
+
+  async destroy() {
+    await this.stronghold.unload()
+  }
+
+  getStatus() {
+    return this.stronghold.getStatus()
+  }
+
+  onStatusChange() {
+    this.stronghold.onStatusChange((status) => {
+      console.info('Stronghold status changed: ', status)
+    })
+  }
+
+  async lock() {
+    console.info('locking vault...')
+    await setPasswordClearInterval({ secs: 1, nanos: 0 })
+    console.info('vault locked.')
+  }
+
+  async unlock(password: string) {
+    await this.stronghold.reload(password)
+    // NOTE: never lock automatically
+    // await setPasswordClearInterval({ secs: 0, nanos: 0 })
+  }
+
+  async changePassword(password: string) {
+    // backup current vault
+    // await copyFile(`${appName}/${vaultName}`, `${appName}/${vaultName}.backup`, {
+    //   dir: Dir.Data,
+    // })
+
+    // read current vault
+    const currentVault = await this.store.get(this.location)
+    console.log('currentVault', currentVault)
+
+    // delete current vault
+    // await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+
+    // set new password
+    await this.stronghold.setPassword(password)
+    await this.stronghold.clearCache()
+
+    // create new vault with new password
+    this.stronghold = new Stronghold(vaultPath, password)
+    // this.stronghold = new Stronghold(`${vaultPath}-new`, password)
+
+    this.store = this.stronghold.getStore('vault', [])
+    this.location = Location.generic('vault', 'record')
+    await this.store.insert(this.location, currentVault)
+    await this.stronghold.save()
+
+    // delete backup
+    // await removeFile(`${appName}/${vaultName}.backup`, { dir: Dir.Data })
+  }
+
+  // async debug() {
+  //   console.log('this.stronghold', this.stronghold)
+
+  //   // backup current vault
+  //   // await copyFile(`${appName}/${vaultName}`, `${appName}/${vaultName}.backup`, {
+  //   //   dir: Dir.Data,
+  //   // })
+
+  //   // read current vault
+  //   const currentVault = await this.store.get(this.location)
+  //   console.log('currentVault', currentVault)
+
+  //   // delete current vault
+  //   await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+  //   // await this.destroy()
+  //   // await this.store.remove(this.location)
+  //   // this.unlock('test')
+  //   // await this.stronghold.save()
+
+  //   // await vault.remove(this.location, true)
+
+  //   await this.stronghold.setPassword('asdf')
+  //   await this.stronghold.clearCache()
+
+  //   // create new vault with new password
+  //   const password = 'asdf'
+  //   this.stronghold = new Stronghold(vaultPath, password)
+  //   // this.stronghold = new Stronghold(`${vaultPath}-new`, password)
+
+  //   this.store = this.stronghold.getStore('vault', [])
+  //   this.location = Location.generic('vault', 'record')
+  //   // await this.store.insert(this.location, currentVault)
+  //   await this.store.insert(
+  //     this.location,
+  //     '[{"uuid":"5b417e50-fcb0-4222-a4e9-7ef70220c2d2","name":"new","secret":"BASE32SECRET3232","issuer":"","group":""}]',
+  //   )
+  //   await this.stronghold.save()
+
+  //   // delete backup
+  //   // await removeFile(`${appName}/${vaultName}.backup`, { dir: Dir.Data })
+  // }
+
+  async debug_deleteVault() {
+    // delete current vault
+    await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+  }
+}

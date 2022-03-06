@@ -55,7 +55,10 @@
       },
       "shell": {
         "execute": false,
-        "open": false
+        "open": true
+      },
+      "path": {
+        "all": true
       },
       "fs": {
         "all": true,
@@ -64,7 +67,8 @@
         "createDir": true,
         "removeDir": true,
         "removeFile": true,
-        "renameFile": true
+        "renameFile": true,
+        "scope": ["$DATA/**"]
       }
     },
     "windows": [
