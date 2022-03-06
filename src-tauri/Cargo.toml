@@ -1,5 +1,5 @@
 [package]
-name = "app"
+name = "tauthy"
 version = "0.1.0"
 description = "A cross-platform TOTP authentication client for desktop."
 authors = ["philippwalter@pm.me"]
