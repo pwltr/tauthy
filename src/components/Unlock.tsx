@@ -27,7 +27,7 @@ const Unlock = () => {
 
   const handleSubmit = async () => {
     try {
-      await vault.unlock(password)
+      // await vault.unlock(password)
       // try to read to check if password is valid
       // const status = await vault.getStatus()
       // console.log('status', status)

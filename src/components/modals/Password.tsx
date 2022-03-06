@@ -16,7 +16,7 @@ const PasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }
   const handleSetPassword = async () => {
     if (password === confirmPassword) {
       try {
-        await vault.changePassword(password)
+        // await vault.changePassword(password)
         setIsPasswordSet(true)
         toast.success('Vault encrypted.')
         onClose()

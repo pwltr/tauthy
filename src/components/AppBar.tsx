@@ -54,7 +54,7 @@ const AppBar = () => {
 
   const handleLock = async () => {
     try {
-      await vault.lock()
+      // await vault.lock()
       handleNavigate('unlock')
     } catch (err) {
       console.error(err)

@@ -35,15 +35,17 @@ const Main = () => {
         console.info('found existing vault', currentVault)
         setIsLoading(false)
       } catch (err) {
-        if (err.includes('Please try another password.')) {
-          console.info('vault locked.')
-          navigate('unlock')
-          setIsLoading(false)
-        } else if (err.includes('record not found')) {
-          console.info('no vault found. initializing...')
-          // initialize with empty array
-          await vault.reset()
-          setIsLoading(false)
+        if (typeof err === 'string') {
+          if (err.includes('Please try another password.')) {
+            console.info('vault locked.')
+            navigate('unlock')
+            setIsLoading(false)
+          } else if (err.includes('record not found')) {
+            console.info('no vault found. initializing...')
+            // initialize with empty array
+            await vault.reset()
+            setIsLoading(false)
+          }
         } else {
           console.error('Unhandled error', err)
         }

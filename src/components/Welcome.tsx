@@ -7,6 +7,8 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import MuiButton from '@mui/material/Button'
 
+import logo from '../../assets/tauthy_bordered.png'
+
 const Container = styled('div')`
   display: flex;
   flex-direction: column;
@@ -33,7 +35,7 @@ const Welcome = () => {
 
   return (
     <Container>
-      <img src="../assets/tauthy_bordered.png" width="140" />
+      <img src={logo} width="140" />
 
       <Typography variant="h6" align="center" color="primary" mt={3} mb={4}>
         This app makes use of software that is still in beta.
