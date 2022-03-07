@@ -65,7 +65,7 @@ const About = () => {
             <ListItemIcon>
               <CodeIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Version" secondary="1.0.0" />
+            <ListItemText primary="Version" secondary="0.1.0" />
           </ListItemButton>
         </ListItem>
 
