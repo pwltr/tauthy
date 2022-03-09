@@ -2,3 +2,12 @@
 # will have compiled files and executables
 /target/
 WixTools
+
+# Yarn (zero-installs)
+.yarn/*
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
