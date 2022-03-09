@@ -47,5 +47,6 @@
     "prettier": "^2.5.1",
     "typescript": "^4.6.2",
     "vite": "^2.8.6"
-  }
+  },
+  "packageManager": "yarn@3.2.0"
 }
