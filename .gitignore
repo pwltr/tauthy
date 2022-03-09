@@ -1,8 +1,12 @@
 node_modules
-.yarn/*
 .DS_Store
 dist
 dist-ssr
 *.local
+
+# Yarn
+.yarn/*
+!.yarn/plugins
+!.yarn/releases
 
 vault.stronghold
