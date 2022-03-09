@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/tauri'
 
 import { vault } from '~/App'
 import { VaultEntry } from '~/types'
+import { generateUUID } from '~/utils'
 
 export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
 
@@ -26,7 +27,7 @@ export const createCode = async ({
   group: string
 }) => {
   let entry = {
-    uuid: crypto.randomUUID(),
+    uuid: generateUUID(),
     name,
     secret,
     issuer,
@@ -105,7 +106,7 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
           if (format === 'authy') {
             const entries = json
             importedEntries = entries.map((entry: any) => ({
-              uuid: crypto.randomUUID(),
+              uuid: generateUUID(),
               name: entry.name,
               secret: entry.secret,
             }))

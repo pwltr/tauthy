@@ -21,6 +21,7 @@ const Main = () => {
   useEffect(() => {
     if (showWelcome) {
       navigate('welcome')
+      return
     }
 
     const setupVault = async () => {

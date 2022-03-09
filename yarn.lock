@@ -1163,6 +1163,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/uuid@npm:^8.3.4":
+  version: 8.3.4
+  resolution: "@types/uuid@npm:8.3.4"
+  checksum: 6f11f3ff70f30210edaa8071422d405e9c1d4e53abbe50fdce365150d3c698fe7bbff65c1e71ae080cbfb8fded860dbb5e174da96fdbbdfcaa3fb3daa474d20f
+  languageName: node
+  linkType: hard
+
 "@vitejs/plugin-react@npm:^1.2.0":
   version: 1.2.0
   resolution: "@vitejs/plugin-react@npm:1.2.0"
@@ -4685,6 +4692,7 @@ __metadata:
     "@types/react-dom": ^17.0.13
     "@types/react-router-dom": ^5.3.3
     "@types/styled-components": ^5.1.24
+    "@types/uuid": ^8.3.4
     "@vitejs/plugin-react": ^1.2.0
     buffer: ^6.0.3
     eslint: ^8.10.0
@@ -4702,6 +4710,7 @@ __metadata:
     styled-components: ^5.3.3
     tauri-plugin-stronghold-api: "link:./tauri-plugin-stronghold"
     typescript: ^4.6.2
+    uuid: ^8.3.2
     vite: ^2.8.6
   languageName: unknown
   linkType: soft
@@ -4922,6 +4931,15 @@ __metadata:
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
   checksum: 474acf1146cb2701fe3b074892217553dfcf9a031280919ba1b8d651a068c9b15d863b7303cb15bd00a862b498e6cf4ad7b4a08fb134edd5a6f7641681cb54a2
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^8.3.2":
+  version: 8.3.2
+  resolution: "uuid@npm:8.3.2"
+  bin:
+    uuid: dist/bin/uuid
+  checksum: 5575a8a75c13120e2f10e6ddc801b2c7ed7d8f3c8ac22c7ed0c7b2ba6383ec0abda88c905085d630e251719e0777045ae3236f04c812184b7c765f63a70e58df
   languageName: node
   linkType: hard
 
