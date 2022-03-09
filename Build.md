@@ -8,7 +8,13 @@
 
 ## Build
 
-1. Install git submodules
+1. Clone the repo
+
+```
+git clone https://github.com/pwltr/tauthy.git
+```
+
+2. Install git submodules
 
 ```
 git submodules update --init --remote
@@ -26,4 +32,6 @@ yarn install
 yarn tauri build
 ```
 
-Executables will be saved to `./src-tauri/target/release`
+## Run
+
+Find the executable for your platform under `./src-tauri/target/release`
