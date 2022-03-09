@@ -35,6 +35,10 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
   <img src="./screenshots/black1.png" alt="black1" width="32%" />
 </div>
 
+## Installation
+
+[Download](https://github.com/pwltr/tauthy/releases) or [Build it from source](./Build.md).
+
 ## Todo
 
 - [ ] add password lock
