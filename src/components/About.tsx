@@ -81,15 +81,15 @@ const About = () => {
           </ListItemButton>
         </ListItem>
 
-        {/* <ListSubheader>Support</ListSubheader>
-        <ListItem disablePadding onClick={() => open('https://github.com/pwltr/tauthy')}>
+        <ListSubheader>Support</ListSubheader>
+        <ListItem disablePadding onClick={() => open('https://www.buymeacoffee.com/pwltr')}>
           <ListItemButton>
             <ListItemIcon>
               <VolunteerActivismIcon color="primary" />
             </ListItemIcon>
             <ListItemText primary="Buy Me a Coffee" />
           </ListItemButton>
-        </ListItem> */}
+        </ListItem>
       </List>
     </>
   )

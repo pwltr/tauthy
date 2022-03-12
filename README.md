@@ -53,6 +53,10 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 - [Tauri](https://tauri.studio)
 - [TimDumol/rust-otp](https://github.com/TimDumol/rust-otp)
 
+## Support
+
+[![Donate](https://img.shields.io/badge/donate-buy%20me%20a%20coffee-orange)](https://www.buymeacoffee.com/pwltr)
+
 ## License
 
 GPL-3.0 License. See [License](./LICENSE).
