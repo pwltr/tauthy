@@ -32,6 +32,7 @@ const StyledProgressBar = styled(ProgressBar)<{ animate: boolean }>`
 const StyledList = styled(List)`
   height: 400px;
   overflow: auto;
+  padding-bottom: 3rem;
 `
 
 const Container = styled('div')`
