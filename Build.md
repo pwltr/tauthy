@@ -1,4 +1,4 @@
-## Requirements:
+## Requirements
 
 - Node.js
 - yarn
@@ -6,18 +6,12 @@
 - Cargo
 - Git
 
-## Build
+## Setup
 
 1. Clone the repo
 
 ```
-git clone https://github.com/pwltr/tauthy.git
-```
-
-2. Install git submodules
-
-```
-git submodules update --init --remote
+git clone --recurse-submodules https://github.com/pwltr/tauthy.git
 ```
 
 2. Install dependencies
@@ -26,12 +20,20 @@ git submodules update --init --remote
 yarn install
 ```
 
-3. Build the app
+## Build
+
+Build the app for production
 
 ```
 yarn tauri build
 ```
 
-## Run
-
 Find the executable for your platform under `./src-tauri/target/release`
+
+## Development
+
+Run the app for development
+
+```
+yarn tauri dev
+```
