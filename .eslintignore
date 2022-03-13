@@ -1,0 +1,5 @@
+# Start by ignoring everything by default
+/*
+
+# Enable linting just for src
+!/src
