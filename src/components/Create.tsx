@@ -32,7 +32,7 @@ const Create = () => {
     // TODO: add better validation
 
     if (name && secret) {
-      let entry = {
+      const entry = {
         name,
         secret,
         issuer,

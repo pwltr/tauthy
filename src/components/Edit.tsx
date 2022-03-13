@@ -46,7 +46,7 @@ const Edit = () => {
     // TODO: add better validation
     // TODO: add icon
 
-    let entry = {
+    const entry = {
       name,
       secret,
       issuer,

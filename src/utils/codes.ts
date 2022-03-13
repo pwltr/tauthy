@@ -2,7 +2,7 @@ import { ChangeEvent } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
 
 import { vault } from '~/App'
-import { VaultEntry } from '~/types'
+import { VaultEntry, AegisEntry, AuthyEntry } from '~/types'
 import { generateUUID } from '~/utils'
 
 export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
@@ -26,7 +26,7 @@ export const createCode = async ({
   issuer: string
   group: string
 }) => {
-  let entry = {
+  const entry = {
     uuid: generateUUID(),
     name,
     secret,
@@ -86,11 +86,11 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
           const currentVault = await vault.getVault()
           const json = JSON.parse(event.target?.result as string)
 
-          let importedEntries
+          let importedEntries: VaultEntry[] = []
 
           if (format === 'aegis') {
-            const entries = json.db.entries
-            importedEntries = entries.map((entry: any) => ({
+            const entries: AegisEntry[] = json.db.entries
+            importedEntries = entries.map((entry) => ({
               uuid: entry.uuid,
               name: entry.name,
               issuer: entry.issuer,
@@ -100,12 +100,9 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
             }))
           }
 
-          const array = new Uint32Array(10)
-          crypto.getRandomValues(array)
-
           if (format === 'authy') {
-            const entries = json
-            importedEntries = entries.map((entry: any) => ({
+            const entries: AuthyEntry[] = json
+            importedEntries = entries.map((entry) => ({
               uuid: generateUUID(),
               name: entry.name,
               secret: entry.secret,
@@ -117,8 +114,8 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
           // }
 
           if (format === 'tauthy') {
-            const entries = json
-            importedEntries = entries.map((entry: any) => ({
+            const entries: VaultEntry[] = json
+            importedEntries = entries.map((entry) => ({
               uuid: entry.uuid,
               name: entry.name,
               issuer: entry.issuer,
@@ -151,25 +148,24 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
   })
 }
 
-export const exportCodes = (): Promise<string> => {
-  return new Promise(async (resolve, reject) => {
-    const entries = await vault.getVault()
-    const file = new Blob([JSON.stringify(entries)], {
-      type: 'application/json',
-    })
-
-    const date = new Date(Date.now())
-      .toLocaleDateString('en-US', {
-        year: '2-digit',
-        month: '2-digit',
-        day: '2-digit',
-      })
-      .replace(/[^\w\s]/gi, '')
-
-    const fileName = `tauthy_export_${date}.json`
-    downloadFile(file, fileName)
-    resolve('Vault exported')
+export const exportCodes = async () => {
+  const entries = await vault.getVault()
+  const file = new Blob([JSON.stringify(entries)], {
+    type: 'application/json',
   })
+
+  const date = new Date(Date.now())
+    .toLocaleDateString('en-US', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    .replace(/[^\w\s]/gi, '')
+
+  const fileName = `tauthy_export_${date}.json`
+  // TODO: add error handling
+  downloadFile(file, fileName)
+  return 'Vault exported'
 }
 
 export const downloadFile = (file: Blob, name: string) => {
