@@ -1,6 +1,6 @@
-import { styled } from "@mui/material/styles";
+import { styled } from '@mui/material/styles'
 
-const Wrapper = styled("div")(
+const Wrapper = styled('div')(
   ({ theme }) => `
     background: ${theme.palette.background.paper};
     display: flex;
@@ -13,27 +13,27 @@ const Wrapper = styled("div")(
     }
 
     animation: 30s slide infinite linear;
-  `
-);
+  `,
+)
 
-const Bar = styled("div")(
+const Bar = styled('div')(
   ({ theme }) => `
     background: ${theme.palette.primary.main};
     width: 100%;
-  `
-);
+  `,
+)
 
 type ProgressBarProps = {
-  className?: string;
-  animate?: boolean;
-};
+  className?: string
+  animate?: boolean
+}
 
 const ProgressBar = ({ className }: ProgressBarProps) => {
   return (
     <Wrapper className={className}>
       <Bar />
     </Wrapper>
-  );
-};
+  )
+}
 
-export default ProgressBar;
+export default ProgressBar
