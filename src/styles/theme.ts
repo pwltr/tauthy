@@ -95,5 +95,16 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
         },
       ],
     },
+    MuiSwitch: {
+      styleOverrides: {
+        switchBase: {
+          color: themes[mode].switch.unchecked.thumb.background,
+        },
+        track: {
+          background: themes[mode].switch.unchecked.thumb.background,
+          opacity: 0.15,
+        },
+      },
+    },
   },
 })

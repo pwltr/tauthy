@@ -1,4 +1,4 @@
-import { alpha, lighten } from '@mui/material/styles'
+import { alpha, lighten, darken } from '@mui/material/styles'
 
 export default {
   mui: {
@@ -43,6 +43,24 @@ export default {
       },
       active: {
         background: lighten('#ffffff', 0.32),
+      },
+    },
+  },
+  switch: {
+    unchecked: {
+      thumb: {
+        background: darken('#ffffff', 0.15),
+      },
+      track: {
+        background: '#ffffff',
+      },
+    },
+    checked: {
+      thumb: {
+        background: '#ffffff',
+      },
+      track: {
+        background: '#ffffff',
       },
     },
   },
