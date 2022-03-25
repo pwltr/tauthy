@@ -28,6 +28,10 @@ const PageTitle = styled(Typography)`
   padding-top: 0.3rem;
 `
 
+const Search = styled(InputBase)`
+  color: #ffffff;
+`
+
 const AppBar = () => {
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { appBarTitle } = useContext(AppBarTitleContext)
@@ -136,7 +140,7 @@ const AppBar = () => {
           )}
 
           {isSearching && location.pathname === '/' ? (
-            <InputBase
+            <Search
               autoFocus
               placeholder="Search"
               inputProps={{ 'aria-label': 'search' }}
