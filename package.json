@@ -17,7 +17,7 @@
   "dependencies": {
     "@mui/icons-material": "^5.5.0",
     "@mui/material": "^5.5.0",
-    "@mui/styled-engine-sc": "^5.4.2",
+    "@mui/styled-engine-sc": "^5.5.2",
     "@tauri-apps/api": "1.0.0-rc.2",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
