@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base", ":automergePatch"],
+  "dependencyDashboard": true,
+  "dependencyDashboardAutoclose": true,
+  "semanticCommits": "enabled",
+  "rangeStrategy": "bump",
+  "stabilityDays": 7,
+  "prCreation": "not-pending",
+  "assignees": ["pwltr"],
+  "assigneesSampleSize": 1,
+  "packageRules": [
+    {
+      "updateTypes": ["minor"],
+      "depTypeList": ["devDependencies"],
+      "automerge": true
+    }
+  ]
+}
