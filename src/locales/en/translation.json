@@ -1,0 +1,85 @@
+{
+  "welcome": {
+    "beta": "This app makes use of software that is still in beta.",
+    "backup": "I'll make sure to keep backups of my data.",
+    "start": "Let's get going"
+  },
+  "codes": {
+    "empty": "Add an entry or import a backup"
+  },
+  "appBar": {
+    "search": "Search",
+    "custom": "Custom",
+    "lock": "Lock",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "create": {
+    "pageTitle": "Add new account",
+    "name": "Name",
+    "issuer": "Issuer (optional)",
+    "group": "Group (optional)",
+    "secret": "Secret",
+    "add": "Add Account"
+  },
+  "edit": {
+    "pageTitle": "Edit account",
+    "name": "Name",
+    "issuer": "Issuer (optional)",
+    "group": "Group (optional)",
+    "secret": "Secret",
+    "delete": "Delete",
+    "save": "Save"
+  },
+  "settings": {
+    "pageTitle": "Settings",
+    "appearance": "Appearance",
+    "appearanceDescription": "Change the theme or the density of entries.",
+    "security": "Security",
+    "securityDescription": "Configure encryption and auto-lock.",
+    "import": "Import & Export",
+    "importDescription": "Import or create exports of your vault."
+  },
+  "appearance": {
+    "pageTitle": "Appearance",
+    "theme": "Theme",
+    "language": "Language",
+    "entries": "Entries",
+    "compact": "Compact",
+    "grouping": "2-digit grouping",
+    "editGroups": "Edit groups"
+  },
+  "import": {
+    "pageTitle": "Import & Export",
+    "import": "Import",
+    "importDescription": "Import backups from other apps",
+    "export": "Export",
+    "exportDescription": "Backup your vault",
+    "reset": "Delete Vault",
+    "resetDescription": "Delete the current vault forever"
+  },
+  "about": {
+    "pageTitle": "About",
+    "openSource": "Open Source",
+    "reportBug": "Report a Bug",
+    "reportBugDescription": "Open an issue on GitHub",
+    "version": "Version",
+    "license": "License",
+    "support": "Support",
+    "coffee": "Buy Me a Coffee"
+  },
+  "modals": {
+    "selectImport": "Select import",
+    "deleteWarning": "This will delete your vault and can not be undone. Are you sure?",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "toasts": {
+    "copied": "Copied to clipboard",
+    "imported": "Vault imported successfully",
+    "exported": "Vault exported.",
+    "emptyExport": "Vault is empty.",
+    "reset": "Vault reset.",
+    "error": "An error occured."
+  }
+}

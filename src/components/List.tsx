@@ -1,5 +1,6 @@
 import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { clipboard } from '@tauri-apps/api'
 import toast from 'react-hot-toast'
 import { Buffer } from 'buffer'
@@ -64,6 +65,7 @@ type ListProps = {
 }
 
 const List = ({ className, entries }: ListProps) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { searchTerm } = useContext(SearchContext)
   const { sorting } = useContext(SortContext)
@@ -114,8 +116,9 @@ const List = ({ className, entries }: ListProps) => {
                 }
                 onClick={() => {
                   clipboard.writeText(String(entry.token))
-                  toast.success('Copied to clipboard', {
+                  toast.success(t('toasts.copied'), {
                     id: 'clipboard',
+                    duration: 1200,
                   })
                 }}
               >

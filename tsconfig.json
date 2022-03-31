@@ -20,6 +20,7 @@
       "~/*": ["./src/*"],
       "~/components/*": ["./src/components/*"],
       "~/hooks/*": ["./src/hooks/*"],
+      "~/locales/*": ["./src/locales/*"],
       "~/styles/*": ["./src/styles/*"],
       "~/utils/*": ["./src/utils/*"]
     }

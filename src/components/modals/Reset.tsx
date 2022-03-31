@@ -1,31 +1,33 @@
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import Button from '@mui/material/Button'
 
 import { vault } from '~/App'
-// import { deleteVault } from '~/utils'
 import Modal, { Buttons } from '~/components/Modal'
 
 const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const { t } = useTranslation()
+
   const handleResetVault = async () => {
     try {
       await vault.reset()
-      toast.success('Vault resetted.')
+      toast.success(t('toasts.reset'))
       onClose()
     } catch (err) {
       console.error(err)
-      toast.error('An error occured')
+      toast.error(t('toasts.error'))
     }
   }
 
   return (
     <Modal open={open} onClose={onClose}>
-      <div>This will delete your vault and can not be undone. Are you sure?</div>
+      <div>{t('modals.deleteWarning')}</div>
       <Buttons>
         <Button color="error" variant="contained" onClick={handleResetVault}>
-          Delete
+          {t('modals.delete')}
         </Button>
         <Button variant="contained" onClick={onClose}>
-          Cancel
+          {t('modals.cancel')}
         </Button>
       </Buttons>
     </Modal>

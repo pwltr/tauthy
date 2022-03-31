@@ -1,5 +1,6 @@
 import { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -12,6 +13,7 @@ import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
 
 const Settings = () => {
+  const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const navigate = useNavigate()
 
@@ -27,20 +29,20 @@ const Settings = () => {
             <BrushIcon color="primary" />
           </ListItemIcon>
           <ListItemText
-            primary="Appearance"
-            secondary="Change the theme or the density of entries."
+            primary={t('settings.appearance')}
+            secondary={t('settings.appearanceDescription')}
           />
         </ListItemButton>
       </ListItem>
 
-      {/* <ListItem disablePadding onClick={() => navigate("/security")}>
+      {/* <ListItem disablePadding onClick={() => navigate('/security')}>
         <ListItemButton>
           <ListItemIcon>
             <SecurityIcon color="primary" />
           </ListItemIcon>
           <ListItemText
-            primary="Security"
-            secondary="Configure encryption and auto-lock"
+            primary={t('settings.security')}
+            secondary={t('settings.securityDescription')}
           />
         </ListItemButton>
       </ListItem> */}
@@ -51,8 +53,8 @@ const Settings = () => {
             <BackupIcon color="primary" />
           </ListItemIcon>
           <ListItemText
-            primary="Import & Export"
-            secondary="Import or create exports of your vault."
+            primary={t('settings.import')}
+            secondary={t('settings.importDescription')}
           />
         </ListItemButton>
       </ListItem>

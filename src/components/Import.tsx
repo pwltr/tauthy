@@ -1,4 +1,5 @@
 import { useEffect, useContext, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -11,6 +12,7 @@ import ImportModal from '~/components/modals/Import'
 import ResetModal from '~/components/modals/Reset'
 
 const Import = () => {
+  const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
@@ -22,16 +24,16 @@ const Import = () => {
 
   const handleExportVault = async () => {
     try {
-      const response = await exportCodes()
-      toast.success(response)
+      await exportCodes()
+      toast.success(t('toasts.exported'))
     } catch (err) {
       console.error(err)
-      toast.error('Nothing to export.')
+      toast.error(t('toasts.emptyExport'))
     }
   }
 
   useEffect(() => {
-    setAppBarTitle('Import & Export')
+    setAppBarTitle(t('import.pageTitle'))
   }, [])
 
   return (
@@ -39,19 +41,19 @@ const Import = () => {
       <List>
         <ListItem disablePadding onClick={handleOpenImportModal}>
           <ListItemButton>
-            <ListItemText primary="Import" secondary="Import backups from other apps" />
+            <ListItemText primary={t('import.import')} secondary={t('import.importDescription')} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding onClick={handleExportVault}>
           <ListItemButton>
-            <ListItemText primary="Export" secondary="Backup your vault" />
+            <ListItemText primary={t('import.export')} secondary={t('import.exportDescription')} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding onClick={handleOpenResetModal}>
           <ListItemButton>
-            <ListItemText primary="Reset Vault" secondary="Delete your vault" />
+            <ListItemText primary={t('import.reset')} secondary={t('import.resetDescription')} />
           </ListItemButton>
         </ListItem>
       </List>

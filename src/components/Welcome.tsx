@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import FormGroup from '@mui/material/FormGroup'
@@ -23,6 +24,7 @@ const Button = styled(MuiButton)`
 `
 
 const Welcome = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [checked, setChecked] = useState(false)
 
@@ -38,14 +40,14 @@ const Welcome = () => {
       <img src={logo} width="140" />
 
       <Typography variant="h6" align="center" color="primary" mt={3} mb={4}>
-        This app makes use of software that is still in beta.
+        {t('welcome.beta')}
       </Typography>
 
       <FormGroup>
         <FormControlLabel
           label={
             <Typography variant="body1" color="primary">
-              I'll make sure to keep backups of my data.
+              {t('welcome.backup')}
             </Typography>
           }
           color="primary"
@@ -62,7 +64,7 @@ const Welcome = () => {
         // disabled={!checked}
         onClick={handleSubmit}
       >
-        Let's get going
+        {t('welcome.start')}
       </Button>
     </Container>
   )

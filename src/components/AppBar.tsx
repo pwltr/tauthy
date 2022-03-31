@@ -1,5 +1,6 @@
 import { useState, useContext, MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import MuiAppBar from '@mui/material/AppBar'
 import MuiToolbar from '@mui/material/Toolbar'
@@ -33,6 +34,7 @@ const Search = styled(InputBase)`
 `
 
 const AppBar = () => {
+  const { t } = useTranslation()
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { appBarTitle } = useContext(AppBarTitleContext)
   const { setSearch } = useContext(SearchContext)
@@ -93,9 +95,9 @@ const AppBar = () => {
       }}
       onClose={handleMenuMoreClose}
     >
-      {isPasswordSet && <MenuItem onClick={handleLock}>Lock</MenuItem>}
-      <MenuItem onClick={() => handleNavigate('/settings')}>Settings</MenuItem>
-      <MenuItem onClick={() => handleNavigate('/about')}>About</MenuItem>
+      {isPasswordSet && <MenuItem onClick={handleLock}>{t('appBar.lock')}</MenuItem>}
+      <MenuItem onClick={() => handleNavigate('/settings')}>{t('appBar.settings')}</MenuItem>
+      <MenuItem onClick={() => handleNavigate('/about')}>{t('appBar.about')}</MenuItem>
     </Menu>
   )
 
@@ -116,7 +118,7 @@ const AppBar = () => {
       }}
       onClose={handleMenuSortClose}
     >
-      <MenuItem onClick={() => handleSort('custom')}>Custom</MenuItem>
+      <MenuItem onClick={() => handleSort('custom')}>{t('appBar.custom')}</MenuItem>
       <MenuItem onClick={() => handleSort('a-z')}>A-Z</MenuItem>
       <MenuItem onClick={() => handleSort('z-a')}>Z-A</MenuItem>
     </Menu>
@@ -142,8 +144,8 @@ const AppBar = () => {
           {isSearching && location.pathname === '/' ? (
             <Search
               autoFocus
-              placeholder="Search"
-              inputProps={{ 'aria-label': 'search' }}
+              placeholder={t('appBar.search')}
+              inputProps={{ 'aria-label': t('appBar.search') }}
               onChange={(event) => setSearch(event.target.value)}
             />
           ) : (

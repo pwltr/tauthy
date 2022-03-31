@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext } from 'react'
+import { useTranslation } from 'react-i18next'
 import Switch from '@mui/material/Switch'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -12,6 +13,7 @@ import LanguageModal from '~/components/modals/Language'
 import ListItem from '~/components/ListItem'
 
 const Appearance = () => {
+  const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const { theme } = useContext(ThemeContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
@@ -24,7 +26,7 @@ const Appearance = () => {
   const handleCloseLanguageModal = () => setOpenLanguageModal(false)
 
   useEffect(() => {
-    setAppBarTitle('Appearance')
+    setAppBarTitle(t('appearance.pageTitle'))
   }, [])
 
   return (
@@ -33,13 +35,13 @@ const Appearance = () => {
         <ListSubheader>App</ListSubheader>
         <ListItem disablePadding onClick={handleOpenThemeModal}>
           <ListItemButton>
-            <ListItemText primary="Theme" secondary={capitalize(theme)} />
+            <ListItemText primary={t('appearance.theme')} secondary={capitalize(theme)} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding onClick={handleOpenLanguageModal}>
           <ListItemButton>
-            <ListItemText primary="Language" secondary="English" />
+            <ListItemText primary={t('appearance.language')} secondary="English" />
           </ListItemButton>
         </ListItem>
 
@@ -50,7 +52,7 @@ const Appearance = () => {
           secondaryAction={<Switch checked={dense} />}
         >
           <ListItemButton>
-            <ListItemText primary="Compact" />
+            <ListItemText primary={t('appearance.compact')} />
           </ListItemButton>
         </ListItem>
 
@@ -60,7 +62,7 @@ const Appearance = () => {
           secondaryAction={<Switch checked={groupByTwos} />}
         >
           <ListItemButton>
-            <ListItemText primary="2-digit grouping" />
+            <ListItemText primary={t('appearance.grouping')} />
           </ListItemButton>
         </ListItem>
 

@@ -150,6 +150,11 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
 
 export const exportCodes = async () => {
   const entries = await vault.getVault()
+
+  if (entries.length === 0) {
+    throw Error('Nothing to export')
+  }
+
   const file = new Blob([JSON.stringify(entries)], {
     type: 'application/json',
   })
@@ -165,6 +170,7 @@ export const exportCodes = async () => {
   const fileName = `tauthy_export_${date}.json`
   // TODO: add error handling
   downloadFile(file, fileName)
+  // TODO: return file path
   return 'Vault exported'
 }
 

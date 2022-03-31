@@ -1,4 +1,5 @@
 import { useEffect, useContext } from 'react'
+import { useTranslation } from 'react-i18next'
 import { open } from '@tauri-apps/api/shell'
 import { styled } from '@mui/material/styles'
 import List from '@mui/material/List'
@@ -27,10 +28,11 @@ const Header = styled('div')`
 `
 
 const About = () => {
+  const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
 
   useEffect(() => {
-    setAppBarTitle('About')
+    setAppBarTitle(t('about.pageTitle'))
   }, [])
 
   return (
@@ -41,7 +43,7 @@ const About = () => {
       </Header>
 
       <List>
-        <ListSubheader>Open Source</ListSubheader>
+        <ListSubheader>{t('about.openSource')}</ListSubheader>
         <ListItem disablePadding onClick={() => open('https://github.com/pwltr/tauthy')}>
           <ListItemButton>
             <ListItemIcon>
@@ -56,7 +58,10 @@ const About = () => {
             <ListItemIcon>
               <BugReportIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Report a Bug" secondary="Open an issue on GitHub" />
+            <ListItemText
+              primary={t('about.reportBug')}
+              secondary={t('about.reportBugDescription')}
+            />
           </ListItemButton>
         </ListItem>
 
@@ -65,7 +70,7 @@ const About = () => {
             <ListItemIcon>
               <CodeIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Version" secondary="0.1.1" />
+            <ListItemText primary={t('about.version')} secondary="0.1.1" />
           </ListItemButton>
         </ListItem>
 
@@ -77,17 +82,17 @@ const About = () => {
             <ListItemIcon>
               <HistoryEduIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="License" secondary="GPL-3.0 License" />
+            <ListItemText primary={t('about.license')} secondary="GPL-3.0 License" />
           </ListItemButton>
         </ListItem>
 
-        <ListSubheader>Support</ListSubheader>
+        <ListSubheader>{t('about.support')}</ListSubheader>
         <ListItem disablePadding onClick={() => open('https://www.buymeacoffee.com/pwltr')}>
           <ListItemButton>
             <ListItemIcon>
               <VolunteerActivismIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Buy Me a Coffee" />
+            <ListItemText primary={t('about.coffee')} />
           </ListItemButton>
         </ListItem>
       </List>

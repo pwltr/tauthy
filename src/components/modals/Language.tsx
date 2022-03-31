@@ -1,46 +1,39 @@
-import { useEffect, useContext } from 'react'
+import { useTranslation } from 'react-i18next'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 
-import { AppBarTitleContext, ThemeContext } from '~/context'
-import { PaletteMode } from '~/styles/theme'
 import Modal from '~/components/Modal'
 import ListItem from '~/components/ListItem'
 
 const Language = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { setAppBarTitle } = useContext(AppBarTitleContext)
-  // const { setLanguage } = useContext(LanguageContext);
+  const { i18n } = useTranslation()
 
-  useEffect(() => {
-    setAppBarTitle('Select theme')
-  }, [])
-
-  const handleClick = (mode: PaletteMode) => {
-    // setTheme(mode);
-    // onClose();
+  const handleClick = (language: string) => {
+    i18n.changeLanguage(language)
+    onClose()
   }
 
   return (
     <Modal open={open} onClose={onClose}>
       <List>
-        <ListItem disablePadding onClick={() => handleClick('light')}>
+        <ListItem disablePadding onClick={() => handleClick('en-US')}>
           <ListItemButton>
             <ListItemText primary="English" />
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding onClick={() => handleClick('dark')}>
+        <ListItem disablePadding onClick={() => handleClick('de-DE')}>
           <ListItemButton>
             <ListItemText primary="German" />
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding onClick={() => handleClick('black')}>
+        {/* <ListItem disablePadding onClick={() => handleClick('fr-FR')}>
           <ListItemButton>
-            <ListItemText primary="Russian" />
+            <ListItemText primary="French" />
           </ListItemButton>
-        </ListItem>
+        </ListItem> */}
       </List>
     </Modal>
   )

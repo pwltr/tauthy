@@ -16,6 +16,7 @@ export default defineConfig({
       '~/': join(PACKAGE_ROOT, 'src') + '/',
       '~/components/': join(PACKAGE_ROOT, 'src') + '/components/',
       '~/hooks/': join(PACKAGE_ROOT, 'src') + '/hooks/',
+      '~/locales/': join(PACKAGE_ROOT, 'src') + '/locales/',
       '~/styles/': join(PACKAGE_ROOT, 'src') + '/styles/',
       '~/utils/': join(PACKAGE_ROOT, 'src') + '/utils/',
     },

@@ -1,24 +1,20 @@
-import { useRef, useEffect, useContext, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 
 import { importCodes, ImportFormat } from '~/utils'
-import { AppBarTitleContext } from '~/context'
 import Modal from '~/components/Modal'
 import ListItem from '~/components/ListItem'
 
 const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
-  const { setAppBarTitle } = useContext(AppBarTitleContext)
   const inputRef = useRef<HTMLInputElement>(null)
   const [format, setFormat] = useState<ImportFormat>()
-
-  useEffect(() => {
-    setAppBarTitle('Select import')
-  }, [])
 
   const handleClick = (format: ImportFormat) => {
     setFormat(format)
@@ -36,7 +32,7 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
           onChange={async (event) => {
             if (format) {
               await importCodes(event, format)
-              toast.success('Vault imported')
+              toast.success(t('toasts.imported'))
               navigate('/')
             }
           }}

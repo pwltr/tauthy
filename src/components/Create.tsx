@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import FormGroup from '@mui/material/FormGroup'
@@ -17,6 +18,7 @@ const Buttons = styled('div')`
 `
 
 const Create = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [name, setName] = useState('')
@@ -25,7 +27,7 @@ const Create = () => {
   const [secret, setSecret] = useState('')
 
   useEffect(() => {
-    setAppBarTitle('Add new account')
+    setAppBarTitle(t('create.pageTitle'))
   }, [])
 
   const handleSubmit = async () => {
@@ -52,7 +54,7 @@ const Create = () => {
     <Box p={4}>
       <FormGroup row>
         <TextField
-          label="Name"
+          label={t('create.name')}
           variant="filled"
           size="small"
           fullWidth
@@ -60,7 +62,7 @@ const Create = () => {
           onChange={(event) => setName(event.target.value)}
         />
         <TextField
-          label="Issuer (optional)"
+          label={t('create.issuer')}
           variant="filled"
           size="small"
           fullWidth
@@ -68,7 +70,7 @@ const Create = () => {
           onChange={(event) => setIssuer(event.target.value)}
         />
         <TextField
-          label="Group (optional)"
+          label={t('create.group')}
           variant="filled"
           size="small"
           fullWidth
@@ -76,7 +78,7 @@ const Create = () => {
           onChange={(event) => setGroup(event.target.value)}
         />
         <TextField
-          label="Secret"
+          label={t('create.secret')}
           variant="filled"
           size="small"
           fullWidth
@@ -87,14 +89,14 @@ const Create = () => {
 
       <Buttons>
         <Button
-          aria-label="add account"
+          aria-label={t('create.add')}
           color="primary"
           variant="contained"
           size="medium"
           // disabled={!name || !secret}
           onClick={handleSubmit}
         >
-          Add Account
+          {t('create.add')}
         </Button>
       </Buttons>
     </Box>

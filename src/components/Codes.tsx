@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { styled, css } from '@mui/material/styles'
 import Fab from '@mui/material/Fab'
 import AddIcon from '@mui/icons-material/Add'
@@ -40,6 +41,7 @@ const Container = styled('div')`
   flex: 1;
   justify-content: center;
   align-items: center;
+  padding: 0 2rem;
 `
 
 const Button = styled(Fab)`
@@ -54,6 +56,7 @@ const INTERVAL_FAST = 1000
 const INTERVAL_STANDARD = 30000
 
 const Codes = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [items, setItems] = useState<ListEntry[]>([])
   const [animate, setAnimate] = useState(true)
@@ -109,7 +112,9 @@ const Codes = () => {
     <>
       {items.length === 0 && (
         <Container>
-          <Typography color="primary">Add an entry or import a backup</Typography>
+          <Typography color="primary" align="center">
+            {t('codes.empty')}
+          </Typography>
         </Container>
       )}
 

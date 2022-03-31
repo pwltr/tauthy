@@ -1,0 +1,84 @@
+{
+  "welcome": {
+    "beta": "Diese App nutzt Software die sich noch in der Beta-Phase befindet.",
+    "backup": "Ich gehe auf Nummer sicher und erstelle regelmäßig Backups",
+    "start": "Los geht's"
+  },
+  "codes": {
+    "empty": "Konto hinzufügen oder Backup importieren"
+  },
+  "appBar": {
+    "search": "Suchen",
+    "custom": "Benutzerdefiniert",
+    "lock": "Sperren",
+    "settings": "Einstellungen",
+    "about": "Über"
+  },
+  "create": {
+    "pageTitle": "Konto hinzufügen",
+    "name": "Name",
+    "issuer": "Herausgeber (optional)",
+    "group": "Gruppe (optional)",
+    "secret": "Schlüssel",
+    "add": "Hinzufügen"
+  },
+  "edit": {
+    "pageTitle": "Konto bearbeiten",
+    "name": "Name",
+    "issuer": "Herausgeber (optional)",
+    "group": "Gruppe (optional)",
+    "secret": "Schlüssel",
+    "delete": "Löschen",
+    "save": "Speichern"
+  },
+  "settings": {
+    "pageTitle": "Einstellungen",
+    "appearance": "Erscheinungsbild",
+    "appearanceDescription": "Farben und Listeneinstellungen",
+    "security": "Sicherheit",
+    "securityDescription": "Passwort und automatisches Sperren",
+    "import": "Importieren & Exportieren",
+    "importDescription": "Tresor importieren oder Export erstellen."
+  },
+  "appearance": {
+    "pageTitle": "Erscheinungsbild",
+    "theme": "Farbschema",
+    "language": "Sprache",
+    "entries": "Liste",
+    "compact": "Kompakt",
+    "grouping": "Zweier-Gruppierung",
+    "editGroups": "Gruppen bearbeiten"
+  },
+  "import": {
+    "pageTitle": "Import & Export",
+    "import": "Importieren",
+    "importDescription": "Sicherungen aus anderen Apps importieren",
+    "export": "Exportieren",
+    "exportDescription": "Sicherung des aktuellen Tresors erstellen",
+    "reset": "Tresor löschen",
+    "resetDescription": "Aktuellen Tresor endgültig löschen"
+  },
+  "about": {
+    "pageTitle": "Über",
+    "openSource": "Open Source",
+    "reportBug": "Bug melden",
+    "reportBugDescription": "Erstelle ein Issue auf GitHub",
+    "version": "Version",
+    "license": "Lizenz",
+    "support": "Support",
+    "coffee": "Kaffee bezahlen"
+  },
+  "modals": {
+    "deleteWarning": "Diese Aktion wird deinen Tresor löschen und kann nicht rückgängig gemacht werden. Bist du sicher?",
+    "delete": "Löschen",
+    "cancel": "Abbrechen"
+  },
+  "toasts": {
+    "copied": "In Zwischenablage kopiert",
+    "imported": "Tresor erfolgreich importiert",
+    "exported": "Tresor exportiert.",
+    "emptyExport": "Tresor ist leer.",
+    "reset": "Tresor gelöscht.",
+    "error": "Ein Fehler ist aufgetreten."
+  }
+}

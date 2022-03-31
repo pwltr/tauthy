@@ -6,6 +6,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, PaletteMode } from '~/styles/theme'
 import { setupVault } from '~/utils'
+import '~/utils/i18n'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
@@ -45,7 +46,7 @@ const App = () => {
               <SortContext.Provider value={{ sorting, setSorting }}>
                 <ThemeProvider theme={theme}>
                   <AppRouter />
-                  <Toaster position="bottom-center" toastOptions={{ duration: 1200 }} />
+                  <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
 
                   {import.meta.env.DEV && <AppDebugger />}
                 </ThemeProvider>
