@@ -44,7 +44,6 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 - [ ] add password lock
 - [ ] support YubiKey / hardware authentication
 - [ ] support other import files
-- [ ] multi-language
 - [ ] support HOTP
 - [ ] add more standard themes (Solarized etc.)
 - [ ] automatic backups
