@@ -37,8 +37,8 @@
     "appearanceDescription": "Farben und Listeneinstellungen",
     "security": "Sicherheit",
     "securityDescription": "Passwort und automatisches Sperren",
-    "import": "Importieren & Exportieren",
-    "importDescription": "Tresor importieren oder Export erstellen."
+    "import": "Import & Export",
+    "importDescription": "Tresor importieren oder Export erstellen"
   },
   "appearance": {
     "pageTitle": "Erscheinungsbild",

@@ -45,7 +45,7 @@ const Appearance = () => {
           </ListItemButton>
         </ListItem>
 
-        <ListSubheader>Entries</ListSubheader>
+        <ListSubheader>{t('appearance.entries')}</ListSubheader>
         <ListItem
           disablePadding
           onClick={() => setListOptions({ dense: !dense, groupByTwos })}
