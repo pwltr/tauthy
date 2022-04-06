@@ -22,7 +22,7 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 - cross-platform
 - offline first
 - secure storage
-- password protection
+- password encryption
 - import / export
 - multi-language
 - all your favorite themes
@@ -41,7 +41,10 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 ## Todo
 
-- [ ] add password lock
+- [ ] add password lock (in progress)
+- [ ] QR codes (in progress)
+- [ ] issuer icons
+- [ ] automatic updates
 - [ ] support YubiKey / hardware authentication
 - [ ] support other import files
 - [ ] support HOTP
