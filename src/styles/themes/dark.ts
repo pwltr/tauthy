@@ -1,4 +1,4 @@
-import { alpha, lighten, darken } from '@mui/material/styles'
+import { lighten, darken } from '@mui/material/styles'
 
 export default {
   mui: {
@@ -30,10 +30,14 @@ export default {
   button: {
     primary: {
       hover: {
-        background: alpha('#ffffff', 0.8),
+        background: darken('#ffffff', 0.2),
       },
       active: {
-        background: alpha('#ffffff', 0.32),
+        background: darken('#ffffff', 0.32),
+      },
+      disabled: {
+        background: darken('#ffffff', 0.4),
+        color: lighten('#31363b', 0.15),
       },
     },
     secondary: {
@@ -43,6 +47,10 @@ export default {
       active: {
         background: lighten('#ffffff', 0.32),
       },
+      disabled: {
+        background: lighten('#ffffff', 0.32),
+        color: lighten('#31363b', 0.15),
+      },
     },
   },
   switch: {
@@ -51,7 +59,7 @@ export default {
         background: darken('#ffffff', 0.15),
       },
       track: {
-        background: alpha('#ffffff', 0.8),
+        background: darken('#ffffff', 0.2),
       },
     },
     checked: {
@@ -63,4 +71,6 @@ export default {
       },
     },
   },
+  // keep default styles
+  textfield: null,
 }

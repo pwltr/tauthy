@@ -1,4 +1,4 @@
-import { alpha, lighten } from '@mui/material/styles'
+import { alpha, lighten, darken } from '@mui/material/styles'
 import { grey } from '@mui/material/colors'
 
 export default {
@@ -34,7 +34,11 @@ export default {
         background: lighten('#31363b', 0.1),
       },
       active: {
-        background: lighten('#ffffff', 0.32),
+        background: lighten('#31363b', 0.32),
+      },
+      disabled: {
+        background: lighten('#31363b', 0.4),
+        color: darken('#ffffff', 0.15),
       },
     },
     secondary: {
@@ -42,7 +46,11 @@ export default {
         background: lighten('#31363b', 0.1),
       },
       active: {
-        background: lighten('#ffffff', 0.32),
+        background: lighten('#31363b', 0.32),
+      },
+      disabled: {
+        background: lighten('#31363b', 0.4),
+        color: darken('#ffffff', 0.15),
       },
     },
   },
@@ -52,7 +60,7 @@ export default {
         background: lighten('#31363b', 0.15),
       },
       track: {
-        background: alpha('#ffffff', 0.8),
+        background: darken('#ffffff', 0.8),
       },
     },
     checked: {
@@ -64,4 +72,6 @@ export default {
       },
     },
   },
+  // keep default styles
+  textfield: null,
 }

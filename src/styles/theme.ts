@@ -42,6 +42,9 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
       main: themes[mode].mui.palette.primary.main,
     },
     secondary: themes[mode].mui.palette.secondary,
+    error: {
+      main: '#ff0000',
+    },
     background: themes[mode].mui.palette.background,
     text: themes[mode].mui.palette.text,
   },
@@ -59,9 +62,13 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
             backgroundColor: 'primary.light',
             '&:hover': {
               backgroundColor: themes[mode].button.primary.hover.background,
-              '&:active': {
-                backgroundColor: themes[mode].button.primary.active.background,
-              },
+            },
+            '&:active': {
+              backgroundColor: themes[mode].button.primary.active.background,
+            },
+            '&:disabled': {
+              backgroundColor: themes[mode].button.primary.disabled.background,
+              color: themes[mode].button.primary.disabled.color,
             },
           },
         },
@@ -71,9 +78,13 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
             backgroundColor: 'secondary.light',
             '&:hover': {
               backgroundColor: themes[mode].button.secondary.hover.background,
-              '&:active': {
-                backgroundColor: themes[mode].button.secondary.active.background,
-              },
+            },
+            '&:active': {
+              backgroundColor: themes[mode].button.secondary.active.background,
+            },
+            '&:disabled': {
+              backgroundColor: themes[mode].button.secondary.disabled.background,
+              color: themes[mode].button.secondary.disabled.color,
             },
           },
         },
@@ -87,9 +98,9 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
             backgroundColor: 'primary.light',
             '&:hover': {
               backgroundColor: themes[mode].button.primary.hover.background,
-              '&:active': {
-                backgroundColor: themes[mode].button.primary.active.background,
-              },
+            },
+            '&:active': {
+              backgroundColor: themes[mode].button.primary.active.background,
             },
           },
         },
@@ -101,10 +112,26 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
           color: themes[mode].switch.unchecked.thumb.background,
         },
         track: {
-          background: themes[mode].switch.unchecked.thumb.background,
+          background: themes[mode].switch.unchecked.track.background,
           opacity: 0.15,
         },
       },
+    },
+    MuiTextField: {
+      variants: [
+        {
+          props: { variant: 'filled' },
+          style: {
+            backgroundColor: themes[mode].textfield?.background,
+            '&:hover': {
+              backgroundColor: themes[mode].textfield?.hover.background,
+            },
+            '.Mui-focused': {
+              backgroundColor: themes[mode].textfield?.focused.background,
+            },
+          },
+        },
+      ],
     },
   },
 })
