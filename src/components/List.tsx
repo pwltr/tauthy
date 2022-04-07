@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { clipboard } from '@tauri-apps/api'
@@ -15,10 +15,12 @@ import Avatar from '@mui/material/Avatar'
 import IconButton from '@mui/material/IconButton'
 import Grid from '@mui/material/Grid'
 import DescriptionIcon from '@mui/icons-material/Description'
+import QrCodeIcon from '@mui/icons-material/QrCode'
 import CopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
 
 import { ListOptionsContext, SearchContext, SortContext } from '~/context'
+import QRCodeModal from '~/components/modals/QRCode'
 import type { ListEntry } from '~/components/Codes'
 
 const ListItem = styled(MuiListItem)`
@@ -55,7 +57,6 @@ const Token = styled('span')(
   color: ${theme.palette.primary.main};
   font-size: 20px;
   font-weight: 600;
-  // line-height: 1;
 `,
 )
 
@@ -70,6 +71,8 @@ const List = ({ className, entries }: ListProps) => {
   const { searchTerm } = useContext(SearchContext)
   const { sorting } = useContext(SortContext)
   const { dense, groupByTwos } = useContext(ListOptionsContext)
+  const [activeEntry, setActiveEntry] = useState<ListEntry | null>(null)
+  const [openQRCodeModal, setOpenQRCodeModal] = useState(false)
 
   const filteredEntries = [...entries].filter(
     (entry) =>
@@ -89,81 +92,101 @@ const List = ({ className, entries }: ListProps) => {
   })
 
   return (
-    <Box className={className} sx={{ flexGrow: 1, maxWidth: 752 }}>
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <MuiList dense={dense}>
-            {sortedEntries.map((entry) => (
-              <ListItem
-                key={entry.uuid}
-                disablePadding
-                secondaryAction={
-                  <>
-                    <IconButton aria-label="copy to clipboard">
-                      <CopyIcon color="primary" />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      aria-label="edit"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        navigate(`edit/${entry.uuid}`)
-                      }}
-                    >
-                      <EditIcon color="primary" />
-                    </IconButton>
-                  </>
-                }
-                onClick={() => {
-                  clipboard.writeText(String(entry.token))
-                  toast.success(t('toasts.copied'), {
-                    id: 'clipboard',
-                    duration: 1200,
-                  })
-                }}
-              >
-                <ListItemButton>
-                  <ListItemAvatar>
-                    <Avatar>
-                      {entry.icon ? (
-                        <Icon
-                          dangerouslySetInnerHTML={{
-                            __html: Buffer.from(entry.icon, 'base64').toString('utf8'),
-                          }}
-                        />
-                      ) : (
-                        <DescriptionIcon />
-                      )}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Name>{`${entry.issuer ?? ''} ${
-                        entry.issuer ? `(${entry.name})` : entry.name
-                      }`}</Name>
-                    }
-                    secondary={
-                      <Token>
-                        {groupByTwos ? (
-                          <>
-                            {String(entry.token).slice(0, 2)} {String(entry.token).slice(2, 4)}{' '}
-                            {String(entry.token).slice(4, 6)}
-                          </>
+    <>
+      <Box className={className} sx={{ flexGrow: 1, maxWidth: 752 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <MuiList dense={dense}>
+              {sortedEntries.map((entry) => (
+                <ListItem
+                  key={entry.uuid}
+                  disablePadding
+                  secondaryAction={
+                    <>
+                      <IconButton aria-label="copy to clipboard">
+                        <CopyIcon color="primary" />
+                      </IconButton>
+                      <IconButton
+                        aria-label="show QR code"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setActiveEntry(entry)
+                          setOpenQRCodeModal(true)
+                        }}
+                      >
+                        <QrCodeIcon color="primary" />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        aria-label="edit"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          navigate(`edit/${entry.uuid}`)
+                        }}
+                      >
+                        <EditIcon color="primary" />
+                      </IconButton>
+                    </>
+                  }
+                  onClick={() => {
+                    clipboard.writeText(String(entry.token))
+                    toast.success(t('toasts.copied'), {
+                      id: 'clipboard',
+                      duration: 1200,
+                    })
+                  }}
+                >
+                  <ListItemButton>
+                    <ListItemAvatar>
+                      <Avatar>
+                        {entry.icon ? (
+                          <Icon
+                            dangerouslySetInnerHTML={{
+                              __html: Buffer.from(entry.icon, 'base64').toString('utf8'),
+                            }}
+                          />
                         ) : (
-                          <>
-                            {String(entry.token).slice(0, 3)} {String(entry.token).slice(3, 6)}
-                          </>
+                          <DescriptionIcon />
                         )}
-                      </Token>
-                    }
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </MuiList>
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Name>{`${entry.issuer ?? ''} ${
+                          entry.issuer ? `(${entry.name})` : entry.name
+                        }`}</Name>
+                      }
+                      secondary={
+                        <Token>
+                          {groupByTwos ? (
+                            <>
+                              {String(entry.token).slice(0, 2)} {String(entry.token).slice(2, 4)}{' '}
+                              {String(entry.token).slice(4, 6)}
+                            </>
+                          ) : (
+                            <>
+                              {String(entry.token).slice(0, 3)} {String(entry.token).slice(3, 6)}
+                            </>
+                          )}
+                        </Token>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </MuiList>
+          </Grid>
         </Grid>
-      </Grid>
-    </Box>
+      </Box>
+
+      {activeEntry && (
+        <QRCodeModal
+          entry={activeEntry}
+          open={openQRCodeModal}
+          onClose={() => setOpenQRCodeModal(false)}
+        />
+      )}
+    </>
   )
 }
 
