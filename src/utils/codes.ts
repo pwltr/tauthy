@@ -2,8 +2,8 @@ import { ChangeEvent } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
 
 import { vault } from '~/App'
-import { VaultEntry, AegisEntry, AuthyEntry } from '~/types'
 import { generateUUID } from '~/utils'
+import type { FormData, VaultEntry, AegisEntry, AuthyEntry } from '~/types'
 
 export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
 
@@ -15,49 +15,28 @@ export const generateTOTP = async (secret: string) => {
   }
 }
 
-export const createCode = async ({
-  name,
-  secret,
-  issuer,
-  group,
-}: {
-  name: string
-  secret: string
-  issuer: string
-  group: string
-}) => {
+export const createCode = async (formData: FormData) => {
   const entry = {
+    ...formData,
     uuid: generateUUID(),
-    name,
-    secret,
-    issuer,
-    group,
-    // icon,
   }
 
   const currentVault = await vault.getVault()
-  const entries = currentVault ? [...currentVault, entry] : [entry]
+  const newVault = currentVault ? [...currentVault, entry] : [entry]
 
   try {
-    await vault.save(JSON.stringify(entries))
+    await vault.save(JSON.stringify(newVault))
   } catch (err) {
     console.error(err)
   }
 }
 
-export const editCode = async (
-  uuid: string,
-  data: {
-    name: string
-    secret: string
-    issuer: string
-    group: string
-  },
-) => {
+export const editCode = async (uuid: string, formData: FormData) => {
   const currentVault = await vault.getVault()
   const entry = currentVault.find((entry: VaultEntry) => entry.uuid === uuid)
   const filteredVault = currentVault.filter((entry: VaultEntry) => entry.uuid !== uuid)
-  const newVault = [...filteredVault, { ...entry, ...data }]
+  if (!entry) throw Error(`No entry found for uuid ${uuid}`)
+  const newVault = [...filteredVault, { ...entry, ...formData }]
 
   try {
     await vault.save(JSON.stringify(newVault))

@@ -1,3 +1,10 @@
+export type FormData = {
+  name: string
+  issuer: string
+  group: string
+  secret: string
+}
+
 export type VaultEntry = {
   uuid: string
   name: string

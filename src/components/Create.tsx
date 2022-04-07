@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext } from 'react'
+// @ts-ignore
+import { useState, useEffect, useContext, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
@@ -9,6 +10,7 @@ import Button from '@mui/material/Button'
 
 import { AppBarTitleContext } from '~/context'
 import { createCode } from '~/utils'
+import type { FormData } from '~/types'
 
 const Buttons = styled('div')`
   display: flex;
@@ -21,32 +23,38 @@ const Create = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
-  const [name, setName] = useState('')
-  const [issuer, setIssuer] = useState('')
-  const [group, setGroup] = useState('')
-  const [secret, setSecret] = useState('')
+  const [isValid, setIsValid] = useState(false)
+  const [form, setForm] = useState<FormData>({
+    name: '',
+    issuer: '',
+    group: '',
+    secret: '',
+  })
 
   useEffect(() => {
     setAppBarTitle(t('create.pageTitle'))
   }, [])
 
-  const handleSubmit = async () => {
-    // TODO: add better validation
+  const onChange = (key: keyof FormData, value: string) => {
+    const formData = { ...form, [key]: value }
+    setForm(formData)
 
-    if (name && secret) {
-      const entry = {
-        name,
-        secret,
-        issuer,
-        group,
+    // validate non-urgently
+    startTransition(() => {
+      if (!formData.name || !formData.secret) {
+        setIsValid(false)
+      } else {
+        setIsValid(true)
       }
+    })
+  }
 
-      try {
-        await createCode(entry)
-        navigate(-1)
-      } catch (err) {
-        console.error(err)
-      }
+  const onSubmit = async () => {
+    try {
+      await createCode(form)
+      navigate(-1)
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -59,7 +67,7 @@ const Create = () => {
           size="small"
           fullWidth
           margin="normal"
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => onChange('name', event.target.value)}
         />
         <TextField
           label={t('create.issuer')}
@@ -67,7 +75,7 @@ const Create = () => {
           size="small"
           fullWidth
           margin="normal"
-          onChange={(event) => setIssuer(event.target.value)}
+          onChange={(event) => onChange('issuer', event.target.value)}
         />
         <TextField
           label={t('create.group')}
@@ -75,7 +83,7 @@ const Create = () => {
           size="small"
           fullWidth
           margin="normal"
-          onChange={(event) => setGroup(event.target.value)}
+          onChange={(event) => onChange('group', event.target.value)}
         />
         <TextField
           label={t('create.secret')}
@@ -83,7 +91,7 @@ const Create = () => {
           size="small"
           fullWidth
           margin="normal"
-          onChange={(event) => setSecret(event.target.value)}
+          onChange={(event) => onChange('secret', event.target.value)}
         />
       </FormGroup>
 
@@ -93,8 +101,8 @@ const Create = () => {
           color="primary"
           variant="contained"
           size="medium"
-          // disabled={!name || !secret}
-          onClick={handleSubmit}
+          disabled={!isValid}
+          onClick={onSubmit}
         >
           {t('create.add')}
         </Button>
