@@ -15,8 +15,8 @@
     "pre-commit": "npm-run-all --parallel tsc:check lint:check"
   },
   "dependencies": {
-    "@mui/icons-material": "^5.5.1",
-    "@mui/material": "^5.5.3",
+    "@mui/icons-material": "^5.6.0",
+    "@mui/material": "^5.6.0",
     "@mui/styled-engine-sc": "^5.5.2",
     "@tauri-apps/api": "1.0.0-rc.3",
     "buffer": "^6.0.3",
