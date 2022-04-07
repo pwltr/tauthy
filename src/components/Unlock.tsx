@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
@@ -14,23 +15,29 @@ const Container = styled('div')`
   justify-content: center;
   align-items: center;
   padding: 3rem;
+  text-align: center;
+`
+
+const Subtitle = styled(Typography)`
+  font-size: 1.2rem;
 `
 
 const Button = styled(MuiButton)`
-  margin-top: 2.2rem;
+  margin-top: 1.8rem;
 `
 
 const Unlock = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
 
   const handleSubmit = async () => {
     try {
-      // await vault.unlock(password)
+      await vault.unlock(password)
       // try to read to check if password is valid
-      // const status = await vault.getStatus()
-      // console.log('status', status)
+      const status = await vault.getStatus()
+      console.log('status', status)
       setError(false)
       navigate('/')
     } catch (err) {
@@ -39,31 +46,23 @@ const Unlock = () => {
     }
   }
 
-  useEffect(() => {
-    const getStatus = async () => {
-      const status = await vault.getStatus()
-      console.log('status', status)
-    }
-
-    getStatus()
-  }, [])
-
   return (
     <Container>
       <Typography variant="h4" color="primary" mb={0}>
-        Vault locked.
+        {t('unlock.title')}
       </Typography>
-      <Typography variant="h5" color="primary" mb={2}>
-        Enter password to unlock
-      </Typography>
+
+      <Subtitle variant="h5" color="primary" mt={1} mb={2}>
+        {t('unlock.subtitle')}
+      </Subtitle>
 
       <TextField
         type="password"
-        placeholder="Password"
+        placeholder={t('unlock.password')}
         variant="filled"
         size="small"
         margin="normal"
-        helperText={error && 'Invalid password'}
+        helperText={error && t('unlock.invalid')}
         error={error}
         fullWidth
         autoFocus
@@ -71,7 +70,7 @@ const Unlock = () => {
       />
 
       <Button aria-label="add account" color="primary" variant="contained" onClick={handleSubmit}>
-        Unlock
+        {t('unlock.unlock')}
       </Button>
     </Container>
   )

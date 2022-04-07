@@ -32,13 +32,13 @@ const Theme = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
 
         <ListItem disablePadding onClick={() => handleClick('dark')}>
           <ListItemButton>
-            <ListItemText primary="Breeze Dark" />
+            <ListItemText primary="Dark" />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding onClick={() => handleClick('black')}>
           <ListItemButton>
-            <ListItemText primary="Black (AMOLED)" />
+            <ListItemText primary="Black" />
           </ListItemButton>
         </ListItem>
       </List>

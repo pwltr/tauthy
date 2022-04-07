@@ -28,27 +28,32 @@ const Main = () => {
       setIsLoading(true)
 
       try {
+        // TODO: can we fix get_status on init?
         // console.info('checking vault status...')
         // const status = await vault.getStatus()
         // console.log('status', status)
 
-        const currentVault = await vault.checkVault()
-        console.info('found existing vault', currentVault)
+        console.info('looking for unlocked vault...')
+        await vault.checkVault()
+        console.info('successfully read vault')
         setIsLoading(false)
       } catch (err) {
         if (typeof err === 'string') {
           if (err.includes('Please try another password.')) {
-            console.info('vault locked.')
+            console.info('found existing vault but password has been changed')
+            await vault.lock()
             navigate('unlock')
             setIsLoading(false)
           } else if (err.includes('record not found')) {
-            console.info('no vault found. initializing...')
             // initialize with empty array
+            console.info('no vault found. initializing...')
             await vault.reset()
             setIsLoading(false)
+          } else {
+            console.error('Unhandled error', err)
           }
         } else {
-          console.error('Unhandled error', err)
+          console.error('Fatal error', err)
         }
       }
     }

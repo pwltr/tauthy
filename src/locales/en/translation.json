@@ -4,6 +4,13 @@
     "backup": "I'll make sure to keep backups of my data.",
     "start": "Let's get going"
   },
+  "unlock": {
+    "title": "Vault locked.",
+    "subtitle": "Enter password to unlock",
+    "password": "Password",
+    "invalid": "Invalid password",
+    "unlock": "Unlock"
+  },
   "codes": {
     "empty": "Add an entry or import a backup"
   },
@@ -49,6 +56,17 @@
     "grouping": "2-digit grouping",
     "editGroups": "Edit groups"
   },
+  "security": {
+    "pageTitle": "Security",
+    "encryption": "Encryption",
+    "password": "Change password",
+    "passwordDescription": "Set a password for unlocking your vault",
+    "passwordReset": "Reset password",
+    "passwordResetDescription": "Remove password protection",
+    "behaviour": "Behaviour",
+    "autoLock": "Auto-Lock",
+    "autoLockDescription": "Lock automatically after 1 minute inactivity"
+  },
   "import": {
     "pageTitle": "Import & Export",
     "import": "Import",
@@ -69,8 +87,16 @@
     "coffee": "Buy Me a Coffee"
   },
   "modals": {
+    "password": "Choose a password for your encrypted vault",
+    "resetPassword": "Reset password?",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "repeatPassword": "Repeat Password",
+    "passwordInsecure": "Password should be at least 8 characters",
+    "passwordNoMatch": "Passwords don't match",
     "selectImport": "Select import",
     "deleteWarning": "This will delete your vault and can not be undone. Are you sure?",
+    "confirm": "Confirm",
     "delete": "Delete",
     "cancel": "Cancel"
   },
@@ -79,6 +105,8 @@
     "imported": "Vault imported successfully",
     "exported": "Vault exported.",
     "emptyExport": "Vault is empty.",
+    "passwordSet": "Password changed.",
+    "passwordReset": "Password reset.",
     "reset": "Vault reset.",
     "error": "An error occured."
   }

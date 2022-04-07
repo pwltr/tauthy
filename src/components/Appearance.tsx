@@ -12,8 +12,13 @@ import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
 import ListItem from '~/components/ListItem'
 
+const languages: { [key: string]: string | undefined } = {
+  'en-US': 'English',
+  'de-DE': 'Deutsch',
+}
+
 const Appearance = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const { theme } = useContext(ThemeContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
@@ -27,7 +32,7 @@ const Appearance = () => {
 
   useEffect(() => {
     setAppBarTitle(t('appearance.pageTitle'))
-  }, [])
+  }, [i18n.language])
 
   return (
     <>
@@ -41,7 +46,7 @@ const Appearance = () => {
 
         <ListItem disablePadding onClick={handleOpenLanguageModal}>
           <ListItemButton>
-            <ListItemText primary={t('appearance.language')} secondary="English" />
+            <ListItemText primary={t('appearance.language')} secondary={languages[i18n.language]} />
           </ListItemButton>
         </ListItem>
 

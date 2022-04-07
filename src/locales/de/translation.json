@@ -1,8 +1,15 @@
 {
   "welcome": {
-    "beta": "Diese App nutzt Software die sich noch in der Beta-Phase befindet.",
-    "backup": "Ich gehe auf Nummer sicher und erstelle regelmäßig Backups",
+    "beta": "Diese App nutzt Software, die sich noch in der Beta-Phase befindet.",
+    "backup": "Ich stelle sicher jederzeit ein Backup zu haben",
     "start": "Los geht's"
+  },
+  "unlock": {
+    "title": "Tresor gesperrt",
+    "subtitle": "Zum Entsperren Passwort eingeben",
+    "password": "Passwort",
+    "invalid": "Passwort falsch",
+    "unlock": "Entsperren"
   },
   "codes": {
     "empty": "Konto hinzufügen oder Backup importieren"
@@ -49,6 +56,17 @@
     "grouping": "Zweier-Gruppierung",
     "editGroups": "Gruppen bearbeiten"
   },
+  "security": {
+    "pageTitle": "Sicherheit",
+    "encryption": "Verschlüsselung",
+    "password": "Passwort ändern",
+    "passwordDescription": "Passwort für das Entsperren setzen",
+    "passwordReset": "Passwort zurücksetzen",
+    "passwordResetDescription": "Passwortschutz entfernen",
+    "behaviour": "Verhalten",
+    "autoLock": "Automatisches Sperren",
+    "autoLockDescription": "Nach 1 Minute Inaktivität sperren"
+  },
   "import": {
     "pageTitle": "Import & Export",
     "import": "Importieren",
@@ -69,7 +87,16 @@
     "coffee": "Kaffee bezahlen"
   },
   "modals": {
+    "password": "Passwort für Verschlüsselung wählen",
+    "resetPassword": "Passwort wirklich löschen?",
+    "currentPassword": "aktuelles Passwort",
+    "newPassword": "neues Passwort",
+    "repeatPassword": "Passwort wiederholen",
+    "passwordInsecure": "Passwort muss mind. 8 Zeichen lang sein",
+    "passwordNoMatch": "Passwörter stimmen nicht überein",
+    "selectImport": "Import wählen",
     "deleteWarning": "Diese Aktion wird deinen Tresor löschen und kann nicht rückgängig gemacht werden. Bist du sicher?",
+    "confirm": "Bestätigen",
     "delete": "Löschen",
     "cancel": "Abbrechen"
   },
@@ -78,6 +105,8 @@
     "imported": "Tresor erfolgreich importiert",
     "exported": "Tresor exportiert.",
     "emptyExport": "Tresor ist leer.",
+    "passwordSet": "Passwort aktualisiert.",
+    "passwordReset": "Passwort gelöscht.",
     "reset": "Tresor gelöscht.",
     "error": "Ein Fehler ist aufgetreten."
   }

@@ -84,7 +84,6 @@ const Codes = () => {
   useEffect(() => {
     const getEntries = async () => {
       const currentVault = await vault.getVault()
-      console.log('Codes: currentVault', currentVault)
       setItems(currentVault)
       generateTokens(currentVault)
     }

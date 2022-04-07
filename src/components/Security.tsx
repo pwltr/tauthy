@@ -1,54 +1,86 @@
 import { useEffect, useState, useContext } from 'react'
-import Switch from '@mui/material/Switch'
+import { useTranslation } from 'react-i18next'
+// import Switch from '@mui/material/Switch'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import ListSubheader from '@mui/material/ListSubheader'
 
+// import { vault } from '~/App'
+import { useLocalStorage } from '~/hooks'
 import { AppBarTitleContext } from '~/context'
 import PasswordModal from '~/components/modals/Password'
+import PasswordResetModal from '~/components/modals/PasswordReset'
 import ListItem from '~/components/ListItem'
 
 const Security = () => {
+  const { t } = useTranslation()
+  const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [openPasswordModal, setOpenPasswordModal] = useState(false)
+  const [openPasswordResetModal, setOpenPasswordResetModal] = useState(false)
 
   const handleOpenPasswordModal = () => setOpenPasswordModal(true)
   const handleClosePasswordModal = () => setOpenPasswordModal(false)
 
+  const handleOpenPasswordResetModal = () => setOpenPasswordResetModal(true)
+  const handleClosePasswordResetModal = () => setOpenPasswordResetModal(false)
+
+  // const toggleAutoLock = async () => {
+  //   try {
+  //     await vault.lock(60)
+  //   } catch (err) {
+  //     console.error(err)
+  //   }
+  // }
+
   useEffect(() => {
-    setAppBarTitle('Security')
+    setAppBarTitle(t('security.pageTitle'))
   }, [])
 
   return (
     <>
       <List>
-        <ListSubheader>Encryption</ListSubheader>
+        <ListSubheader>{t('security.encryption')}</ListSubheader>
         <ListItem disablePadding onClick={handleOpenPasswordModal}>
           <ListItemButton>
             <ListItemText
-              primary="Change Password"
-              secondary="Set a password for unlocking your vault"
+              primary={t('security.password')}
+              secondary={t('security.passwordDescription')}
             />
           </ListItemButton>
         </ListItem>
 
-        <ListSubheader>Behaviour</ListSubheader>
         <ListItem
           disablePadding
-          // onClick={() => setListOptions({ dense: !dense, groupByTwos })}
+          disabled={!isPasswordSet}
+          onClick={() => (isPasswordSet ? handleOpenPasswordResetModal() : null)}
+        >
+          <ListItemButton>
+            <ListItemText
+              primary={t('security.passwordReset')}
+              secondary={t('security.passwordResetDescription')}
+            />
+          </ListItemButton>
+        </ListItem>
+
+        {/* <ListSubheader>{t('security.behaviour')}</ListSubheader>
+        <ListItem
+          disablePadding
+          onClick={toggleAutoLock}
           secondaryAction={<Switch checked={false} disabled />}
         >
           <ListItemButton>
             <ListItemText
-              primary="Auto-Lock"
-              secondary="Lock automatically after 1 minute inactivity"
+              primary={t('security.autoLock')}
+              secondary={t('security.autoLockDescription')}
             />
           </ListItemButton>
-        </ListItem>
+        </ListItem> */}
       </List>
 
       <PasswordModal open={openPasswordModal} onClose={handleClosePasswordModal} />
+      <PasswordResetModal open={openPasswordResetModal} onClose={handleClosePasswordResetModal} />
     </>
   )
 }

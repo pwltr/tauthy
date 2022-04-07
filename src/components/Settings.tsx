@@ -18,7 +18,7 @@ const Settings = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    setAppBarTitle('Settings')
+    setAppBarTitle(t('settings.pageTitle'))
   }, [])
 
   return (
@@ -35,7 +35,7 @@ const Settings = () => {
         </ListItemButton>
       </ListItem>
 
-      {/* <ListItem disablePadding onClick={() => navigate('/security')}>
+      <ListItem disablePadding onClick={() => navigate('/security')}>
         <ListItemButton>
           <ListItemIcon>
             <SecurityIcon color="primary" />
@@ -45,7 +45,7 @@ const Settings = () => {
             secondary={t('settings.securityDescription')}
           />
         </ListItemButton>
-      </ListItem> */}
+      </ListItem>
 
       <ListItem disablePadding onClick={() => navigate('/import')}>
         <ListItemButton>
