@@ -32,7 +32,11 @@ const Unlock = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
 
-  const handleSubmit = async () => {
+  const onSubmit = async (
+    event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLElement>,
+  ) => {
+    event.preventDefault()
+
     try {
       await vault.unlock(password)
       // try to read to check if password is valid
@@ -56,22 +60,24 @@ const Unlock = () => {
         {t('unlock.subtitle')}
       </Subtitle>
 
-      <TextField
-        type="password"
-        placeholder={t('unlock.password')}
-        variant="filled"
-        size="small"
-        margin="normal"
-        helperText={error && t('unlock.invalid')}
-        error={error}
-        fullWidth
-        autoFocus
-        onChange={(event) => setPassword(event.target.value)}
-      />
+      <form onSubmit={onSubmit}>
+        <TextField
+          type="password"
+          placeholder={t('unlock.password')}
+          variant="filled"
+          size="small"
+          margin="normal"
+          helperText={error && t('unlock.invalid')}
+          error={error}
+          fullWidth
+          autoFocus
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-      <Button aria-label="add account" color="primary" variant="contained" onClick={handleSubmit}>
-        {t('unlock.unlock')}
-      </Button>
+        <Button aria-label="add account" color="primary" variant="contained" onClick={onSubmit}>
+          {t('unlock.unlock')}
+        </Button>
+      </form>
     </Container>
   )
 }

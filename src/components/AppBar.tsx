@@ -1,7 +1,7 @@
 import { useState, useContext, MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { styled } from '@mui/material/styles'
+import { styled, lighten } from '@mui/material/styles'
 import MuiAppBar from '@mui/material/AppBar'
 import MuiToolbar from '@mui/material/Toolbar'
 import Box from '@mui/material/Box'
@@ -32,6 +32,16 @@ const PageTitle = styled(Typography)`
 const Search = styled(InputBase)`
   color: #ffffff;
 `
+
+const StyledMenuItem = styled(MenuItem)(
+  ({ theme }) => `
+  // background: ${lighten(theme.palette.background.paper, 0.07)};
+
+  // &:hover {
+  //   background: ${lighten(theme.palette.background.paper, 0.07)};
+  // }
+`,
+)
 
 const AppBar = () => {
   const { t } = useTranslation()
@@ -95,9 +105,11 @@ const AppBar = () => {
       }}
       onClose={handleMenuMoreClose}
     >
-      {isPasswordSet && <MenuItem onClick={handleLock}>{t('appBar.lock')}</MenuItem>}
-      <MenuItem onClick={() => handleNavigate('/settings')}>{t('appBar.settings')}</MenuItem>
-      <MenuItem onClick={() => handleNavigate('/about')}>{t('appBar.about')}</MenuItem>
+      {isPasswordSet && <StyledMenuItem onClick={handleLock}>{t('appBar.lock')}</StyledMenuItem>}
+      <StyledMenuItem onClick={() => handleNavigate('/settings')}>
+        {t('appBar.settings')}
+      </StyledMenuItem>
+      <StyledMenuItem onClick={() => handleNavigate('/about')}>{t('appBar.about')}</StyledMenuItem>
     </Menu>
   )
 
