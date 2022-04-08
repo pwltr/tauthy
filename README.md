@@ -41,12 +41,13 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 ## Todo
 
-- [ ] add password lock (in progress)
-- [ ] QR codes (in progress)
-- [ ] issuer icons
+- [x] add password lock
+- [x] QR codes
+- [x] issuer icons
+- [ ] auto-lock after idle
 - [ ] automatic updates
-- [ ] support YubiKey / hardware authentication
 - [ ] support other import files
+- [ ] support YubiKey / hardware authentication
 - [ ] support HOTP
 - [ ] add more standard themes (Solarized etc.)
 - [ ] automatic backups
@@ -55,6 +56,7 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 ## Credits
 
 - [Aegis](https://github.com/beemdevelopment/Aegis)
+- [aegis-icons](https://github.com/aegis-icons/aegis-icons)
 - [Tauri](https://tauri.studio)
 - [TimDumol/rust-otp](https://github.com/TimDumol/rust-otp)
 

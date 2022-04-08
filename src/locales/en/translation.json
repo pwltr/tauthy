@@ -96,6 +96,7 @@
     "passwordNoMatch": "Passwords don't match",
     "selectImport": "Select import",
     "deleteWarning": "This will delete your vault and can not be undone. Are you sure?",
+    "noResults": "No matching results",
     "confirm": "Confirm",
     "delete": "Delete",
     "cancel": "Cancel"

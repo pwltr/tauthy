@@ -3,6 +3,7 @@ export type FormData = {
   issuer: string
   group: string
   secret: string
+  icon: string
 }
 
 export type VaultEntry = {

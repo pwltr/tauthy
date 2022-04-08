@@ -96,6 +96,7 @@
     "passwordNoMatch": "Passwörter stimmen nicht überein",
     "selectImport": "Import wählen",
     "deleteWarning": "Diese Aktion wird deinen Tresor löschen und kann nicht rückgängig gemacht werden. Bist du sicher?",
+    "noResults": "Keine Ergebnisse",
     "confirm": "Bestätigen",
     "delete": "Löschen",
     "cancel": "Abbrechen"
