@@ -63,9 +63,6 @@ const IconsModal = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredIcons, setFilteredIcons] = useState(icons)
 
-  console.log('searchTerm', searchTerm)
-  console.log('filteredIcons', filteredIcons)
-
   const onInputChange = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const searchTerm = event.target.value
     setSearchTerm(searchTerm)
