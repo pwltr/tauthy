@@ -26,6 +26,10 @@ import type { ListEntry } from '~/components/Codes'
 const ListItem = styled(MuiListItem)`
   cursor: pointer;
 
+  .MuiListItemButton-root {
+    min-height: 80px;
+  }
+
   .MuiListItemSecondaryAction-root {
     display: none;
   }
@@ -103,19 +107,23 @@ const List = ({ className, entries }: ListProps) => {
                   disablePadding
                   secondaryAction={
                     <>
-                      <IconButton aria-label="copy to clipboard">
-                        <CopyIcon color="primary" />
-                      </IconButton>
-                      <IconButton
-                        aria-label="show QR code"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setActiveEntry(entry)
-                          setOpenQRCodeModal(true)
-                        }}
-                      >
-                        <QrCodeIcon color="primary" />
-                      </IconButton>
+                      {entry.token && (
+                        <>
+                          <IconButton aria-label="copy to clipboard">
+                            <CopyIcon color="primary" />
+                          </IconButton>
+                          <IconButton
+                            aria-label="show QR code"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setActiveEntry(entry)
+                              setOpenQRCodeModal(true)
+                            }}
+                          >
+                            <QrCodeIcon color="primary" />
+                          </IconButton>
+                        </>
+                      )}
                       <IconButton
                         edge="end"
                         aria-label="edit"
@@ -129,11 +137,13 @@ const List = ({ className, entries }: ListProps) => {
                     </>
                   }
                   onClick={() => {
-                    clipboard.writeText(String(entry.token))
-                    toast.success(t('toasts.copied'), {
-                      id: 'clipboard',
-                      duration: 1200,
-                    })
+                    if (entry.token) {
+                      clipboard.writeText(String(entry.token))
+                      toast.success(t('toasts.copied'), {
+                        id: 'clipboard',
+                        duration: 1200,
+                      })
+                    }
                   }}
                 >
                   <ListItemButton>
