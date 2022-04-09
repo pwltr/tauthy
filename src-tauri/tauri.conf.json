@@ -1,7 +1,7 @@
 {
   "package": {
     "productName": "Tauthy",
-    "version": "0.1.1"
+    "version": "0.2.0"
   },
   "build": {
     "distDir": "../dist",
@@ -24,7 +24,7 @@
       "resources": [],
       "externalBin": [],
       "copyright": "GPL-3.0",
-      "category": "Security",
+      "category": "Productivity",
       "shortDescription": "Cross-platform TOTP authentication client",
       "longDescription": "A cross-platform TOTP authentication client built with tauri",
       "deb": {
@@ -81,7 +81,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'"
+      "csp": "default-src 'self' style-src: 'unsafe-inline'"
     }
   }
 }

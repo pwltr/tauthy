@@ -1,6 +1,6 @@
 [package]
 name = "tauthy"
-version = "0.1.1"
+version = "0.2.0"
 description = "A cross-platform TOTP authentication client built with tauri"
 authors = ["philippwalter@pm.me"]
 license = "GPL-3.0 License"
@@ -22,7 +22,3 @@ tauri-build = { version = "1.0.0-rc.5", features = [] }
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
-
-[patch.crates-io]
-aesni = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
-aes-soft = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }

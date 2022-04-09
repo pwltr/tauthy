@@ -4632,7 +4632,7 @@ dependencies = [
 
 [[package]]
 name = "tauthy"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "otp",
  "serde 1.0.136",
@@ -5539,13 +5539,3 @@ dependencies = [
  "syn 1.0.86",
  "synstructure",
 ]
-
-[[patch.unused]]
-name = "aes-soft"
-version = "0.4.0"
-source = "git+https://github.com/RustCrypto/block-ciphers/?rev=268dadc93df08928de3bc510ddf20aabfcc49435#268dadc93df08928de3bc510ddf20aabfcc49435"
-
-[[patch.unused]]
-name = "aesni"
-version = "0.7.0"
-source = "git+https://github.com/RustCrypto/block-ciphers/?rev=268dadc93df08928de3bc510ddf20aabfcc49435#268dadc93df08928de3bc510ddf20aabfcc49435"
