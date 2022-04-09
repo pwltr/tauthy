@@ -12,8 +12,11 @@ import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
 import ListItem from '~/components/ListItem'
 
+// TODO: find a better solution for this
 const languages: { [key: string]: string | undefined } = {
+  'en-UK': 'English',
   'en-US': 'English',
+  'de-AT': 'Deutsch',
   'de-DE': 'Deutsch',
 }
 
