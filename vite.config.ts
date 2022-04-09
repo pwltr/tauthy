@@ -4,11 +4,17 @@ import react from '@vitejs/plugin-react'
 
 const PACKAGE_ROOT = __dirname
 
-// https://vitejs.dev/config/
 export default defineConfig({
   root: PACKAGE_ROOT,
   build: {
     target: 'ESNext',
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name].js`,
+        chunkFileNames: `assets/[name].js`,
+        assetFileNames: `assets/[name].[ext]`,
+      },
+    },
   },
   resolve: {
     alias: {

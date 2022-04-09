@@ -6,7 +6,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, PaletteMode } from '~/styles/theme'
 import { setupVault } from '~/utils'
-import '~/utils/i18n'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
@@ -17,6 +16,9 @@ import {
   SearchContext,
   SortContext,
 } from '~/context'
+
+// init react-i18next
+import '~/utils/i18n'
 
 export const vault = await setupVault()
 

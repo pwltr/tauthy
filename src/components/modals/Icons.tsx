@@ -1,51 +1,38 @@
 // @ts-ignore
+import { FixedSizeGrid } from 'react-window'
 import { useState, useTransition, memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Buffer } from 'buffer'
 import { styled } from '@mui/material/styles'
 import TextField from '@mui/material/TextField'
 
 import { imageToBase64 } from '~/utils'
 import Modal from '~/components/Modal'
 
-const modules = import.meta.glob('../../../assets/aegis-icons/**/*.svg')
+const modules = import.meta.globEager('../../../assets/*.svg')
+const urls = Object.keys(modules).map((path) => new URL(path, import.meta.url).toString())
+const sortedIcons = urls.sort((a, b) => (a.toUpperCase() < b.toUpperCase() ? -1 : 1))
+const icons = sortedIcons.map((url) => ({
+  name: decodeURIComponent(url.split('assets/').pop()!.split('.svg').shift() as string),
+  url,
+}))
 
 type Icon = {
   name: string
-  base64: string
+  url: string
 }
 
-const icons: Icon[] = []
-
-for (const path in modules) {
-  modules[path]().then(() => {
-    const url = new URL(path, import.meta.url).toString()
-    // TODO: group by subfolder
-    const name = path.split('aegis-icons/').pop()!.split('.svg').shift() as string
-
-    imageToBase64(url).then((base64: string) => {
-      icons.push({ name, base64 })
-    })
-  })
-}
-
-const Grid = styled('div')`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  grid-gap: 1.2rem;
+const Grid = styled(FixedSizeGrid)`
   margin-top: 1rem;
-  max-height: 375px;
-  overflow: auto;
 `
 
-const Icon = styled('div')`
+const Image = styled('img')`
   cursor: pointer;
   height: 44px;
   width: 44px;
   border-radius: 50%;
 `
 
-const Empty = styled('div')`
+const Text = styled('div')`
   margin-top: 1rem;
 `
 
@@ -76,8 +63,9 @@ const IconsModal = ({
     })
   }
 
-  const onClick = (icon: string) => {
-    onIconClick(icon)
+  const onClick = async (url: string) => {
+    const base64 = await imageToBase64(url)
+    onIconClick(base64)
     onCloseModal()
   }
 
@@ -101,28 +89,53 @@ const IconsModal = ({
       />
 
       {filteredIcons.length !== 0 ? (
-        <Icons icons={filteredIcons} onIconClick={onClick} />
+        <Images icons={filteredIcons} onIconClick={onClick} />
       ) : (
-        <Empty>{t('modals.noResults')}</Empty>
+        <Text>{t('modals.noResults')}</Text>
       )}
     </Modal>
   )
 }
 
-const Icons = memo(
+const Images = memo(
   ({ icons, onIconClick }: { icons: Icon[]; onIconClick: (icon: string) => void }) => {
+    const columnCount = 5
+    const rowCount = Math.ceil(icons.length / columnCount)
+    const width = 340
+    const columnWidth = width / columnCount
+
     return (
-      <Grid>
-        {icons.map((icon, index) => (
-          <Icon
-            key={index}
-            title={icon.name}
-            onClick={() => onIconClick(icon.base64)}
-            dangerouslySetInnerHTML={{
-              __html: Buffer.from(icon.base64, 'base64').toString('utf8'),
-            }}
-          />
-        ))}
+      <Grid
+        columnCount={columnCount}
+        rowCount={rowCount}
+        columnWidth={columnWidth}
+        rowHeight={70}
+        height={375}
+        width={width}
+      >
+        {({
+          columnIndex,
+          rowIndex,
+          style,
+        }: {
+          columnIndex: number
+          rowIndex: number
+          style: React.CSSProperties
+        }) => {
+          const index = rowIndex * columnCount + columnIndex
+
+          if (icons[index]) {
+            return (
+              <div style={style}>
+                <Image
+                  title={icons[index].name}
+                  src={icons[index].url}
+                  onClick={() => onIconClick(icons[index].url)}
+                />
+              </div>
+            )
+          }
+        }}
       </Grid>
     )
   },
