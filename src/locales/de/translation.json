@@ -12,7 +12,8 @@
     "unlock": "Entsperren"
   },
   "codes": {
-    "empty": "Konto hinzufügen oder Backup importieren"
+    "empty": "Konto hinzufügen oder Backup importieren",
+    "invalid": "Schlüssel ungültig"
   },
   "appBar": {
     "search": "Suchen",

@@ -12,7 +12,8 @@
     "unlock": "Unlock"
   },
   "codes": {
-    "empty": "Add an entry or import a backup"
+    "empty": "Add an entry or import a backup",
+    "invalid": "Invalid secret"
   },
   "appBar": {
     "search": "Search",

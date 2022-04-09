@@ -11,7 +11,6 @@ import { useInterval } from '~/hooks/useInterval'
 import { generateTOTP } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
 import List from '~/components/List'
-
 import type { VaultEntry } from '~/types'
 
 export type ListEntry = VaultEntry & {
@@ -67,7 +66,8 @@ const Codes = () => {
     const tokens = (await Promise.all(promises)) as string[]
     const itemsWithTokens = items.map((item, index) => ({
       ...item,
-      token: tokens[index],
+      issuer: tokens[index] ? item.issuer : t('codes.invalid'),
+      token: tokens[index] ? tokens[index] : '',
     }))
 
     if (!items[0]?.token) {
