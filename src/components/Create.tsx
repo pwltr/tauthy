@@ -8,6 +8,7 @@ import FormGroup from '@mui/material/FormGroup'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import MuiAvatar from '@mui/material/Avatar'
+import MuiEditIcon from '@mui/icons-material/Edit'
 import DescriptionIcon from '@mui/icons-material/Description'
 
 import { AppBarTitleContext } from '~/context'
@@ -22,10 +23,11 @@ const IconWrapper = styled('div')`
 `
 
 const Icon = styled('div')`
+  border-radius: 50%;
   cursor: pointer;
   height: 70px;
   width: 70px;
-  border-radius: 50%;
+  position: relative;
 `
 
 const Avatar = styled(MuiAvatar)`
@@ -37,6 +39,20 @@ const Avatar = styled(MuiAvatar)`
     width: 35px;
   }
 `
+
+const EditIcon = styled(MuiEditIcon)(
+  ({ theme }) => `
+  background: ${theme.palette.text.primary};
+  border-radius: 50%;
+  color: ${theme.palette.background.paper};
+  height: 25px;
+  width: 25px;
+  padding: 0.3rem;
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+`,
+)
 
 const Buttons = styled('div')`
   display: flex;
@@ -110,6 +126,10 @@ const Create = () => {
                 <DescriptionIcon />
               </Avatar>
             )}
+
+            <div title={t('create.editIcon')}>
+              <EditIcon />
+            </div>
           </Icon>
         </IconWrapper>
 

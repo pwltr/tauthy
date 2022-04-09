@@ -28,7 +28,8 @@
     "issuer": "Issuer (optional)",
     "group": "Group (optional)",
     "secret": "Secret",
-    "add": "Add Account"
+    "add": "Add Account",
+    "editIcon": "Edit icon"
   },
   "edit": {
     "pageTitle": "Edit account",

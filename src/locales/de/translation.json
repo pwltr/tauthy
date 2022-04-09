@@ -28,7 +28,8 @@
     "issuer": "Herausgeber (optional)",
     "group": "Gruppe (optional)",
     "secret": "Schlüssel",
-    "add": "Hinzufügen"
+    "add": "Hinzufügen",
+    "editIcon": "Icon ändern"
   },
   "edit": {
     "pageTitle": "Konto bearbeiten",
