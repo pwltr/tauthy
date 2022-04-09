@@ -5,7 +5,7 @@ import ListItemText from '@mui/material/ListItemText'
 
 import { AppBarTitleContext, ThemeContext } from '~/context'
 import { PaletteMode } from '~/styles/theme'
-import Modal, { Buttons } from '~/components/Modal'
+import Modal from '~/components/Modal'
 import ListItem from '~/components/ListItem'
 
 const Theme = ({ open, onClose }: { open: boolean; onClose: () => void }) => {

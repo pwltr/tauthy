@@ -1,4 +1,3 @@
-// @ts-ignore
 import { useState, useEffect, useContext, startTransition } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'

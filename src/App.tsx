@@ -37,6 +37,7 @@ const App = () => {
   return (
     <>
       <CssBaseline />
+      {/* @ts-ignore */}
       <GlobalStyle />
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
