@@ -5,14 +5,21 @@
 
 mod commands;
 
+#[cfg(target_os = "macos")]
+mod menu;
+
 use tauri_plugin_stronghold::TauriStronghold;
-// use tauri_plugin_authenticator::TauriAuthenticator;
 
 fn main() {
-  tauri::Builder::default()
+  let builder = tauri::Builder::default()
     .plugin(TauriStronghold::default())
-    // .plugin(TauriAuthenticator::default())
-    .invoke_handler(tauri::generate_handler![commands::generate_totp])
+    .invoke_handler(tauri::generate_handler![commands::generate_totp]);
+
+  // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
+  #[cfg(target_os = "macos")]
+  let builder = builder.menu(menu::menu());
+
+  builder
     .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .expect("error while running application");
 }
