@@ -31,22 +31,35 @@ const Unlock = () => {
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
+  const [isDisabled, setIsDisabled] = useState(false)
 
   const onSubmit = async (
     event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLElement>,
   ) => {
     event.preventDefault()
 
+    setIsDisabled(true)
+    setError(false)
+
     try {
       await vault.unlock(password)
       // try to read to check if password is valid
-      const status = await vault.getStatus()
-      console.log('status', status)
+      await vault.checkVault()
+      setIsDisabled(false)
       setError(false)
       navigate('/')
     } catch (err) {
       console.error(err)
-      setError(true)
+
+      // lock it again in case of wrong status
+      await vault.lock()
+
+      // FIX: too many wrong attempts in short amount
+      // of time  lead to corrupted stronghold
+      setTimeout(() => {
+        setIsDisabled(false)
+        setError(true)
+      }, 2000)
     }
   }
 
@@ -67,14 +80,20 @@ const Unlock = () => {
           variant="filled"
           size="small"
           margin="normal"
-          helperText={error && t('unlock.invalid')}
+          helperText={error ? t('unlock.invalid') : ' '}
           error={error}
           fullWidth
           autoFocus
           onChange={(event) => setPassword(event.target.value)}
         />
 
-        <Button aria-label="add account" color="primary" variant="contained" onClick={onSubmit}>
+        <Button
+          aria-label="add account"
+          color="primary"
+          variant="contained"
+          disabled={isDisabled}
+          onClick={onSubmit}
+        >
           {t('unlock.unlock')}
         </Button>
       </form>

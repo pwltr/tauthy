@@ -65,7 +65,7 @@ const QRCodeModal = ({
         </Code>
 
         <Text>
-          {entry.name} ({entry.issuer})
+          {entry.name} {entry.issuer && `(${entry.issuer})`}
         </Text>
       </Container>
     </Modal>
