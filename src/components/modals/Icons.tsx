@@ -1,4 +1,3 @@
-// @ts-ignore
 import { FixedSizeGrid } from 'react-window'
 import { useState, useTransition, memo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +20,7 @@ type Icon = {
   url: string
 }
 
+// @ts-ignore
 const Grid = styled(FixedSizeGrid)`
   margin-top: 1rem;
 `

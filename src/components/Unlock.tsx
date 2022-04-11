@@ -55,7 +55,7 @@ const Unlock = () => {
       await vault.lock()
 
       // FIX: too many wrong attempts in short amount
-      // of time  lead to corrupted stronghold
+      // of time lead to corrupted stronghold
       setTimeout(() => {
         setIsDisabled(false)
         setError(true)
