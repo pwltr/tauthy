@@ -54,6 +54,7 @@ export class Vault {
 
   async destroy() {
     await this.stronghold.unload()
+    await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
   }
 
   getStatus() {

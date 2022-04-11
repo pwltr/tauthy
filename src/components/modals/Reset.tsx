@@ -10,6 +10,7 @@ const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =
 
   const handleResetVault = async () => {
     try {
+      await vault.destroy()
       await vault.reset()
       toast.success(t('toasts.reset'))
       onClose()
