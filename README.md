@@ -41,10 +41,8 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 ## Todo
 
-- [x] add password lock
-- [x] QR codes
-- [x] issuer icons
 - [ ] auto-lock after idle
+- [ ] custom sorting
 - [ ] automatic updates
 - [ ] support other import files
 - [ ] QR code scanning
