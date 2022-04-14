@@ -34,7 +34,8 @@ const Unlock = () => {
   }
 
   const handleClearAll = async () => {
-    await vault.debug_deleteVault()
+    await vault.destroy()
+    await vault.reset()
     localStorage.clear()
   }
 

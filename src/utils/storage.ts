@@ -107,9 +107,4 @@ export class Vault {
   async debug() {
     console.debug('test')
   }
-
-  async debug_deleteVault() {
-    // delete current vault
-    await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
-  }
 }
