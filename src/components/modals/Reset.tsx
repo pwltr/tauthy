@@ -3,15 +3,18 @@ import toast from 'react-hot-toast'
 import Button from '@mui/material/Button'
 
 import { vault } from '~/App'
+import { useLocalStorage } from '~/hooks'
 import Modal, { Buttons } from '~/components/Modal'
 
 const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation()
+  const [, setIsPasswordSet] = useLocalStorage('isPasswordSet', false)
 
   const handleResetVault = async () => {
     try {
       await vault.destroy()
       await vault.reset()
+      setIsPasswordSet(false)
       toast.success(t('toasts.reset'))
       onClose()
     } catch (err) {
