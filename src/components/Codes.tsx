@@ -60,6 +60,7 @@ const Codes = () => {
   const [items, setItems] = useState<ListEntry[]>([])
   const [animate, setAnimate] = useState(true)
   const [delay, setDelay] = useState<number>(INTERVAL_FAST)
+  const [isLoading, setIsLoading] = useState(false)
 
   const generateTokens = async (items: ListEntry[]) => {
     const promises = items.map((item) => generateTOTP(item.secret))
@@ -83,9 +84,11 @@ const Codes = () => {
   // get tokens on mount
   useEffect(() => {
     const getEntries = async () => {
+      setIsLoading(true)
       const currentVault = await vault.getVault()
       setItems(currentVault)
-      generateTokens(currentVault)
+      await generateTokens(currentVault)
+      setIsLoading(false)
     }
 
     getEntries()
@@ -105,6 +108,10 @@ const Codes = () => {
     setTimeout(() => {
       setAnimate(true)
     }, 0)
+  }
+
+  if (isLoading) {
+    return null
   }
 
   return (
