@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
-import MuiButton from '@mui/material/Button'
+import MuiLoadingButton from '@mui/lab/LoadingButton'
 
 import { vault } from '~/App'
 
@@ -22,7 +22,7 @@ const Subtitle = styled(Typography)`
   font-size: 1.2rem;
 `
 
-const Button = styled(MuiButton)`
+const Button = styled(MuiLoadingButton)`
   margin-top: 1.8rem;
 `
 
@@ -31,7 +31,7 @@ const Unlock = () => {
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
-  const [isDisabled, setIsDisabled] = useState(false)
+  const [isDisabled, setIsDisabled] = useState(true)
 
   const onSubmit = async (
     event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLElement>,
@@ -63,6 +63,12 @@ const Unlock = () => {
     }
   }
 
+  useEffect(() => {
+    // FIX: too many wrong attempts in short amount
+    // of time lead to corrupted stronghold
+    setTimeout(() => setIsDisabled(false), 2000)
+  }, [])
+
   return (
     <Container>
       <Typography variant="h4" color="primary" mb={0}>
@@ -88,10 +94,10 @@ const Unlock = () => {
         />
 
         <Button
-          aria-label="add account"
+          aria-label={t('unlock.unlock')}
           color="primary"
           variant="contained"
-          disabled={isDisabled}
+          loading={isDisabled}
           onClick={onSubmit}
         >
           {t('unlock.unlock')}
