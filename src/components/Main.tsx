@@ -42,6 +42,7 @@ const Main = () => {
           if (err.includes('Please try another password.')) {
             console.info('found existing vault but password has been changed')
             await vault.lock()
+            // TODO: timeout on lock screen only in this case
             navigate('unlock')
             setIsLoading(false)
           } else if (err.includes('record not found')) {
