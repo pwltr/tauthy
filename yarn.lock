@@ -781,9 +781,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/base@npm:5.0.0-alpha.77":
-  version: 5.0.0-alpha.77
-  resolution: "@mui/base@npm:5.0.0-alpha.77"
+"@mui/base@npm:5.0.0-alpha.78":
+  version: 5.0.0-alpha.78
+  resolution: "@mui/base@npm:5.0.0-alpha.78"
   dependencies:
     "@babel/runtime": ^7.17.2
     "@emotion/is-prop-valid": ^1.1.2
@@ -800,7 +800,7 @@ __metadata:
   peerDependenciesMeta:
     "@types/react":
       optional: true
-  checksum: 31bd5f47bf24e46f594a62a4375cc2c289b764d3f73752294d22af8c8a4d521405117b36aae58bb9b998c537b29c3e70dd64ba029b83cae04fdf6d017e82501d
+  checksum: f0c3d29c6baa5e696f70c54f3c8f50e6426ce8af904472eb04aea346100b485cc500baaa2390093b79a1339b7adea18e2435ffa387dab5160dcfb113b5aecc16
   languageName: node
   linkType: hard
 
@@ -820,13 +820,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/lab@npm:5.0.0-alpha.78":
-  version: 5.0.0-alpha.78
-  resolution: "@mui/lab@npm:5.0.0-alpha.78"
+"@mui/lab@npm:5.0.0-alpha.79":
+  version: 5.0.0-alpha.79
+  resolution: "@mui/lab@npm:5.0.0-alpha.79"
   dependencies:
     "@babel/runtime": ^7.17.2
-    "@mui/base": 5.0.0-alpha.77
-    "@mui/system": ^5.6.2
+    "@mui/base": 5.0.0-alpha.78
+    "@mui/system": ^5.6.3
     "@mui/utils": ^5.6.1
     "@mui/x-date-pickers": 5.0.0-alpha.0
     clsx: ^1.1.1
@@ -854,17 +854,17 @@ __metadata:
       optional: true
     moment:
       optional: true
-  checksum: 8bb4d6a42cc7f6f4883d536f87f41c02b8f52fce8b00563e61b903f2d7caeeeff6e16b1524da5b72b101f0c0b6fed809416c79b8fd27a957443dfea599b45e95
+  checksum: 7b5c0e91f18d8ee99fef50e05ffa462a33d6db62baf360ae066ad00e76e08255b8f68ffef7c1b675b7aa72618f978200a6abce0f0a492c330c491826be62adca
   languageName: node
   linkType: hard
 
-"@mui/material@npm:^5.6.2":
-  version: 5.6.2
-  resolution: "@mui/material@npm:5.6.2"
+"@mui/material@npm:^5.6.3":
+  version: 5.6.3
+  resolution: "@mui/material@npm:5.6.3"
   dependencies:
     "@babel/runtime": ^7.17.2
-    "@mui/base": 5.0.0-alpha.77
-    "@mui/system": ^5.6.2
+    "@mui/base": 5.0.0-alpha.78
+    "@mui/system": ^5.6.3
     "@mui/types": ^7.1.3
     "@mui/utils": ^5.6.1
     "@types/react-transition-group": ^4.4.4
@@ -887,7 +887,7 @@ __metadata:
       optional: true
     "@types/react":
       optional: true
-  checksum: 40b76b13ec068e2b218573a74b1b8ae86278b12c686f4d58a3f43bbb0c8a9f9d3ecf63b5c7e9b1cd9e51e8f852470b422c8980839b179a0bfe3271441f2bcfcb
+  checksum: d81f2870fc08458ce7bb02fb07adc165eb97e99380d141af75cbc4829fbb2d7ebe4d8d46821dc2e85b491bc2e7e5b3435f168289e3a419107f98d4d63029827f
   languageName: node
   linkType: hard
 
@@ -943,9 +943,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/system@npm:^5.6.2":
-  version: 5.6.2
-  resolution: "@mui/system@npm:5.6.2"
+"@mui/system@npm:^5.6.3":
+  version: 5.6.3
+  resolution: "@mui/system@npm:5.6.3"
   dependencies:
     "@babel/runtime": ^7.17.2
     "@mui/private-theming": ^5.6.2
@@ -967,7 +967,7 @@ __metadata:
       optional: true
     "@types/react":
       optional: true
-  checksum: b7ec38174b6949873b3089b9e1d21ef4feac8aa3e561ec8606b635c6f78fbbfb535e5b9733f579af3c004961279eb46a4e975bd7df83674bf1d6292ee7a89950
+  checksum: 63e119b46c829b5ec6c6a2628ca309a9f17e0f0e3123ee7d9a7a57fe838c59e5efdafc5993a7e8c91168722c0618f63eff66afa3b7f61f92bfd8e872fdcf4773
   languageName: node
   linkType: hard
 
@@ -4616,16 +4616,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-window@npm:^1.8.6":
-  version: 1.8.6
-  resolution: "react-window@npm:1.8.6"
+"react-window@npm:^1.8.7":
+  version: 1.8.7
+  resolution: "react-window@npm:1.8.7"
   dependencies:
     "@babel/runtime": ^7.0.0
     memoize-one: ">=3.1.1 <6"
   peerDependencies:
-    react: ^15.0.0 || ^16.0.0 || ^17.0.0
-    react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0
-  checksum: 54ccf2b16c921a1acfadbe6de5dc19fe0981d84c5a913e4607afbf24448b96e938020704bf5125ec528e43a710643fc05e86fc117219fc4936e231ecd19be0b2
+    react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
+    react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
+  checksum: 1e122c29224781e70359978287a2e850ccdf509cd71ba16b16ea258725687a62f5c16ab69f52f732b4ed20df583196dbe2a04804f3e4a176bb3e62f3fc910452
   languageName: node
   linkType: hard
 
@@ -5268,8 +5268,8 @@ __metadata:
     "@commitlint/cli": ^16.2.3
     "@commitlint/config-conventional": ^16.2.1
     "@mui/icons-material": ^5.6.2
-    "@mui/lab": 5.0.0-alpha.78
-    "@mui/material": ^5.6.2
+    "@mui/lab": 5.0.0-alpha.79
+    "@mui/material": ^5.6.3
     "@mui/styled-engine-sc": ^5.6.1
     "@ptsecurity/commitlint-config": ^2.0.0
     "@tauri-apps/api": 1.0.0-rc.3
@@ -5300,7 +5300,7 @@ __metadata:
     react-hot-toast: ^2.2.0
     react-i18next: ^11.16.7
     react-router-dom: ^6.3.0
-    react-window: ^1.8.6
+    react-window: ^1.8.7
     styled-components: ^5.3.5
     tauri-plugin-stronghold-api: "link:./tauri-plugin-stronghold"
     typescript: ^4.6.3
