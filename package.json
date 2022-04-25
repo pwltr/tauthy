@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@mui/icons-material": "^5.6.2",
-    "@mui/lab": "5.0.0-alpha.78",
-    "@mui/material": "^5.6.2",
+    "@mui/lab": "5.0.0-alpha.79",
+    "@mui/material": "^5.6.3",
     "@mui/styled-engine-sc": "^5.6.1",
     "@tauri-apps/api": "1.0.0-rc.3",
     "buffer": "^6.0.3",
@@ -29,7 +29,7 @@
     "react-hot-toast": "^2.2.0",
     "react-i18next": "^11.16.7",
     "react-router-dom": "^6.3.0",
-    "react-window": "^1.8.6",
+    "react-window": "^1.8.7",
     "styled-components": "^5.3.5",
     "tauri-plugin-stronghold-api": "link:./tauri-plugin-stronghold",
     "uuid": "^8.3.2"
