@@ -135,6 +135,8 @@ const Images = memo(
               </div>
             )
           }
+
+          return null
         }}
       </Grid>
     )
