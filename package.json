@@ -19,7 +19,7 @@
     "@mui/lab": "5.0.0-alpha.79",
     "@mui/material": "^5.6.3",
     "@mui/styled-engine-sc": "^5.6.1",
-    "@tauri-apps/api": "1.0.0-rc.3",
+    "@tauri-apps/api": "1.0.0-rc.4",
     "buffer": "^6.0.3",
     "i18next": "^21.6.16",
     "i18next-browser-languagedetector": "^6.1.4",
