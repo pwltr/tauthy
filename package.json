@@ -38,7 +38,7 @@
     "@commitlint/cli": "^16.2.3",
     "@commitlint/config-conventional": "^16.2.1",
     "@ptsecurity/commitlint-config": "^2.0.0",
-    "@tauri-apps/cli": "1.0.0-rc.8",
+    "@tauri-apps/cli": "1.0.0-rc.9",
     "@types/react": "^18.0.5",
     "@types/react-dom": "^18.0.1",
     "@types/react-router-dom": "^5.3.3",
