@@ -24,14 +24,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup Node
-        uses: actions/setup-node@v2.5.1
+        uses: actions/setup-node@v3
         with:
-          node-version: 16.14.0
+          node-version: 16
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1.0.6
@@ -66,4 +66,24 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
           releaseDraft: true
+          releaseBody: 'See the assets to download this version and install.'
           prerelease: false
+  update:
+    needs: release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Create Update
+        run: yarn update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

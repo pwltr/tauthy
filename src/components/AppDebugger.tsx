@@ -2,6 +2,7 @@ import { styled } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 
 import { vault } from '~/App'
+import { checkUpdate } from '~/utils'
 
 const Container = styled('div')`
   position: fixed;
@@ -39,9 +40,9 @@ const Unlock = () => {
     localStorage.clear()
   }
 
-  const handleDebugVault = async () => {
+  const handleDebug = async () => {
     try {
-      const result = await vault.debug()
+      const result = await checkUpdate()
       console.log('result', result)
     } catch (err) {
       console.error(err)
@@ -57,7 +58,7 @@ const Unlock = () => {
         <Button size="small" variant="contained" onClick={handleGetVault}>
           Value
         </Button>
-        <Button color="warning" size="small" variant="contained" onClick={handleDebugVault}>
+        <Button color="warning" size="small" variant="contained" onClick={handleDebug}>
           Debug
         </Button>
         <Button color="error" size="small" variant="contained" onClick={handleClearAll}>
