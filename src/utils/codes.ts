@@ -5,7 +5,7 @@ import { vault } from '~/App'
 import { generateUUID } from '~/utils'
 import type { FormData, VaultEntry, AegisEntry, AuthyEntry } from '~/types'
 
-export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
+export type ImportFormat = 'aegis' | 'aegis (.txt)' | 'authy' | 'google' | 'tauthy'
 
 export const generateTOTP = async (secret: string) => {
   try {
@@ -68,6 +68,18 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
           let importedEntries: VaultEntry[] = []
 
           if (format === 'aegis') {
+            const entries: AegisEntry[] = json.db.entries
+            importedEntries = entries.map((entry) => ({
+              uuid: entry.uuid,
+              name: entry.name,
+              issuer: entry.issuer,
+              group: entry.group,
+              secret: entry.info.secret,
+              icon: entry.icon,
+            }))
+          }
+
+          if (format === 'aegis (.txt)') {
             const entries: AegisEntry[] = json.db.entries
             importedEntries = entries.map((entry) => ({
               uuid: entry.uuid,
