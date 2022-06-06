@@ -15,7 +15,7 @@
     "pre-commit": "npm-run-all --parallel tsc:check lint:check"
   },
   "dependencies": {
-    "@mui/icons-material": "^5.8.0",
+    "@mui/icons-material": "^5.8.2",
     "@mui/lab": "5.0.0-alpha.83",
     "@mui/material": "^5.8.1",
     "@mui/styled-engine-sc": "^5.8.0",
