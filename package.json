@@ -21,7 +21,7 @@
     "@mui/styled-engine-sc": "^5.8.0",
     "@tauri-apps/api": "1.0.0-rc.6",
     "buffer": "^6.0.3",
-    "i18next": "^21.8.5",
+    "i18next": "^21.8.8",
     "i18next-browser-languagedetector": "^6.1.4",
     "qrcode.react": "^3.0.2",
     "react": "^18.1.0",
