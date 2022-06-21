@@ -2,10 +2,12 @@
   "name": "tauthy",
   "version": "0.2.3",
   "scripts": {
+    "start": "tauri dev",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "release": "node scripts/release.mjs",
     "tsc:check": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
@@ -35,6 +37,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@actions/github": "^5.0.1",
     "@commitlint/cli": "^17.0.2",
     "@commitlint/config-conventional": "^17.0.2",
     "@ptsecurity/commitlint-config": "^2.0.0",

@@ -103,8 +103,4 @@ export class Vault {
     // delete backup
     await removeFile(`${appName}/${vaultName}.backup`, { dir: Dir.Data })
   }
-
-  async debug() {
-    console.debug('test')
-  }
 }
