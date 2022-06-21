@@ -60,7 +60,7 @@ await Promise.allSettled(promises)
 
 const releaseData = {
   version: latestRelease.tag_name,
-  notes: `https://github.com/${repoMetaData.owner}/${repoMetaData.repo}/releases/tag/${latestTag.name}`,
+  notes: `https://github.com/${repoMetaData.owner}/${repoMetaData.repo}/releases/tag/${latestRelease.tag_name}`,
   pub_date: new Date().toISOString(),
   platforms: {},
 }
