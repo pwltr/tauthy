@@ -11,8 +11,8 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 <div align="center">
   
 [![Windows Support](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white)](https://github.com/pwltr/tauthy/releases)
-[![MacOS Support](https://img.shields.io/badge/MACOS-adb8c5?style=flat&logo=macos&logoColor=white)](https://github.com/pwltr/tauthy/releases)
-[![Linux Support](https://img.shields.io/badge/linux-1793D1?style=flat&logo=linux&logoColor=white)](https://github.com/pwltr/tauthy/releases)
+[![MacOS Support](https://img.shields.io/badge/MacOS-adb8c5?style=flat&logo=macos&logoColor=white)](https://github.com/pwltr/tauthy/releases)
+[![Linux Support](https://img.shields.io/badge/Linux-1793D1?style=flat&logo=linux&logoColor=white)](https://github.com/pwltr/tauthy/releases)
 
 </div>
 
@@ -41,9 +41,9 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 ## Todo
 
+- [x] automatic updates
 - [ ] auto-lock after idle
 - [ ] custom sorting
-- [ ] automatic updates
 - [ ] support other import files
 - [ ] QR code scanning
 - [ ] Nextcloud sync
