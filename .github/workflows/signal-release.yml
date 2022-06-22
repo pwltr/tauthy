@@ -1,4 +1,4 @@
-name: Signal release for Tauri updater
+name: Signal release for Updater
 
 on:
   workflow_dispatch:

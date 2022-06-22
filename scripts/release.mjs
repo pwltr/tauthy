@@ -26,62 +26,68 @@ const repoMetaData = {
 
 const { data: latestRelease } = await repos.getLatestRelease(repoMetaData)
 
-const macOS = {}
-const linux = {}
-const windows = {}
+const releaseData = {
+  version: latestRelease.tag_name,
+  notes: `https://github.com/${repoMetaData.owner}/${repoMetaData.repo}/releases/tag/${latestRelease.tag_name}`,
+  pub_date: new Date().toISOString(),
+  platforms: {
+    'darwin-aarch64': {},
+    'darwin-x86_64': {},
+    'linux-x86_64': {},
+    'windows-x86_64': {},
+  },
+}
 
 const promises = latestRelease.assets.map(async ({ name, browser_download_url }) => {
   if (name.endsWith('.app.tar.gz')) {
-    macOS.url = browser_download_url
+    releaseData.platforms['darwin-aarch64'].url = browser_download_url
   }
 
   if (name.endsWith('.app.tar.gz.sig')) {
-    macOS.signature = await getSignature(browser_download_url)
+    releaseData.platforms['darwin-aarch64'].signature = await getSignature(browser_download_url)
   }
 
-  if (name.endsWith('.AppImage.tar.gz')) {
-    linux.url = browser_download_url
+  if (name.endsWith('.dmg')) {
+    releaseData.platforms['darwin-x86_64'].url = browser_download_url
   }
 
-  if (name.endsWith('.AppImage.tar.gz.sig')) {
-    linux.signature = await getSignature(browser_download_url)
+  if (name.endsWith('.dmg.sig')) {
+    releaseData.platforms['darwin-x86_64'].signature = await getSignature(browser_download_url)
   }
 
-  if (name.endsWith('.msi.zip')) {
-    windows.url = browser_download_url
+  if (name.endsWith('.AppImage')) {
+    releaseData.platforms['linux-x86_64'].url = browser_download_url
   }
 
-  if (name.endsWith('.msi.zip.sig')) {
-    windows.signature = await getSignature(browser_download_url)
+  if (name.endsWith('.AppImage.sig')) {
+    releaseData.platforms['linux-x86_64'].signature = await getSignature(browser_download_url)
+  }
+
+  if (name.endsWith('.msi')) {
+    releaseData.platforms['windows-x86_64'].url = browser_download_url
+  }
+
+  if (name.endsWith('.msi.sig')) {
+    releaseData.platforms['windows-x86_64'].signature = await getSignature(browser_download_url)
   }
 })
 
 await Promise.allSettled(promises)
 
-const releaseData = {
-  version: latestRelease.tag_name,
-  notes: `https://github.com/${repoMetaData.owner}/${repoMetaData.repo}/releases/tag/${latestRelease.tag_name}`,
-  pub_date: new Date().toISOString(),
-  platforms: {},
+if (!releaseData.platforms['darwin-aarch64'].url) {
+  throw new Error('Failed to get release for MacOS (ARM)')
 }
 
-if (macOS.url) {
-  releaseData.platforms['darwin-aarch64'] = macOS
-  releaseData.platforms['darwin-x86_64'] = macOS
-} else {
-  console.error('Failed to get release for MacOS')
+if (!releaseData.platforms['darwin-x86_64'].url) {
+  throw new Error('Failed to get release for MacOS (x86)')
 }
 
-if (linux.url) {
-  releaseData.platforms['linux-x86_64'] = linux
-} else {
-  console.error('Failed to get release for Linux')
+if (!releaseData.platforms['linux-x86_64'].url) {
+  throw new Error('Failed to get release for Linux')
 }
 
-if (windows.url) {
-  releaseData.platforms['windows-x86_64'] = windows
-} else {
-  console.error('Failed to get release for Windows')
+if (!releaseData.platforms['windows-x86_64'].url) {
+  throw new Error('Failed to get release for Windows')
 }
 
 const { data: updater } = await repos.getReleaseByTag({
