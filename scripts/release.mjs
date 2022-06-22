@@ -51,47 +51,39 @@ const releaseData = {
 }
 
 const promises = latestRelease.assets.map(async ({ name, browser_download_url }) => {
+  const signature = await getSignature(browser_download_url)
+
   if (name.endsWith('.app.tar.gz')) {
     releaseData.platforms['darwin-aarch64'].url = browser_download_url
-  }
-
-  if (name.endsWith('.app.tar.gz.sig')) {
-    releaseData.platforms['darwin-aarch64'].signature = await getSignature(browser_download_url)
-  }
-
-  if (name.endsWith('.dmg')) {
     releaseData.platforms['darwin-x86_64'].url = browser_download_url
   }
 
-  if (name.endsWith('.dmg.sig')) {
-    releaseData.platforms['darwin-x86_64'].signature = await getSignature(browser_download_url)
+  if (name.endsWith('.app.tar.gz.sig')) {
+    releaseData.platforms['darwin-aarch64'].signature = signature
+    releaseData.platforms['darwin-x86_64'].signature = signature
   }
 
-  if (name.endsWith('.AppImage')) {
+  if (name.endsWith('.AppImage.tar.gz')) {
     releaseData.platforms['linux-x86_64'].url = browser_download_url
   }
 
-  if (name.endsWith('.AppImage.sig')) {
-    releaseData.platforms['linux-x86_64'].signature = await getSignature(browser_download_url)
+  if (name.endsWith('.AppImage.tar.gz.sig')) {
+    releaseData.platforms['linux-x86_64'].signature = signature
   }
 
-  if (name.endsWith('.msi')) {
+  if (name.endsWith('.msi.zip')) {
     releaseData.platforms['windows-x86_64'].url = browser_download_url
   }
 
-  if (name.endsWith('.msi.sig')) {
-    releaseData.platforms['windows-x86_64'].signature = await getSignature(browser_download_url)
+  if (name.endsWith('.msi.zip.sig')) {
+    releaseData.platforms['windows-x86_64'].signature = signature
   }
 })
 
 await Promise.allSettled(promises)
 
 if (!releaseData.platforms['darwin-aarch64'].url) {
-  throw new Error('Failed to get release for MacOS (ARM)')
-}
-
-if (!releaseData.platforms['darwin-x86_64'].url) {
-  throw new Error('Failed to get release for MacOS (x86)')
+  throw new Error('Failed to get release for MacOS')
 }
 
 if (!releaseData.platforms['linux-x86_64'].url) {
