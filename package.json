@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@mui/icons-material": "^5.8.4",
-    "@mui/lab": "5.0.0-alpha.86",
-    "@mui/material": "^5.8.4",
+    "@mui/lab": "5.0.0-alpha.87",
+    "@mui/material": "^5.8.5",
     "@mui/styled-engine-sc": "^5.8.0",
     "@tauri-apps/api": "1.0.1",
     "buffer": "^6.0.3",
@@ -37,7 +37,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@actions/github": "^5.0.1",
+    "@actions/github": "^5.0.3",
     "@commitlint/cli": "^17.0.2",
     "@commitlint/config-conventional": "^17.0.2",
     "@ptsecurity/commitlint-config": "^2.0.0",
