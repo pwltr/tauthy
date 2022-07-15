@@ -6,6 +6,9 @@ const PACKAGE_ROOT = __dirname
 
 export default defineConfig({
   root: PACKAGE_ROOT,
+  server: {
+    port: 3000,
+  },
   build: {
     target: 'ESNext',
     rollupOptions: {
