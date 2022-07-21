@@ -28,7 +28,7 @@ body:
     id: version
     attributes:
       label: Tauthy version
-      description: What version of Tauthy were you running when the bug occurred?
+      description: What version of Tauthy were you running when the bug occurred? You can find the version number on the About page.
       options:
         - v0.2.3
         - v0.1.1
