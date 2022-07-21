@@ -14,8 +14,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "lint": "eslint --fix \"src/**/*.{ts,tsx}\"",
     "lint:check": "eslint \"src/**/*.{ts,tsx}\"",
-    "prepare": "husky install",
-    "pre-commit": "npm-run-all --parallel tsc:check lint:check"
+    "prepare": "husky install"
   },
   "dependencies": {
     "@mui/icons-material": "^5.8.4",
