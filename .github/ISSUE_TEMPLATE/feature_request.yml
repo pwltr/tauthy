@@ -8,7 +8,7 @@ body:
       value: |
         We're always looking for suggestions on how we could improve Tauthy!
   - type: textarea
-    id: describe
+    id: problem
     attributes:
       label: Describe the problem
       description: Is your feature request related to a problem? Please describe.
@@ -16,7 +16,7 @@ body:
     validations:
       required: false
   - type: textarea
-    id: describe
+    id: solution
     attributes:
       label: Describe the solution
       description: Add some details about the solution you'd like to see
@@ -24,7 +24,7 @@ body:
     validations:
       required: false
   - type: textarea
-    id: describe
+    id: context
     attributes:
       label: Additional context
       description: Add any other context or screenshots about the feature request here.
