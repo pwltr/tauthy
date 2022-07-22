@@ -109,7 +109,7 @@
     "exported": "Vault exported.",
     "emptyExport": "Vault is empty.",
     "passwordSet": "Password changed.",
-    "passwordReset": "Password reset.",
+    "passwordReset": "Password protection removed.",
     "reset": "Vault reset.",
     "error": "An error occured."
   }

@@ -109,7 +109,7 @@
     "exported": "Tresor exportiert.",
     "emptyExport": "Tresor ist leer.",
     "passwordSet": "Passwort aktualisiert.",
-    "passwordReset": "Passwort gelöscht.",
+    "passwordReset": "Passwortschutz entfernt.",
     "reset": "Tresor gelöscht.",
     "error": "Ein Fehler ist aufgetreten."
   }

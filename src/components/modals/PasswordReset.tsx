@@ -24,7 +24,7 @@ const PasswordResetModal = ({ open, onClose }: { open: boolean; onClose: () => v
 
   return (
     <Modal open={open} onClose={onClose}>
-      <div>{t('modals.password')}</div>
+      <div>{t('modals.resetPassword')}</div>
       <Buttons>
         <Button onClick={onClose}>{t('modals.cancel')}</Button>
         <Button color="primary" variant="contained" onClick={handleSetPassword}>
