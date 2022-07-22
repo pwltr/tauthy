@@ -1,5 +1,5 @@
 module.exports = {
-  'src/**/*.{ts,tsx}': ['yarn format', 'yarn lint:check'],
+  'src/**/*.{ts,tsx}': ['prettier --write', 'eslint --ext .ts,.tsx'],
   '{.{eslintrc.js,prettierrc}}': ['prettier --parser json --write'],
-  '*.{yml,md}': ['prettier --single-quote --write'],
+  '*.{yml,md}': ['prettier --write'],
 }
