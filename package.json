@@ -19,7 +19,7 @@
   "dependencies": {
     "@mui/icons-material": "^5.8.4",
     "@mui/lab": "5.0.0-alpha.90",
-    "@mui/material": "^5.9.0",
+    "@mui/material": "^5.9.1",
     "@mui/styled-engine-sc": "^5.8.0",
     "@tauri-apps/api": "1.0.2",
     "buffer": "^6.0.3",
