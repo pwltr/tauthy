@@ -20,7 +20,7 @@
     "@mui/icons-material": "^5.8.4",
     "@mui/lab": "5.0.0-alpha.92",
     "@mui/material": "^5.9.2",
-    "@mui/styled-engine-sc": "^5.8.0",
+    "@mui/styled-engine-sc": "^5.9.3",
     "@tauri-apps/api": "1.0.2",
     "buffer": "^6.0.3",
     "i18next": "^21.8.14",
