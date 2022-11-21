@@ -400,6 +400,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.20.1":
+  version: 7.20.1
+  resolution: "@babel/runtime@npm:7.20.1"
+  dependencies:
+    regenerator-runtime: ^0.13.10
+  checksum: 00567a333d3357925742a6f5e39394dcc0af6e6029103fe188158bf7ae8b0b3ee3c6c0f68fccc217f0a6cfa455f6be252298baf56b3f5ff37b34313b170cd9f6
+  languageName: node
+  linkType: hard
+
 "@babel/template@npm:^7.16.7":
   version: 7.16.7
   resolution: "@babel/template@npm:7.16.7"
@@ -967,10 +976,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/styled-engine-sc@npm:^5.8.0":
-  version: 5.8.0
-  resolution: "@mui/styled-engine-sc@npm:5.8.0"
+"@mui/styled-engine-sc@npm:^5.10.14":
+  version: 5.10.14
+  resolution: "@mui/styled-engine-sc@npm:5.10.14"
   dependencies:
+    "@babel/runtime": ^7.20.1
     prop-types: ^15.8.1
   peerDependencies:
     "@types/styled-components": ^5.1.14
@@ -978,7 +988,7 @@ __metadata:
   peerDependenciesMeta:
     "@types/styled-components":
       optional: true
-  checksum: 7667fd36e2eeb7eba6a6d8c65aea7e1f83b911fb013cd13ccaf82f97c1a35d1f305d944cef785f0415d051b097fd5da90084815054d20c08354c489f4ddbdefa
+  checksum: 64645560b261f4b671158c8de48f18e7a85c68e06f44652026bd6c95abe029aa13f0544e7ddb65ba73c10b85fe78ae61b22e101e48675febef91c1214624a72e
   languageName: node
   linkType: hard
 
@@ -5231,6 +5241,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"regenerator-runtime@npm:^0.13.10":
+  version: 0.13.11
+  resolution: "regenerator-runtime@npm:0.13.11"
+  checksum: 27481628d22a1c4e3ff551096a683b424242a216fee44685467307f14d58020af1e19660bf2e26064de946bad7eff28950eae9f8209d55723e2d9351e632bbb4
+  languageName: node
+  linkType: hard
+
 "regenerator-runtime@npm:^0.13.4":
   version: 0.13.9
   resolution: "regenerator-runtime@npm:0.13.9"
@@ -5959,7 +5976,7 @@ __metadata:
     "@mui/icons-material": ^5.8.4
     "@mui/lab": 5.0.0-alpha.92
     "@mui/material": ^5.9.2
-    "@mui/styled-engine-sc": ^5.8.0
+    "@mui/styled-engine-sc": ^5.10.14
     "@ptsecurity/commitlint-config": ^2.0.0
     "@tauri-apps/api": 1.0.2
     "@tauri-apps/cli": 1.0.5
