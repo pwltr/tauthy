@@ -400,6 +400,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.20.6":
+  version: 7.20.7
+  resolution: "@babel/runtime@npm:7.20.7"
+  dependencies:
+    regenerator-runtime: ^0.13.11
+  checksum: 4629ce5c46f06cca9cfb9b7fc00d48003335a809888e2b91ec2069a2dcfbfef738480cff32ba81e0b7c290f8918e5c22ddcf2b710001464ee84ba62c7e32a3a3
+  languageName: node
+  linkType: hard
+
 "@babel/template@npm:^7.16.7":
   version: 7.16.7
   resolution: "@babel/template@npm:7.16.7"
@@ -3650,12 +3659,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"i18next@npm:^21.8.14":
-  version: 21.8.14
-  resolution: "i18next@npm:21.8.14"
+"i18next@npm:^22.4.9":
+  version: 22.4.9
+  resolution: "i18next@npm:22.4.9"
   dependencies:
-    "@babel/runtime": ^7.17.2
-  checksum: 83b1a57d761c3d29b90f4e87eb9945902fa13d7750f11bc7f22e8c9999f7e5bf9b2a30c44a9b47569c8ea704573b02a562c2678cf2281073197ace07657d21be
+    "@babel/runtime": ^7.20.6
+  checksum: 8cce4aaced4857e006fab2c9d4adb0eb1375829e459076be79d4d3532b1be6342b7003a720e187098f17bb276bea46df8b3fc2cf21f0f3a230bd519243048d1a
   languageName: node
   linkType: hard
 
@@ -5231,6 +5240,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"regenerator-runtime@npm:^0.13.11":
+  version: 0.13.11
+  resolution: "regenerator-runtime@npm:0.13.11"
+  checksum: 27481628d22a1c4e3ff551096a683b424242a216fee44685467307f14d58020af1e19660bf2e26064de946bad7eff28950eae9f8209d55723e2d9351e632bbb4
+  languageName: node
+  linkType: hard
+
 "regenerator-runtime@npm:^0.13.4":
   version: 0.13.9
   resolution: "regenerator-runtime@npm:0.13.9"
@@ -5979,7 +5995,7 @@ __metadata:
     eslint-plugin-react: ^7.30.1
     eslint-plugin-react-hooks: ^4.6.0
     husky: ^8.0.1
-    i18next: ^21.8.14
+    i18next: ^22.4.9
     i18next-browser-languagedetector: ^6.1.4
     lint-staged: ^13.0.3
     npm-run-all: ^4.1.5
