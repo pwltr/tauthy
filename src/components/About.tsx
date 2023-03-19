@@ -15,7 +15,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
-import logo from '../../assets/tauthy_bordered.png'
+import logo from '../../assets/app-icons/icon-round-bordered.png'
 
 const Header = styled('div')`
   display: flex;

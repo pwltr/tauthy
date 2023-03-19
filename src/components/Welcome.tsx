@@ -8,7 +8,7 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import MuiButton from '@mui/material/Button'
 
-import logo from '../../assets/tauthy_bordered.png'
+import logo from '../../assets/app-icons/icon-round-bordered.png'
 
 const Container = styled('div')`
   display: flex;
