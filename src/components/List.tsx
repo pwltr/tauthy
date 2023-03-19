@@ -26,10 +26,6 @@ import type { ListEntry } from '~/components/Codes'
 const ListItem = styled(MuiListItem)`
   cursor: pointer;
 
-  .MuiListItemButton-root {
-    min-height: 80px;
-  }
-
   .MuiListItemSecondaryAction-root {
     display: none;
   }
