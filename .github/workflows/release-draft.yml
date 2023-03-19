@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-
   workflow_dispatch:
 
 jobs:
@@ -22,29 +21,33 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Node
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Node and yarn cache
         uses: actions/setup-node@v3
         with:
-          node-version: 16
-
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+          node-version: 'lts/*'
+          cache: 'yarn'
 
       - name: Install dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 librsvg2-dev patchelf
 
       - name: Install dependencies
         run: yarn
 
-      - name: Build application
+      - name: Build frontend
         run: yarn build
 
-      - name: Build package
+      - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
