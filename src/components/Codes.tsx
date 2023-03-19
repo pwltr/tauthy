@@ -45,7 +45,7 @@ const Container = styled('div')`
 
 const Button = styled(Fab)`
   position: fixed;
-  bottom: 16px;
+  bottom: 20px;
   /* check cross-platform scrollbar widths */
   /* right: 28px; */
   right: 16px;

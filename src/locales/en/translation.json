@@ -23,7 +23,7 @@
     "about": "About"
   },
   "create": {
-    "pageTitle": "Add new account",
+    "pageTitle": "Add account",
     "name": "Name",
     "issuer": "Issuer (optional)",
     "group": "Group (optional)",
@@ -43,11 +43,11 @@
   "settings": {
     "pageTitle": "Settings",
     "appearance": "Appearance",
-    "appearanceDescription": "Change the theme or the density of entries.",
+    "appearanceDescription": "Change the theme or the density of entries",
     "security": "Security",
-    "securityDescription": "Configure encryption and auto-lock.",
+    "securityDescription": "Configure encryption and auto-lock",
     "import": "Import & Export",
-    "importDescription": "Import or create exports of your vault."
+    "importDescription": "Import or create exports of your vault"
   },
   "appearance": {
     "pageTitle": "Appearance",

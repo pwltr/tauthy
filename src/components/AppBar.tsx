@@ -26,7 +26,6 @@ const Toolbar = styled(MuiToolbar)`
 
 const PageTitle = styled(Typography)`
   font-size: 1.2rem;
-  padding-top: 0.3rem;
 `
 
 const Search = styled(InputBase)`

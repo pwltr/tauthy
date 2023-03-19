@@ -74,7 +74,7 @@
     "windows": [
       {
         "title": "Tauthy",
-        "width": 400,
+        "width": 380,
         "height": 700,
         "resizable": false,
         "fullscreen": false
