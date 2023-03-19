@@ -70,7 +70,7 @@ const About = () => {
             <ListItemIcon>
               <CodeIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary={t('about.version')} secondary="0.2.4" />
+            <ListItemText primary={t('about.version')} secondary="0.2.5" />
           </ListItemButton>
         </ListItem>
 

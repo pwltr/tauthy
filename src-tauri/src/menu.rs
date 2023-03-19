@@ -4,7 +4,7 @@ use tauri::{AboutMetadata, Menu, MenuItem, Submenu};
 
 pub(crate) fn menu() -> Menu {
   let about_menu = AboutMetadata::new()
-    .version(String::from("0.2.4"))
+    .version(String::from("0.2.5"))
     .authors(vec![String::from("Philipp Walter")])
     .comments(String::from("2FA authentication client"))
     .copyright(String::from("GPL-3.0 License"))
