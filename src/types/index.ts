@@ -39,8 +39,9 @@ export type AuthyEntry = {
   uri: string
 }
 
-declare global {
-  interface Crypto {
-    randomUUID: () => string
+// i18next.d.ts
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    returnNull: false
   }
 }
