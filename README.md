@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./assets/tauthy_bordered.png" alt="Tauthy" width="128" />
+  <img src="./assets/app-icons/icon-round-bordered.png" alt="Tauthy" width="128" />
   <br>
   <div>Tauthy</div>
 </h1>
