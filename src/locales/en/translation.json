@@ -106,8 +106,10 @@
   "toasts": {
     "copied": "Copied to clipboard",
     "imported": "Vault imported successfully",
-    "exported": "Vault exported.",
-    "emptyExport": "Vault is empty.",
+    "exportSuccess": "Vault exported.",
+    "exportEmpty": "Vault is empty.",
+    "exportCancelled": "Export cancelled.",
+    "exportFailed": "Export failed.",
     "passwordSet": "Password changed.",
     "passwordReset": "Password protection removed.",
     "reset": "Vault reset.",

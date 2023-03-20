@@ -53,6 +53,11 @@
       "clipboard": {
         "writeText": true
       },
+      "dialog": {
+        "all": false,
+        "open": true,
+        "save": true
+      },
       "shell": {
         "execute": false,
         "open": true

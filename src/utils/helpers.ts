@@ -22,3 +22,12 @@ export const imageToBase64 = (url: string) => {
     .then((response) => response.arrayBuffer())
     .then(base64ToBrowser)
 }
+
+export const downloadFile = (file: Blob, name: string) => {
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(file)
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}

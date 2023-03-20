@@ -25,10 +25,10 @@ const Import = () => {
   const handleExportVault = async () => {
     try {
       await exportCodes()
-      toast.success(t('toasts.exported'))
+      toast.success(t('toasts.exportSuccess'))
     } catch (err) {
-      console.error(err)
-      toast.error(t('toasts.emptyExport'))
+      const error = err as Error
+      toast.error(t(`toasts.${error.message}`))
     }
   }
 

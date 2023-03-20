@@ -1,5 +1,7 @@
 import { ChangeEvent } from 'react'
+import { save } from '@tauri-apps/api/dialog'
 import { invoke } from '@tauri-apps/api/tauri'
+import { writeTextFile } from '@tauri-apps/api/fs'
 
 import { vault } from '~/App'
 import { generateUUID } from '~/utils'
@@ -9,7 +11,7 @@ export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
 
 export const generateTOTP = async (secret: string) => {
   try {
-    return await invoke('generate_totp', { argument: secret })
+    return await invoke<string>('generate_totp', { argument: secret })
   } catch (err) {
     console.error('error from backend:', err)
   }
@@ -131,12 +133,8 @@ export const exportCodes = async () => {
   const entries = await vault.getVault()
 
   if (entries.length === 0) {
-    throw Error('Nothing to export')
+    throw Error('exportEmpty')
   }
-
-  const file = new Blob([JSON.stringify(entries)], {
-    type: 'application/json',
-  })
 
   const date = new Date(Date.now())
     .toLocaleDateString('en-US', {
@@ -146,18 +144,22 @@ export const exportCodes = async () => {
     })
     .replace(/[^\w\s]/gi, '')
 
+  const file = JSON.stringify(entries)
   const fileName = `tauthy_export_${date}.json`
-  // TODO: add error handling
-  downloadFile(file, fileName)
-  // TODO: return file path
-  return 'Vault exported'
-}
+  const filePath = await save({
+    defaultPath: fileName,
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  })
 
-export const downloadFile = (file: Blob, name: string) => {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(file)
-  a.download = name
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  if (!filePath) {
+    throw Error('exportCancelled')
+  }
+
+  try {
+    await writeTextFile(filePath, file)
+  } catch (err) {
+    throw Error('exportFailed')
+  }
+
+  return 'exportSuccess'
 }

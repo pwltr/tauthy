@@ -106,8 +106,10 @@
   "toasts": {
     "copied": "In Zwischenablage kopiert",
     "imported": "Tresor erfolgreich importiert",
-    "exported": "Tresor exportiert.",
-    "emptyExport": "Tresor ist leer.",
+    "exportSuccess": "Tresor exportiert.",
+    "exportEmpty": "Tresor ist leer.",
+    "exportCancelled": "Export abgebrochen.",
+    "exportFailed": "Export fehlgeschlagen.",
     "passwordSet": "Passwort aktualisiert.",
     "passwordReset": "Passwortschutz entfernt.",
     "reset": "Tresor gelöscht.",

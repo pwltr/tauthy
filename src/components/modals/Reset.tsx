@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import Button from '@mui/material/Button'
@@ -7,6 +8,7 @@ import { useLocalStorage } from '~/hooks'
 import Modal, { Buttons } from '~/components/Modal'
 
 const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const navigate = useNavigate()
   const { t } = useTranslation()
   const [, setIsPasswordSet] = useLocalStorage('isPasswordSet', false)
 
@@ -17,6 +19,7 @@ const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =
       setIsPasswordSet(false)
       toast.success(t('toasts.reset'))
       onClose()
+      navigate('/')
     } catch (err) {
       console.error(err)
       toast.error(t('toasts.error'))

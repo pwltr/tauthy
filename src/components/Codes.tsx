@@ -64,7 +64,7 @@ const Codes = () => {
 
   const generateTokens = async (items: ListEntry[]) => {
     const promises = items.map((item) => generateTOTP(item.secret))
-    const tokens = (await Promise.all(promises)) as string[]
+    const tokens = await Promise.all(promises)
     const itemsWithTokens = items.map((item, index) => ({
       ...item,
       issuer: tokens[index] ? item.issuer : t('codes.invalid'),
@@ -102,12 +102,10 @@ const Codes = () => {
   const reset = () => {
     // set normal interval
     setDelay(INTERVAL_STANDARD)
+
     // reset progressbar
     setAnimate(false)
-
-    setTimeout(() => {
-      setAnimate(true)
-    }, 0)
+    setTimeout(() => setAnimate(true), 10)
   }
 
   if (isLoading) {
