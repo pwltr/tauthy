@@ -13,7 +13,7 @@ build = "src/build.rs"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 otp = { git = "https://github.com/TimDumol/rust-otp" }
-tauri = { version = "1.2.4", features = ["clipboard-write-text", "dialog-open", "dialog-save", "fs-all", "path-all", "shell-open", "updater"] }
+tauri = { version = "1.2.4", features = ["clipboard-write-text", "dialog-open", "dialog-save", "fs-all", "os-all", "path-all", "shell-open", "updater"] }
 tauri-plugin-stronghold = { path = "../tauri-plugin-stronghold" }
 
 [build-dependencies]

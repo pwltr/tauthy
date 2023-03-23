@@ -1,4 +1,10 @@
+import { type } from '@tauri-apps/api/os'
 import { lighten, darken } from '@mui/material/styles'
+
+const isMac = (await type()) === 'Darwin'
+
+const secondary = isMac ? '#363636' : '#31363b'
+const background = isMac ? '#282828' : '#232629'
 
 export default {
   mui: {
@@ -8,15 +14,15 @@ export default {
         darker: '#ffffff',
       },
       secondary: {
-        main: '#31363b',
+        main: secondary,
       },
       neutral: {
         main: '#64748B',
         contrastText: '#ffffff',
       },
       background: {
-        default: '#232629',
-        paper: '#232629',
+        default: background,
+        paper: background,
       },
       text: {
         primary: '#ffffff',
@@ -37,19 +43,19 @@ export default {
       },
       disabled: {
         background: darken('#ffffff', 0.4),
-        color: lighten('#31363b', 0.15),
+        color: lighten(secondary, 0.15),
       },
     },
     secondary: {
       hover: {
-        background: lighten('#31363b', 0.1),
+        background: lighten(secondary, 0.1),
       },
       active: {
         background: lighten('#ffffff', 0.32),
       },
       disabled: {
         background: lighten('#ffffff', 0.32),
-        color: lighten('#31363b', 0.15),
+        color: lighten(secondary, 0.15),
       },
     },
   },

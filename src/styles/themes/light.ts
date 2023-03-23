@@ -1,15 +1,20 @@
+import { type } from '@tauri-apps/api/os'
 import { alpha, lighten, darken } from '@mui/material/styles'
 import { grey } from '@mui/material/colors'
+
+const isMac = (await type()) === 'Darwin'
+
+const primary = isMac ? '#363636' : '#31363b'
 
 export default {
   mui: {
     palette: {
       primary: {
-        main: '#31363b',
+        main: primary,
         darker: '#053e85',
       },
       secondary: {
-        main: '#31363b',
+        main: primary,
       },
       neutral: {
         main: '#64748B',
@@ -31,25 +36,25 @@ export default {
   button: {
     primary: {
       hover: {
-        background: lighten('#31363b', 0.1),
+        background: lighten(primary, 0.1),
       },
       active: {
-        background: lighten('#31363b', 0.32),
+        background: lighten(primary, 0.32),
       },
       disabled: {
-        background: lighten('#31363b', 0.4),
+        background: lighten(primary, 0.4),
         color: darken('#ffffff', 0.15),
       },
     },
     secondary: {
       hover: {
-        background: lighten('#31363b', 0.1),
+        background: lighten(primary, 0.1),
       },
       active: {
-        background: lighten('#31363b', 0.32),
+        background: lighten(primary, 0.32),
       },
       disabled: {
-        background: lighten('#31363b', 0.4),
+        background: lighten(primary, 0.4),
         color: darken('#ffffff', 0.15),
       },
     },
@@ -57,7 +62,7 @@ export default {
   switch: {
     unchecked: {
       thumb: {
-        background: lighten('#31363b', 0.15),
+        background: lighten(primary, 0.15),
       },
       track: {
         background: darken('#ffffff', 0.8),
@@ -65,7 +70,7 @@ export default {
     },
     checked: {
       thumb: {
-        background: '#31363b',
+        background: primary,
       },
       track: {
         background: alpha('#ffffff', 1),

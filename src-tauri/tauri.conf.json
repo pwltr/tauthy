@@ -62,6 +62,9 @@
         "execute": false,
         "open": true
       },
+      "os": {
+        "all": true
+      },
       "path": {
         "all": true
       },
