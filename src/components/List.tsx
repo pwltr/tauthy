@@ -48,15 +48,13 @@ const Icon = styled('div')(
 const Name = styled('span')(
   ({ theme }) => `
   color: ${theme.palette.primary.main};
-  font-size: 12px;
-`,
+  `,
 )
 
 const Token = styled('span')(
   ({ theme }) => `
-  color: ${theme.palette.primary.main};
-  font-size: 20px;
-  font-weight: 600;
+    color: ${theme.palette.primary.main};
+    font-weight: 600;
 `,
 )
 
@@ -157,6 +155,8 @@ const List = ({ className, entries }: ListProps) => {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
+                      primaryTypographyProps={{ fontSize: 12 }}
+                      secondaryTypographyProps={{ fontSize: 20 }}
                       primary={
                         <Name>{`${entry.issuer ?? ''} ${
                           entry.issuer ? `(${entry.name})` : entry.name

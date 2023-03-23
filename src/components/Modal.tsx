@@ -12,7 +12,6 @@ const StyledBox = styled(Box)(
   max-height: 90vh;
   overflow: auto;
   background: ${theme.palette.background.paper};
-  // background: ${lighten(theme.palette.background.paper, 0.1)};
   box-shadow: ${theme.shadows[24]};
   border-radius: 4px;
   color: ${theme.palette.primary.main};

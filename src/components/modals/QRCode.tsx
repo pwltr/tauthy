@@ -22,6 +22,11 @@ const Code = styled('div')`
   display: flex;
   justify-content: center;
   align-items: center;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  padding: 16px;
 `
 
 const Icon = styled('div')`
@@ -50,9 +55,7 @@ const QRCodeModal = ({
         <Code>
           <QRCodeSVG
             value={getOtpUri(entry.name, entry.secret, entry.issuer, entry.group)}
-            size={330}
-            bgColor="#eeeeee"
-            includeMargin
+            size={280}
           />
 
           {entry.icon && (
