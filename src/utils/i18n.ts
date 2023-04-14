@@ -8,6 +8,7 @@ const resources = {
   en: { translation: translations.en },
   de: { translation: translations.de },
   fr: { translation: translations.fr },
+  es: { translation: translations.es },
 }
 
 i18n
