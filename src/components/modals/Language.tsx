@@ -34,6 +34,12 @@ const Language = ({ open, onClose }: { open: boolean; onClose: () => void }) => 
             <ListItemText primary="French" />
           </ListItemButton>
         </ListItem> */}
+
+        <ListItem disablePadding onClick={() => handleClick('es-ES')}>
+          <ListItemButton>
+            <ListItemText primary="Spanish" />
+          </ListItemButton>
+        </ListItem>
       </List>
     </Modal>
   )

@@ -18,6 +18,8 @@ const languages: { [key: string]: string | undefined } = {
   'en-US': 'English',
   'de-AT': 'Deutsch',
   'de-DE': 'Deutsch',
+  'es-ES': 'Español',
+  'es-MX': 'Español',
 }
 
 const Appearance = () => {
