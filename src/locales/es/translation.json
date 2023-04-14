@@ -1,0 +1,118 @@
+{
+  "welcome": {
+    "beta": "Esta aplicación utiliza software que está en versión beta todavía.",
+    "backup": "Me aseguraré de realizar copias de seguridad de mis datos.",
+    "start": "Empecemos"
+  },
+  "unlock": {
+    "title": "Baúl bloqueado",
+    "subtitle": "Introduce la contraseña para desbloquear",
+    "password": "Contraseña",
+    "invalid": "Contraseña incorrecta",
+    "unlock": "Desbloquear"
+  },
+  "codes": {
+    "empty": "Añadir entrada o importar una copia de seguridad",
+    "invalid": "Secreto incorrecto"
+  },
+  "appBar": {
+    "search": "Buscar",
+    "custom": "Personalizado",
+    "lock": "Bloquear",
+    "settings": "Ajustes",
+    "about": "Acerca de"
+  },
+  "create": {
+    "pageTitle": "Añadir cuenta",
+    "name": "Nombre",
+    "issuer": "Emisor (opcional)",
+    "group": "Grupo (opcional)",
+    "secret": "Secreto",
+    "add": "Añadir cuenta",
+    "editIcon": "Editar icono"
+  },
+  "edit": {
+    "pageTitle": "Editar cuenta",
+    "name": "Nombre",
+    "issuer": "Emisor (opcional)",
+    "group": "Grupo (opcional)",
+    "secret": "Secreto",
+    "delete": "Eliminar",
+    "save": "Guardar"
+  },
+  "settings": {
+    "pageTitle": "Ajustes",
+    "appearance": "Apariencia",
+    "appearanceDescription": "Cambiar el tema o la densidad de las entradas",
+    "security": "Seguridad",
+    "securityDescription": "Configurar encriptado y autobloqueo",
+    "import": "Importar y Exportar",
+    "importDescription": "Importa o crea copias de tu baúl."
+  },
+  "appearance": {
+    "pageTitle": "Apariencia",
+    "theme": "Tema",
+    "language": "Idioma",
+    "entries": "Entradas",
+    "compact": "Compacto",
+    "grouping": "Agrupar por 2 dígitos",
+    "editGroups": "Editar grupos"
+  },
+  "security": {
+    "pageTitle": "Seguridad",
+    "encryption": "Encriptado",
+    "password": "Cambiar contraseña",
+    "passwordDescription": "Establece una contraseña para desbloquear tu baúl.",
+    "passwordReset": "Reestablecer contraseña",
+    "passwordResetDescription": "Eliminar protección por contraseña",
+    "behaviour": "Comportamiento",
+    "autoLock": "Bloqueo automático",
+    "autoLockDescription": "Bloquear automáticamente tras 1 minuto de inactividad"
+  },
+  "import": {
+    "pageTitle": "Importar y Exportar",
+    "import": "Importar",
+    "importDescription": "Importa copias de seguridad desde otras apps",
+    "export": "Exportar",
+    "exportDescription": "Crea una copia de seguridad del baúl",
+    "reset": "Eliminar el baúl",
+    "resetDescription": "Elimina todo el baúl para siempre"
+  },
+  "about": {
+    "pageTitle": "Acerca de",
+    "openSource": "Código Abierto",
+    "reportBug": "Reportar Error",
+    "reportBugDescription": "Crea un reporte en GitHub",
+    "version": "Versión",
+    "license": "Licencia",
+    "support": "Apoya el proyecto",
+    "coffee": "Buy Me a Coffee"
+  },
+  "modals": {
+    "password": "Elige una contraseña para tu baúl",
+    "resetPassword": "¿Reestablecer contraseña?",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "repeatPassword": "Repetir contraseña",
+    "passwordInsecure": "La contraseña debe tener al menos 8 caracteres",
+    "passwordNoMatch": "Las contraseñas no coinciden",
+    "selectImport": "Selecciona un fichero para importar",
+    "deleteWarning": "Esto eliminará tu baúl y no se puede deshacer. ¿Estás seguro?",
+    "noResults": "No hay resultados",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "cancel": "Cancelar"
+  },
+  "toasts": {
+    "copied": "Copiado al portapapeles.",
+    "imported": "Baúl importado correctamente.",
+    "exportSuccess": "Baúl exportado.",
+    "exportEmpty": "El baúl está vacío.",
+    "exportCancelled": "Exportación cancelada.",
+    "exportFailed": "La exportación falló.",
+    "passwordSet": "Contraseña actualizada.",
+    "passwordReset": "Protección por contraseña desactivada.",
+    "reset": "Reiniciar Baúl.",
+    "error": "Ha ocurrido un error."
+  }
+}
