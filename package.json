@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@actions/github": "^5.1.1",
-    "@commitlint/cli": "^17.4.4",
+    "@commitlint/cli": "^17.6.3",
     "@commitlint/config-conventional": "^17.4.4",
     "@ptsecurity/commitlint-config": "^2.0.0",
     "@tauri-apps/cli": "1.2.3",
