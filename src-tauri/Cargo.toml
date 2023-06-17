@@ -5,20 +5,21 @@ description = "A cross-platform TOTP authentication client built with tauri"
 authors = ["philippwalter@pm.me"]
 license = "GPL-3.0 License"
 repository = "https://github.com/pwltr/tauthy"
-default-run = "tauthy"
-edition = "2018"
-build = "src/build.rs"
+edition = "2021"
 
-[dependencies]
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-otp = { git = "https://github.com/TimDumol/rust-otp" }
-tauri = { version = "1.2.4", features = ["clipboard-write-text", "dialog-open", "dialog-save", "fs-all", "os-all", "path-all", "shell-open", "updater"] }
-tauri-plugin-stronghold = { path = "../tauri-plugin-stronghold" }
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.2.1", features = [] }
+tauri-build = { version = "1.4", features = [] }
+
+[dependencies]
+otp = { git = "https://github.com/TimDumol/rust-otp" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "1.4", features = ["clipboard-write-text", "dialog-open", "dialog-save", "fs-all", "os-all", "path-all", "shell-open", "updater"] }
+tauri-plugin-stronghold = { path = "../tauri-plugin-stronghold" }
 
 [features]
-default = ["custom-protocol"]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]

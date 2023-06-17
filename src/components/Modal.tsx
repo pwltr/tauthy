@@ -1,4 +1,4 @@
-import { styled, lighten } from '@mui/material/styles'
+import { styled } from '@mui/material/styles'
 import MuiModal from '@mui/material/Modal'
 import Box from '@mui/material/Box'
 

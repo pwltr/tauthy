@@ -1,4 +1,4 @@
-import { useState, useContext, MouseEvent } from 'react'
+import { useState, useContext, MouseEvent, ChangeEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled, lighten } from '@mui/material/styles'
@@ -157,7 +157,7 @@ const AppBar = () => {
               autoFocus
               placeholder={t('appBar.search')}
               inputProps={{ 'aria-label': t('appBar.search') }}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
             />
           ) : (
             <PageTitle variant="h6" noWrap>

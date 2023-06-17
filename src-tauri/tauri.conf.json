@@ -4,10 +4,11 @@
     "version": "0.2.5"
   },
   "build": {
-    "distDir": "../dist",
-    "devPath": "http://localhost:3000",
     "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build"
+    "beforeBuildCommand": "yarn build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": false
   },
   "tauri": {
     "bundle": {
@@ -24,7 +25,7 @@
       "resources": [],
       "externalBin": [],
       "copyright": "GPL-3.0",
-      "category": "Productivity",
+      "category": "Security",
       "shortDescription": "Cross-platform TOTP authentication client",
       "longDescription": "A cross-platform TOTP authentication client built with tauri",
       "deb": {
