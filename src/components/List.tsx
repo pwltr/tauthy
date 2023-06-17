@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { clipboard } from '@tauri-apps/api'
@@ -72,14 +72,14 @@ const List = ({ className, entries }: ListProps) => {
   const [activeEntry, setActiveEntry] = useState<ListEntry | null>(null)
   const [openQRCodeModal, setOpenQRCodeModal] = useState(false)
 
-  const filteredEntries = [...entries].filter(
+  const filteredEntries = entries.filter(
     (entry) =>
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.issuer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.group?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const sortedEntries = [...filteredEntries].sort((a, b) => {
+  const sortedEntries = filteredEntries.sort((a, b) => {
     if (sorting === 'a-z') {
       return a.name < b.name ? -1 : 1
     }
@@ -88,6 +88,32 @@ const List = ({ className, entries }: ListProps) => {
     }
     return 0
   })
+
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+        event.preventDefault()
+
+        if (filteredEntries.length === 1 && filteredEntries[0].token) {
+          copyToClipboard(filteredEntries[0].token)
+        }
+      }
+    }
+
+    window.addEventListener('keypress', handleKeyPress)
+
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress)
+    }
+  }, [filteredEntries.length === 1, filteredEntries[0]?.token])
+
+  const copyToClipboard = (text: string) => {
+    clipboard.writeText(String(text))
+    toast.success(t('toasts.copied'), {
+      id: 'clipboard',
+      duration: 1200,
+    })
+  }
 
   return (
     <>
@@ -132,11 +158,7 @@ const List = ({ className, entries }: ListProps) => {
                   }
                   onClick={() => {
                     if (entry.token) {
-                      clipboard.writeText(String(entry.token))
-                      toast.success(t('toasts.copied'), {
-                        id: 'clipboard',
-                        duration: 1200,
-                      })
+                      copyToClipboard(entry.token)
                     }
                   }}
                 >

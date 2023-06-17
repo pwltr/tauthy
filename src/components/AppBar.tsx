@@ -1,4 +1,4 @@
-import { useState, useContext, MouseEvent, ChangeEvent } from 'react'
+import { useState, useContext, MouseEvent, ChangeEvent, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled, lighten } from '@mui/material/styles'
@@ -46,16 +46,33 @@ const AppBar = () => {
   const { t } = useTranslation()
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { appBarTitle } = useContext(AppBarTitleContext)
-  const { setSearch } = useContext(SearchContext)
+  const { searchTerm, setSearch } = useContext(SearchContext)
   const { setSorting } = useContext(SortContext)
   const location = useLocation()
   const navigate = useNavigate()
 
-  const [isSearching, setIsSearching] = useState(false)
+  const [isSearching, setIsSearching] = useState(!!searchTerm)
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null)
   const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null)
   const isMenuSortOpen = Boolean(sortAnchorEl)
   const isMenuMoreOpen = Boolean(moreAnchorEl)
+
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSearch('')
+        setIsSearching(false)
+      } else {
+        setIsSearching(true)
+      }
+    }
+
+    window.addEventListener('keypress', handleKeyPress)
+
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress)
+    }
+  }, [])
 
   const handleNavigate = async (path: string) => {
     setMoreAnchorEl(null)
@@ -157,6 +174,7 @@ const AppBar = () => {
               autoFocus
               placeholder={t('appBar.search')}
               inputProps={{ 'aria-label': t('appBar.search') }}
+              value={searchTerm}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
             />
           ) : (
