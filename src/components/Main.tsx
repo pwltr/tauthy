@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Outlet } from 'react-router-dom'
+import { useIdleTimer } from 'react-idle-timer'
 import { styled } from '@mui/material/styles'
 
 import { vault } from '~/App'
@@ -16,6 +17,8 @@ const Wrapper = styled('div')`
 const Main = () => {
   const navigate = useNavigate()
   const [showWelcome] = useLocalStorage('showWelcome', true)
+  const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
+  const [shouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -61,6 +64,21 @@ const Main = () => {
 
     setupVault()
   }, [])
+
+  // Lock vault after idle
+  useIdleTimer({
+    timeout: 60000,
+    onIdle: async () => {
+      if (isPasswordSet && shouldAutoLock) {
+        try {
+          await vault.lock()
+          navigate('unlock')
+        } catch (err) {
+          console.error(err)
+        }
+      }
+    },
+  })
 
   if (isLoading || showWelcome) {
     return null

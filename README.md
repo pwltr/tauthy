@@ -25,7 +25,7 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 - fully offline
 - import / export
 - multi-language
-- all your favorite themes
+- OS native themes
 
 ## Screenshots
 
@@ -43,15 +43,13 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 - [x] automatic updates
 - [x] custom sorting
-- [ ] auto-lock after idle
+- [x] auto-lock after idle
 - [ ] support other import files
 - [ ] QR code scanning
 - [ ] Nextcloud sync
-- [ ] support YubiKey / hardware authentication
+- [ ] support YubiKey / hardware authentication / biometrics
 - [ ] support HOTP
-- [ ] add more standard themes (Solarized etc.)
 - [ ] automatic backups
-- [ ] support biometrics
 
 ## Credits
 

@@ -7018,6 +7018,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-idle-timer@npm:^5.7.2":
+  version: 5.7.2
+  resolution: "react-idle-timer@npm:5.7.2"
+  peerDependencies:
+    react: ">=16"
+    react-dom: ">=16"
+  checksum: 6faf3cfa87c9d65ae7a87078a2d82db5b821936a45565a98d69e7341e4b4acd5610b1f26cf1a6809b5551e4c30357f2ab5ce729c4c33751f66cb9ce6072dfb02
+  languageName: node
+  linkType: hard
+
 "react-is@npm:^16.13.1, react-is@npm:^16.7.0":
   version: 16.13.1
   resolution: "react-is@npm:16.13.1"
@@ -8080,6 +8090,7 @@ __metadata:
     react-dom: ^18.2.0
     react-hot-toast: ^2.4.1
     react-i18next: ^13.0.0
+    react-idle-timer: ^5.7.2
     react-router-dom: ^6.13.0
     react-window: ^1.8.9
     styled-components: 6.0.0-rc.3
