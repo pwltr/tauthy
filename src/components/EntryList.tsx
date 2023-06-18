@@ -61,10 +61,10 @@ const EntryList = ({ className, entries }: ListProps) => {
       }
     }
 
-    window.addEventListener('keypress', handleKeyPress)
+    window.addEventListener('keydown', handleKeyPress)
 
     return () => {
-      window.removeEventListener('keypress', handleKeyPress)
+      window.removeEventListener('keydown', handleKeyPress)
     }
   }, [filteredEntries.length === 1, filteredEntries[0]?.token])
 

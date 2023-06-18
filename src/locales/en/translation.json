@@ -43,7 +43,7 @@
   "settings": {
     "pageTitle": "Settings",
     "appearance": "Appearance",
-    "appearanceDescription": "Change the theme or the density of entries",
+    "appearanceDescription": "Change app theme or language",
     "security": "Security",
     "securityDescription": "Configure encryption and auto-lock",
     "import": "Import & Export",
@@ -67,7 +67,7 @@
     "passwordResetDescription": "Remove password protection",
     "behaviour": "Behaviour",
     "autoLock": "Auto-Lock",
-    "autoLockDescription": "Lock automatically after 1 minute inactivity"
+    "autoLockDescription": "Lock app after 1 minute of inactivity"
   },
   "import": {
     "pageTitle": "Import & Export",
