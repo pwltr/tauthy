@@ -10,7 +10,7 @@ import { vault } from '~/App'
 import { useInterval } from '~/hooks/useInterval'
 import { generateTOTP } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
-import List from '~/components/List'
+import EntryList from '~/components/EntryList'
 import type { VaultEntry } from '~/types'
 
 export type ListEntry = VaultEntry & {
@@ -29,7 +29,7 @@ const StyledProgressBar = styled(ProgressBar)<{ animate: boolean }>`
     `}
 `
 
-const StyledList = styled(List)`
+const StyledList = styled(EntryList)`
   height: 400px;
   overflow: auto;
   padding-bottom: 3rem;

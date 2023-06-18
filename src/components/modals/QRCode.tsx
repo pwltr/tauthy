@@ -48,31 +48,29 @@ const QRCodeModal = ({
   entry: ListEntry
   open: boolean
   onClose: () => void
-}) => {
-  return (
-    <Modal open={open} onClose={onClose}>
-      <Container onClick={onClose}>
-        <Code>
-          <QRCodeSVG
-            value={getOtpUri(entry.name, entry.secret, entry.issuer, entry.group)}
-            size={280}
+}) => (
+  <Modal open={open} onClose={onClose}>
+    <Container onClick={onClose}>
+      <Code>
+        <QRCodeSVG
+          value={getOtpUri(entry.name, entry.secret, entry.issuer, entry.group)}
+          size={280}
+        />
+
+        {entry.icon && (
+          <Icon
+            dangerouslySetInnerHTML={{
+              __html: Buffer.from(entry.icon, 'base64').toString('utf8'),
+            }}
           />
+        )}
+      </Code>
 
-          {entry.icon && (
-            <Icon
-              dangerouslySetInnerHTML={{
-                __html: Buffer.from(entry.icon, 'base64').toString('utf8'),
-              }}
-            />
-          )}
-        </Code>
-
-        <Text>
-          {entry.name} {entry.issuer && `(${entry.issuer})`}
-        </Text>
-      </Container>
-    </Modal>
-  )
-}
+      <Text>
+        {entry.name} {entry.issuer && `(${entry.issuer})`}
+      </Text>
+    </Container>
+  </Modal>
+)
 
 export default QRCodeModal

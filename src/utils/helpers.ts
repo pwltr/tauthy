@@ -1,4 +1,7 @@
+import { clipboard } from '@tauri-apps/api'
+import { toast } from 'react-hot-toast'
 import { v4 as uuidv4 } from 'uuid'
+import i18n from './i18n'
 
 export const capitalize = (word: string) => {
   return word.charAt(0).toUpperCase() + word.slice(1)
@@ -30,4 +33,19 @@ export const downloadFile = (file: Blob, name: string) => {
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
+}
+
+export const reorderList = <T>(list: T[], startIndex: number, endIndex: number): T[] => {
+  const [removed] = list.splice(startIndex, 1)
+  list.splice(endIndex, 0, removed)
+
+  return list
+}
+
+export const copyToClipboard = (text: string) => {
+  clipboard.writeText(String(text))
+  toast.success(i18n.t('toasts.copied'), {
+    id: 'clipboard',
+    duration: 1200,
+  })
 }

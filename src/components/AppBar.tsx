@@ -18,7 +18,7 @@ import MoreIcon from '@mui/icons-material/MoreVert'
 
 import { vault } from '~/App'
 import { useLocalStorage } from '~/hooks'
-import { AppBarTitleContext, SearchContext, SortContext } from '~/context'
+import { AppBarTitleContext, SearchContext, SortContext, SortOption } from '~/context'
 
 const Toolbar = styled(MuiToolbar)`
   padding-right: 0;
@@ -47,7 +47,7 @@ const AppBar = () => {
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { appBarTitle } = useContext(AppBarTitleContext)
   const { searchTerm, setSearch } = useContext(SearchContext)
-  const { setSorting } = useContext(SortContext)
+  const { sortOption, setSortOption } = useContext(SortContext)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -74,13 +74,13 @@ const AppBar = () => {
     }
   }, [])
 
-  const handleNavigate = async (path: string) => {
+  const handleNavigate = (path: string) => {
     setMoreAnchorEl(null)
     navigate(path)
   }
 
-  const handleSort = async (option: string) => {
-    setSorting(option)
+  const handleSort = (option: SortOption) => {
+    setSortOption(option)
     setSortAnchorEl(null)
   }
 
@@ -110,15 +110,9 @@ const AppBar = () => {
       id={menuMoreId}
       anchorEl={moreAnchorEl}
       open={isMenuMoreOpen}
-      anchorOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
       keepMounted
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       onClose={handleMenuMoreClose}
     >
       {isPasswordSet && <StyledMenuItem onClick={handleLock}>{t('appBar.lock')}</StyledMenuItem>}
@@ -135,20 +129,20 @@ const AppBar = () => {
       id={menuSortId}
       anchorEl={sortAnchorEl}
       open={isMenuSortOpen}
-      anchorOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
       keepMounted
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       onClose={handleMenuSortClose}
     >
-      <MenuItem onClick={() => handleSort('custom')}>{t('appBar.custom')}</MenuItem>
-      <MenuItem onClick={() => handleSort('a-z')}>A-Z</MenuItem>
-      <MenuItem onClick={() => handleSort('z-a')}>Z-A</MenuItem>
+      <MenuItem selected={sortOption === 'custom'} onClick={() => handleSort('custom')}>
+        {t('appBar.custom')}
+      </MenuItem>
+      <MenuItem selected={sortOption === 'a-z'} onClick={() => handleSort('a-z')}>
+        A-Z
+      </MenuItem>
+      <MenuItem selected={sortOption === 'z-a'} onClick={() => handleSort('z-a')}>
+        Z-A
+      </MenuItem>
     </Menu>
   )
 

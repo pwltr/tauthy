@@ -15,6 +15,7 @@ import {
   ListOptionsContext,
   SearchContext,
   SortContext,
+  SortOption,
 } from '~/context'
 
 // init react-i18next
@@ -26,7 +27,8 @@ const App = () => {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
   const [appBarTitle, setAppBarTitle] = useState('Tauthy')
   const [searchTerm, setSearch] = useState('')
-  const [sorting, setSorting] = useLocalStorage('sorting', 'custom')
+  const [sortOption, setSortOption] = useLocalStorage<SortOption>('sortOption', 'custom')
+  const [customOrder, setCustomOrder] = useLocalStorage<string[]>('customOrder', [])
   const [mode, setMode] = useLocalStorage<PaletteMode>('theme', prefersDarkMode ? 'dark' : 'light')
   const [listOptions, setListOptions] = useLocalStorage('listOptions', {
     dense: false,
@@ -39,14 +41,15 @@ const App = () => {
   return (
     <>
       <CssBaseline />
-      {/* @ts-ignore */}
       <GlobalStyle />
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
         <ThemeContext.Provider value={{ theme: mode, setTheme: setMode }}>
           <ListOptionsContext.Provider value={{ ...listOptions, setListOptions }}>
             <SearchContext.Provider value={{ searchTerm, setSearch }}>
-              <SortContext.Provider value={{ sorting, setSorting }}>
+              <SortContext.Provider
+                value={{ sortOption, setSortOption, customOrder, setCustomOrder }}
+              >
                 <ThemeProvider theme={theme}>
                   <AppRouter />
                   <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />

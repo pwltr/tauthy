@@ -42,8 +42,8 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 ## Todo
 
 - [x] automatic updates
+- [x] custom sorting
 - [ ] auto-lock after idle
-- [ ] custom sorting
 - [ ] support other import files
 - [ ] QR code scanning
 - [ ] Nextcloud sync
