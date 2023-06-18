@@ -44,12 +44,12 @@ const StyledMenuItem = styled(MenuItem)(
 
 const AppBar = () => {
   const { t } = useTranslation()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { appBarTitle } = useContext(AppBarTitleContext)
   const { searchTerm, setSearch } = useContext(SearchContext)
   const { sortOption, setSortOption } = useContext(SortContext)
-  const location = useLocation()
-  const navigate = useNavigate()
 
   const [isSearching, setIsSearching] = useState(!!searchTerm)
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null)
@@ -58,12 +58,18 @@ const AppBar = () => {
   const isMenuMoreOpen = Boolean(moreAnchorEl)
 
   useEffect(() => {
+    if (location.pathname !== '/' && searchTerm === '') {
+      setIsSearching(false)
+    }
+
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSearch('')
-        setIsSearching(false)
-      } else {
-        setIsSearching(true)
+      if (location.pathname === '/') {
+        if (event.key === 'Escape') {
+          setSearch('')
+          setIsSearching(false)
+        } else {
+          setIsSearching(true)
+        }
       }
     }
 
@@ -72,7 +78,7 @@ const AppBar = () => {
     return () => {
       window.removeEventListener('keypress', handleKeyPress)
     }
-  }, [])
+  }, [location.pathname])
 
   const handleNavigate = (path: string) => {
     setMoreAnchorEl(null)

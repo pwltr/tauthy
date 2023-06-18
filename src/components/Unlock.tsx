@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
@@ -29,6 +29,7 @@ const Button = styled(MuiLoadingButton)`
 const Unlock = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const inputRef = useRef<HTMLInputElement>(null)
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [isDisabled, setIsDisabled] = useState(true)
@@ -69,6 +70,16 @@ const Unlock = () => {
     setTimeout(() => setIsDisabled(false), 2000)
   }, [])
 
+  useEffect(() => {
+    const handleKeyPress = () => inputRef.current?.focus()
+
+    window.addEventListener('keypress', handleKeyPress)
+
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress)
+    }
+  }, [])
+
   return (
     <Container>
       <Typography variant="h4" color="primary" mb={0}>
@@ -81,8 +92,9 @@ const Unlock = () => {
 
       <form onSubmit={onSubmit}>
         <TextField
+          inputRef={inputRef}
           type="password"
-          placeholder={t('unlock.password')}
+          label={t('unlock.password')}
           variant="filled"
           size="small"
           margin="normal"
