@@ -3076,14 +3076,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:^18.2.12":
-  version: 18.2.12
-  resolution: "@types/react@npm:18.2.12"
+"@types/react@npm:^18.2.18":
+  version: 18.2.18
+  resolution: "@types/react@npm:18.2.18"
   dependencies:
     "@types/prop-types": "*"
     "@types/scheduler": "*"
     csstype: ^3.0.2
-  checksum: ad85a7eadaf1b35cfeee9f715b39311420ff46d46e0650377d918b3f888c2e47416037da4a765e1dccd3d1916abd54c105a3bee803c971ba56c955a7768ce976
+  checksum: 2e0d75de2b618e76780019e52478b1bec2b015a9187aea30f84518c0c3ddc639055bdfea50864aece937bad0cb0544d0100b80d30f5461e72fbc1c3c0be8b140
   languageName: node
   linkType: hard
 
@@ -8063,7 +8063,7 @@ __metadata:
     "@ptsecurity/commitlint-config": ^2.0.0
     "@tauri-apps/api": 1.4.0
     "@tauri-apps/cli": 1.4.0
-    "@types/react": ^18.2.12
+    "@types/react": ^18.2.18
     "@types/react-beautiful-dnd": ^13.1.4
     "@types/react-dom": ^18.2.5
     "@types/react-router-dom": ^5.3.3
