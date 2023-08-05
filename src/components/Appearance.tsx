@@ -19,6 +19,12 @@ const languages: { [key: string]: string | undefined } = {
   'en-US': 'English',
   'de-AT': 'Deutsch',
   'de-DE': 'Deutsch',
+  'fr-FR': 'Français',
+  'fr-BE': 'Français',
+  'fr-CA': 'Français',
+  'fr-CH': 'Français',
+  'fr-LU': 'Français',
+  'fr-MC': 'Français',
   'es-ES': 'Español',
   'es-MX': 'Español',
 }

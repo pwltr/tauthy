@@ -1,5 +1,120 @@
 {
+  "welcome": {
+    "beta": "Cette application utilise un logiciel encore en version bêta.",
+    "backup": "Je vais m'assurer de sauvegarder mes données.",
+    "start": "Commençons"
+  },
+  "unlock": {
+    "title": "Coffre-fort verrouillé.",
+    "subtitle": "Entrez le mot de passe pour déverrouiller",
+    "password": "Mot de passe",
+    "invalid": "Mot de passe invalide",
+    "unlock": "Déverrouiller"
+  },
+  "codes": {
+    "empty": "Ajoutez une entrée ou importez une sauvegarde",
+    "invalid": "Secret invalide"
+  },
   "appBar": {
-    "search": "Chercher"
+    "search": "Chercher",
+    "custom": "Personnaliser",
+    "lock": "Verrouiller",
+    "settings": "Paramètres",
+    "about": "À propos"
+  },
+  "create": {
+    "pageTitle": "Ajouter un compte",
+    "name": "Nom",
+    "issuer": "Émetteur (facultatif)",
+    "group": "Groupe (facultatif)",
+    "secret": "Secret",
+    "add": "Ajouter un compte",
+    "editIcon": "Modifier l'icône"
+  },
+  "edit": {
+    "pageTitle": "Modifier le compte",
+    "name": "Nom",
+    "issuer": "Émetteur (facultatif)",
+    "group": "Groupe (facultatif)",
+    "secret": "Secret",
+    "delete": "Supprimer",
+    "save": "Enregistrer"
+  },
+  "settings": {
+    "pageTitle": "Paramètres",
+    "appearance": "Apparence",
+    "appearanceDescription": "Changer le thème de l'application ou la langue",
+    "security": "Sécurité",
+    "securityDescription": "Configurer le chiffrement et le verrouillage automatique",
+    "import": "Importer et exporter",
+    "importDescription": "Importer ou créer des exportations de votre coffre-fort"
+  },
+  "appearance": {
+    "pageTitle": "Apparence",
+    "theme": "Thème",
+    "language": "Langue",
+    "entries": "Entrées",
+    "compact": "Compact",
+    "grouping": "Groupement de 2 chiffres",
+    "editGroups": "Modifier les groupes",
+    "usage": "Utilisation",
+    "minimize": "Réduire à la copie"
+  },
+  "security": {
+    "pageTitle": "Sécurité",
+    "encryption": "Chiffrement",
+    "password": "Changer le mot de passe",
+    "passwordDescription": "Définir un mot de passe pour déverrouiller votre coffre-fort",
+    "passwordReset": "Réinitialiser le mot de passe",
+    "passwordResetDescription": "Supprimer la protection par mot de passe",
+    "behaviour": "Comportement",
+    "autoLock": "Verrouillage automatique",
+    "autoLockDescription": "Verrouiller l'application après 1 minute d'inactivité"
+  },
+  "import": {
+    "pageTitle": "Importer et exporter",
+    "import": "Importer",
+    "importDescription": "Importer des sauvegardes d'autres applications",
+    "export": "Exporter",
+    "exportDescription": "Sauvegarder votre coffre-fort",
+    "reset": "Supprimer le coffre-fort",
+    "resetDescription": "Supprimer le coffre-fort actuel définitivement"
+  },
+  "about": {
+    "pageTitle": "À propos",
+    "openSource": "Open Source",
+    "reportBug": "Signaler un bug",
+    "reportBugDescription": "Ouvrir un problème sur GitHub",
+    "version": "Version",
+    "license": "Licence",
+    "support": "Assistance",
+    "coffee": "Offrez-moi un café"
+  },
+  "modals": {
+    "password": "Choisissez un mot de passe pour votre coffre-fort chiffré",
+    "resetPassword": "Réinitialiser le mot de passe ?",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "repeatPassword": "Répéter le mot de passe",
+    "passwordInsecure": "Le mot de passe doit comporter au moins 8 caractères",
+    "passwordNoMatch": "Les mots de passe ne correspondent pas",
+    "selectImport": "Sélectionner l'importation",
+    "deleteWarning": "Cela supprimera votre coffre-fort et ne pourra pas être annulé. Êtes-vous sûr ?",
+    "noResults": "Aucun résultat correspondant",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "cancel": "Annuler"
+  },
+  "toasts": {
+    "copied": "Copié dans le presse-papiers",
+    "imported": "Coffre-fort importé avec succès",
+    "exportSuccess": "Coffre-fort exporté.",
+    "exportEmpty": "Le coffre-fort est vide.",
+    "exportCancelled": "Exportation annulée.",
+    "exportFailed": "Échec de l'exportation.",
+    "passwordSet": "Mot de passe modifié.",
+    "passwordReset": "Protection par mot de passe supprimée.",
+    "reset": "Coffre-fort réinitialisé.",
+    "error": "Une erreur s'est produite."
   }
 }

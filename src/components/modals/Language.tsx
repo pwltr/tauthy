@@ -29,11 +29,11 @@ const Language = ({ open, onClose }: { open: boolean; onClose: () => void }) => 
           </ListItemButton>
         </ListItem>
 
-        {/* <ListItem disablePadding onClick={() => handleClick('fr-FR')}>
+        <ListItem disablePadding onClick={() => handleClick('fr-FR')}>
           <ListItemButton>
             <ListItemText primary="French" />
           </ListItemButton>
-        </ListItem> */}
+        </ListItem>
 
         <ListItem disablePadding onClick={() => handleClick('es-ES')}>
           <ListItemButton>
