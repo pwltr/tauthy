@@ -56,7 +56,9 @@
     "entries": "Liste",
     "compact": "Kompakt",
     "grouping": "Zweier-Gruppierung",
-    "editGroups": "Gruppen bearbeiten"
+    "editGroups": "Gruppen bearbeiten",
+    "usage": "Benutzung",
+    "minimize": "Nach dem Kopieren minimieren"
   },
   "security": {
     "pageTitle": "Sicherheit",

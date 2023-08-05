@@ -1,3 +1,4 @@
+import { appWindow } from '@tauri-apps/api/window'
 import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Buffer } from 'buffer'
@@ -15,7 +16,7 @@ import CopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
 
 import { ListEntry } from './Codes'
-import { ListOptionsContext } from '~/context'
+import { AppSettingsContext, ListOptionsContext } from '~/context'
 import { copyToClipboard } from '~/utils'
 
 const ListItem = styled(MuiListItem)`
@@ -61,7 +62,16 @@ export type EntryListItemProps = {
 
 const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
   const navigate = useNavigate()
+  const { minimizeOnCopy } = useContext(AppSettingsContext)
   const { groupByTwos } = useContext(ListOptionsContext)
+
+  const onCopy = async (token: string) => {
+    copyToClipboard(token)
+
+    if (minimizeOnCopy) {
+      await appWindow.minimize()
+    }
+  }
 
   return (
     <Draggable draggableId={item.uuid} index={index}>
@@ -103,7 +113,7 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
           }
           onClick={() => {
             if (item.token) {
-              copyToClipboard(item.token)
+              onCopy(item.token)
             }
           }}
         >

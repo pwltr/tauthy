@@ -7,6 +7,7 @@ import ListItemText from '@mui/material/ListItemText'
 
 import { AppBarTitleContext } from '~/context'
 import { exportCodes } from '~/utils'
+import ListSection from '~/components/ListSection'
 import ListItem from '~/components/ListItem'
 import ImportModal from '~/components/modals/Import'
 import ResetModal from '~/components/modals/Reset'
@@ -39,23 +40,31 @@ const Import = () => {
   return (
     <>
       <List>
-        <ListItem disablePadding onClick={handleOpenImportModal}>
-          <ListItemButton>
-            <ListItemText primary={t('import.import')} secondary={t('import.importDescription')} />
-          </ListItemButton>
-        </ListItem>
+        <ListSection>
+          <ListItem disablePadding onClick={handleOpenImportModal}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('import.import')}
+                secondary={t('import.importDescription')}
+              />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem disablePadding onClick={handleExportVault}>
-          <ListItemButton>
-            <ListItemText primary={t('import.export')} secondary={t('import.exportDescription')} />
-          </ListItemButton>
-        </ListItem>
+          <ListItem disablePadding onClick={handleExportVault}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('import.export')}
+                secondary={t('import.exportDescription')}
+              />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem disablePadding onClick={handleOpenResetModal}>
-          <ListItemButton>
-            <ListItemText primary={t('import.reset')} secondary={t('import.resetDescription')} />
-          </ListItemButton>
-        </ListItem>
+          <ListItem disablePadding onClick={handleOpenResetModal}>
+            <ListItemButton>
+              <ListItemText primary={t('import.reset')} secondary={t('import.resetDescription')} />
+            </ListItemButton>
+          </ListItem>
+        </ListSection>
       </List>
 
       <ImportModal open={isImportModalOpen} onClose={handleCloseImportModal} />

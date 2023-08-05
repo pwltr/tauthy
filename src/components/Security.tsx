@@ -4,12 +4,13 @@ import Switch from '@mui/material/Switch'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
-import ListSubheader from '@mui/material/ListSubheader'
 
 import { useLocalStorage } from '~/hooks'
 import { AppBarTitleContext } from '~/context'
 import PasswordModal from '~/components/modals/Password'
 import PasswordResetModal from '~/components/modals/PasswordReset'
+import ListSection from '~/components/ListSection'
+import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
 
 const Security = () => {
@@ -33,42 +34,46 @@ const Security = () => {
   return (
     <>
       <List>
-        <ListSubheader>{t('security.encryption')}</ListSubheader>
-        <ListItem disablePadding onClick={handleOpenPasswordModal}>
-          <ListItemButton>
-            <ListItemText
-              primary={t('security.password')}
-              secondary={t('security.passwordDescription')}
-            />
-          </ListItemButton>
-        </ListItem>
+        <ListSection>
+          <ListSubheader>{t('security.encryption')}</ListSubheader>
+          <ListItem disablePadding onClick={handleOpenPasswordModal}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('security.password')}
+                secondary={t('security.passwordDescription')}
+              />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem
-          disablePadding
-          disabled={!isPasswordSet}
-          onClick={() => (isPasswordSet ? handleOpenPasswordResetModal() : null)}
-        >
-          <ListItemButton>
-            <ListItemText
-              primary={t('security.passwordReset')}
-              secondary={t('security.passwordResetDescription')}
-            />
-          </ListItemButton>
-        </ListItem>
+          <ListItem
+            disablePadding
+            disabled={!isPasswordSet}
+            onClick={() => (isPasswordSet ? handleOpenPasswordResetModal() : null)}
+          >
+            <ListItemButton>
+              <ListItemText
+                primary={t('security.passwordReset')}
+                secondary={t('security.passwordResetDescription')}
+              />
+            </ListItemButton>
+          </ListItem>
+        </ListSection>
 
-        <ListSubheader>{t('security.behaviour')}</ListSubheader>
-        <ListItem
-          disablePadding
-          secondaryAction={<Switch checked={shouldAutoLock} />}
-          onClick={() => setShouldAutoLock(!shouldAutoLock)}
-        >
-          <ListItemButton>
-            <ListItemText
-              primary={t('security.autoLock')}
-              secondary={t('security.autoLockDescription')}
-            />
-          </ListItemButton>
-        </ListItem>
+        <ListSection>
+          <ListSubheader>{t('security.behaviour')}</ListSubheader>
+          <ListItem
+            disablePadding
+            secondaryAction={<Switch checked={shouldAutoLock} />}
+            onClick={() => setShouldAutoLock(!shouldAutoLock)}
+          >
+            <ListItemButton>
+              <ListItemText
+                primary={t('security.autoLock')}
+                secondary={t('security.autoLockDescription')}
+              />
+            </ListItemButton>
+          </ListItem>
+        </ListSection>
       </List>
 
       <PasswordModal open={openPasswordModal} onClose={handleClosePasswordModal} />

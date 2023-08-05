@@ -56,7 +56,9 @@
     "entries": "Entradas",
     "compact": "Compacto",
     "grouping": "Agrupar por 2 dígitos",
-    "editGroups": "Editar grupos"
+    "editGroups": "Editar grupos",
+    "usage": "Uso",
+    "minimize": "Minimizar después de copiar"
   },
   "security": {
     "pageTitle": "Seguridad",

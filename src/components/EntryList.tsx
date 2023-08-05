@@ -1,3 +1,4 @@
+import { appWindow } from '@tauri-apps/api/window'
 import { useContext, useEffect, useState } from 'react'
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd'
 import Box from '@mui/material/Box'
@@ -5,7 +6,7 @@ import MuiList from '@mui/material/List'
 import Grid from '@mui/material/Grid'
 
 import { copyToClipboard, reorderList } from '~/utils'
-import { ListOptionsContext, SearchContext, SortContext } from '~/context'
+import { AppSettingsContext, ListOptionsContext, SearchContext, SortContext } from '~/context'
 import QRCodeModal from '~/components/modals/QRCode'
 import EntryListItem from './EntryListItem'
 import type { ListEntry } from './Codes'
@@ -18,6 +19,7 @@ type ListProps = {
 const EntryList = ({ className, entries }: ListProps) => {
   const { searchTerm } = useContext(SearchContext)
   const { sortOption, setSortOption, customOrder, setCustomOrder } = useContext(SortContext)
+  const { minimizeOnCopy } = useContext(AppSettingsContext)
   const { dense } = useContext(ListOptionsContext)
   const [qrEntry, setQrEntry] = useState<ListEntry | null>(null)
 
@@ -56,7 +58,7 @@ const EntryList = ({ className, entries }: ListProps) => {
         event.preventDefault()
 
         if (filteredEntries.length === 1 && filteredEntries[0].token) {
-          copyToClipboard(filteredEntries[0].token)
+          onCopy(filteredEntries[0].token)
         }
       }
     }
@@ -67,6 +69,14 @@ const EntryList = ({ className, entries }: ListProps) => {
       window.removeEventListener('keydown', handleKeyPress)
     }
   }, [filteredEntries.length === 1, filteredEntries[0]?.token])
+
+  const onCopy = async (token: string) => {
+    copyToClipboard(token)
+
+    if (minimizeOnCopy) {
+      await appWindow.minimize()
+    }
+  }
 
   const onDragEnd = ({ destination, source }: DropResult) => {
     if (!destination) return

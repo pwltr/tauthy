@@ -78,6 +78,9 @@
         "removeFile": true,
         "renameFile": true,
         "scope": ["$DATA/**"]
+      },
+      "window": {
+        "minimize": true
       }
     },
     "windows": [

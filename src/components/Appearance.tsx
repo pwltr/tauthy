@@ -4,12 +4,13 @@ import Switch from '@mui/material/Switch'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
-import ListSubheader from '@mui/material/ListSubheader'
 
-import { AppBarTitleContext, ThemeContext, ListOptionsContext } from '~/context'
+import { AppBarTitleContext, ThemeContext, AppSettingsContext, ListOptionsContext } from '~/context'
 import { capitalize } from '~/utils'
 import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
+import ListSection from '~/components/ListSection'
+import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
 
 // TODO: find a better solution for this
@@ -26,6 +27,7 @@ const Appearance = () => {
   const { t, i18n } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const { theme } = useContext(ThemeContext)
+  const { minimizeOnCopy, setAppSettings } = useContext(AppSettingsContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
   const [openThemeModal, setOpenThemeModal] = useState(false)
   const [openLanguageModal, setOpenLanguageModal] = useState(false)
@@ -42,45 +44,65 @@ const Appearance = () => {
   return (
     <>
       <List>
-        <ListSubheader>App</ListSubheader>
-        <ListItem disablePadding onClick={handleOpenThemeModal}>
-          <ListItemButton>
-            <ListItemText primary={t('appearance.theme')} secondary={capitalize(theme)} />
-          </ListItemButton>
-        </ListItem>
+        <ListSection>
+          <ListSubheader>App</ListSubheader>
+          <ListItem disablePadding onClick={handleOpenThemeModal}>
+            <ListItemButton>
+              <ListItemText primary={t('appearance.theme')} secondary={capitalize(theme)} />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem disablePadding onClick={handleOpenLanguageModal}>
-          <ListItemButton>
-            <ListItemText primary={t('appearance.language')} secondary={languages[i18n.language]} />
-          </ListItemButton>
-        </ListItem>
+          <ListItem disablePadding onClick={handleOpenLanguageModal}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('appearance.language')}
+                secondary={languages[i18n.language]}
+              />
+            </ListItemButton>
+          </ListItem>
+        </ListSection>
 
-        <ListSubheader>{t('appearance.entries')}</ListSubheader>
-        <ListItem
-          disablePadding
-          onClick={() => setListOptions({ dense: !dense, groupByTwos })}
-          secondaryAction={<Switch checked={dense} />}
-        >
-          <ListItemButton>
-            <ListItemText primary={t('appearance.compact')} />
-          </ListItemButton>
-        </ListItem>
+        <ListSection>
+          <ListSubheader>{t('appearance.entries')}</ListSubheader>
+          <ListItem
+            disablePadding
+            secondaryAction={<Switch checked={dense} />}
+            onClick={() => setListOptions({ dense: !dense, groupByTwos })}
+          >
+            <ListItemButton>
+              <ListItemText primary={t('appearance.compact')} />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem
-          disablePadding
-          onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
-          secondaryAction={<Switch checked={groupByTwos} />}
-        >
-          <ListItemButton>
-            <ListItemText primary={t('appearance.grouping')} />
-          </ListItemButton>
-        </ListItem>
+          <ListItem
+            disablePadding
+            secondaryAction={<Switch checked={groupByTwos} />}
+            onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
+          >
+            <ListItemButton>
+              <ListItemText primary={t('appearance.grouping')} />
+            </ListItemButton>
+          </ListItem>
 
-        {/* <ListItem disablePadding onClick={() => setListOptions({ dense: !dense, groupByTwos })}>
+          {/* <ListItem disablePadding onClick={() => setListOptions({ dense: !dense, groupByTwos })}>
           <ListItemButton>
-            <ListItemText primary="Edit groups" />
+          <ListItemText primary="Edit groups" />
           </ListItemButton>
         </ListItem> */}
+        </ListSection>
+
+        <ListSection>
+          <ListSubheader>{t('appearance.usage')}</ListSubheader>
+          <ListItem
+            disablePadding
+            secondaryAction={<Switch checked={minimizeOnCopy} />}
+            onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy })}
+          >
+            <ListItemButton>
+              <ListItemText primary={t('appearance.minimize')} />
+            </ListItemButton>
+          </ListItem>
+        </ListSection>
       </List>
 
       <ThemeModal open={openThemeModal} onClose={handleCloseThemeModal} />

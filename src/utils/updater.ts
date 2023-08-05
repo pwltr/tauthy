@@ -4,7 +4,7 @@ import { updater } from '@tauri-apps/api'
 export const checkUpdate = async () => {
   try {
     console.log('checking for update')
-    const { shouldUpdate, manifest } = await updater.checkUpdate()
+    const { shouldUpdate } = await updater.checkUpdate()
     console.log('shouldUpdate', shouldUpdate)
     // shouldUpdate && store.setUpdater({ active: true, version: manifest?.version })
     return shouldUpdate

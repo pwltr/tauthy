@@ -12,6 +12,7 @@ import AppDebugger from '~/components/AppDebugger'
 import {
   AppBarTitleContext,
   ThemeContext,
+  AppSettingsContext,
   ListOptionsContext,
   SearchContext,
   SortContext,
@@ -30,6 +31,9 @@ const App = () => {
   const [sortOption, setSortOption] = useLocalStorage<SortOption>('sortOption', 'custom')
   const [customOrder, setCustomOrder] = useLocalStorage<string[]>('customOrder', [])
   const [mode, setMode] = useLocalStorage<PaletteMode>('theme', prefersDarkMode ? 'dark' : 'light')
+  const [appSettings, setAppSettings] = useLocalStorage('appSettings', {
+    minimizeOnCopy: false,
+  })
   const [listOptions, setListOptions] = useLocalStorage('listOptions', {
     dense: false,
     groupByTwos: false,
@@ -45,20 +49,22 @@ const App = () => {
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
         <ThemeContext.Provider value={{ theme: mode, setTheme: setMode }}>
-          <ListOptionsContext.Provider value={{ ...listOptions, setListOptions }}>
-            <SearchContext.Provider value={{ searchTerm, setSearch }}>
-              <SortContext.Provider
-                value={{ sortOption, setSortOption, customOrder, setCustomOrder }}
-              >
-                <ThemeProvider theme={theme}>
-                  <AppRouter />
-                  <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
+          <AppSettingsContext.Provider value={{ ...appSettings, setAppSettings }}>
+            <ListOptionsContext.Provider value={{ ...listOptions, setListOptions }}>
+              <SearchContext.Provider value={{ searchTerm, setSearch }}>
+                <SortContext.Provider
+                  value={{ sortOption, setSortOption, customOrder, setCustomOrder }}
+                >
+                  <ThemeProvider theme={theme}>
+                    <AppRouter />
+                    <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
 
-                  {import.meta.env.DEV && <AppDebugger />}
-                </ThemeProvider>
-              </SortContext.Provider>
-            </SearchContext.Provider>
-          </ListOptionsContext.Provider>
+                    {import.meta.env.DEV && <AppDebugger />}
+                  </ThemeProvider>
+                </SortContext.Provider>
+              </SearchContext.Provider>
+            </ListOptionsContext.Provider>
+          </AppSettingsContext.Provider>
         </ThemeContext.Provider>
       </AppBarTitleContext.Provider>
     </>

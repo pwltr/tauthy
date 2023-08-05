@@ -17,6 +17,14 @@ export const ThemeContext = createContext<{
   setTheme: () => {},
 })
 
+export const AppSettingsContext = createContext<{
+  minimizeOnCopy: boolean
+  setAppSettings: (options: { minimizeOnCopy: boolean }) => void
+}>({
+  minimizeOnCopy: false,
+  setAppSettings: () => {},
+})
+
 export const ListOptionsContext = createContext<{
   dense: boolean
   groupByTwos: boolean
