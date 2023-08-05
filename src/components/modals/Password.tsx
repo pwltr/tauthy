@@ -63,6 +63,7 @@ const PasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }
         size="small"
         fullWidth
         margin="normal"
+        autoComplete="off"
         error={!!error}
         onChange={(event) => setNewPassword(event.target.value)}
       />
@@ -73,6 +74,7 @@ const PasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }
         size="small"
         fullWidth
         margin="normal"
+        autoComplete="off"
         helperText={!!error && error}
         error={!!error}
         onChange={(event) => setConfirmPassword(event.target.value)}

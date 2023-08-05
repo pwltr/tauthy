@@ -98,6 +98,7 @@ const Unlock = () => {
           variant="filled"
           size="small"
           margin="normal"
+          autoComplete="off"
           helperText={error ? t('unlock.invalid') : ' '}
           error={error}
           fullWidth

@@ -85,6 +85,7 @@ const IconsModal = ({
         autoFocus
         fullWidth
         margin="normal"
+        autoComplete="off"
         onChange={onInputChange}
       />
 

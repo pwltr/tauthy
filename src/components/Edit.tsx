@@ -167,6 +167,7 @@ const Edit = () => {
               size="small"
               fullWidth
               margin="normal"
+              autoComplete="off"
               onChange={(event) => onChange('name', event.target.value)}
             />
             <TextField
@@ -194,6 +195,7 @@ const Edit = () => {
               size="small"
               fullWidth
               margin="normal"
+              autoComplete="off"
               onChange={(event) => onChange('secret', event.target.value)}
             />
           </FormGroup>
