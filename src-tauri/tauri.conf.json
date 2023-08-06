@@ -46,8 +46,9 @@
     },
     "updater": {
       "active": true,
+      "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE3MERFQUNBN0E3RUI2QjEKUldTeHRuNTZ5dW9ORjJTcTBhUFQrVU5ocUNuRVBMSkMxcXJsTS9qRnFjeGs5U1FjMWJMRmVheGwK",
-      "endpoints": ["https://github.com/pwltr/tauthy/releases/download/updater/release.json"]
+      "endpoints": ["https://github.com/pwltr/tauthy/releases/latest/download/latest.json"]
     },
     "allowlist": {
       "all": false,
