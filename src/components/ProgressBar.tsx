@@ -6,10 +6,11 @@ const Wrapper = styled('div')(
     display: flex;
     height: 5px;
     width: 100%;
+    transform-origin: left;
 
     @keyframes slide {
-      from {max-width: 100%;}
-      to {max-width: 0%;}
+      from {transform: scaleX(1);}
+      to {transform: scaleX(0);}
     }
 
     animation: 30s slide infinite linear;
