@@ -31,6 +31,7 @@ const Icon = styled('div')`
 `
 
 const Avatar = styled(MuiAvatar)`
+  font-size: 2rem;
   height: 70px;
   width: 70px;
 
@@ -110,22 +111,34 @@ const Create = () => {
     }
   }
 
+  const getIcon = () => {
+    if (form.icon) {
+      return (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: Buffer.from(form.icon, 'base64').toString('utf8'),
+          }}
+        />
+      )
+    }
+
+    if (form.name) {
+      return <Avatar>{form.name.charAt(0).toUpperCase()}</Avatar>
+    }
+
+    return (
+      <Avatar>
+        <DescriptionIcon />
+      </Avatar>
+    )
+  }
+
   return (
     <>
       <Box p={4}>
         <IconWrapper>
           <Icon onClick={() => setOpenIconsModal(true)}>
-            {form.icon ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: Buffer.from(form.icon, 'base64').toString('utf8'),
-                }}
-              />
-            ) : (
-              <Avatar>
-                <DescriptionIcon />
-              </Avatar>
-            )}
+            {getIcon()}
 
             <div title={t('create.editIcon')}>
               <EditIcon />
@@ -188,8 +201,8 @@ const Create = () => {
       </Box>
 
       <IconsModal
-        onIconClick={onIconClick}
         open={openIconsModal}
+        onIconClick={onIconClick}
         onClose={() => setOpenIconsModal(false)}
       />
     </>

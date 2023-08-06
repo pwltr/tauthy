@@ -10,7 +10,6 @@ import ListItemText from '@mui/material/ListItemText'
 import Avatar from '@mui/material/Avatar'
 import IconButton from '@mui/material/IconButton'
 import { styled } from '@mui/material/styles'
-import DescriptionIcon from '@mui/icons-material/Description'
 import QrCodeIcon from '@mui/icons-material/QrCode'
 import CopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
@@ -127,7 +126,7 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
                     }}
                   />
                 ) : (
-                  <DescriptionIcon />
+                  item.name.charAt(0).toUpperCase()
                 )}
               </Avatar>
             </ListItemAvatar>

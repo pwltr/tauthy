@@ -37,8 +37,8 @@ const Text = styled('div')`
 `
 
 const IconsModal = ({
-  onIconClick,
   open,
+  onIconClick,
   onClose,
 }: {
   open: boolean
