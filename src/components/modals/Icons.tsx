@@ -7,7 +7,7 @@ import TextField from '@mui/material/TextField'
 import { imageToBase64 } from '~/utils'
 import Modal from '~/components/Modal'
 
-const modules = import.meta.globEager('../../../assets/*.svg')
+const modules = import.meta.glob('../../../assets/*.svg', { eager: true })
 const urls = Object.keys(modules).map((path) => new URL(path, import.meta.url).toString())
 const sortedIcons = urls.sort((a, b) => (a.toUpperCase() < b.toUpperCase() ? -1 : 1))
 const icons = sortedIcons.map((url) => ({
@@ -20,7 +20,6 @@ type Icon = {
   url: string
 }
 
-// @ts-ignore
 const Grid = styled(FixedSizeGrid)`
   margin-top: 1rem;
 `
