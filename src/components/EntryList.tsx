@@ -35,9 +35,10 @@ const EntryList = ({ className, entries }: ListProps) => {
       })
     }
     if (sortOption === 'custom' && customOrder.length) {
-      return customOrder.map((uuid) => {
-        return entries.find((i) => i.uuid === uuid)!
-      })
+      const existing = customOrder.filter((uuid) => entries.find((i) => i.uuid === uuid))
+      const sorted = existing.map((uuid) => entries.find((i) => i.uuid === uuid)!)
+      const unsorted = entries.filter((entry) => !existing.includes(entry.uuid))
+      return [...sorted, ...unsorted]
     }
     return entries
   }
