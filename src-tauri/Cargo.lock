@@ -5139,7 +5139,7 @@ dependencies = [
 
 [[package]]
 name = "tauthy"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "otp",
  "serde 1.0.164",

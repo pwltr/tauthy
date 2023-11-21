@@ -1,6 +1,6 @@
 [package]
 name = "tauthy"
-version = "0.2.6"
+version = "0.2.7"
 description = "A cross-platform TOTP authentication client built with tauri"
 authors = ["philippwalter@pm.me"]
 license = "GPL-3.0 License"
