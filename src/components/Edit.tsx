@@ -196,7 +196,7 @@ const Edit = () => {
               fullWidth
               margin="normal"
               autoComplete="off"
-              onChange={(event) => onChange('secret', event.target.value)}
+              onChange={(event) => onChange('secret', event.target.value.replace(/\s/g, ''))}
             />
           </FormGroup>
 
