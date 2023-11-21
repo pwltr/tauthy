@@ -1,8 +1,8 @@
 import { appWindow } from '@tauri-apps/api/window'
-import { useContext } from 'react'
+import { FC, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Buffer } from 'buffer'
-import { Draggable } from 'react-beautiful-dnd'
+import { DraggableProps, Draggable as _Draggable } from 'react-beautiful-dnd'
 import MuiListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
@@ -17,6 +17,9 @@ import EditIcon from '@mui/icons-material/Edit'
 import { ListEntry } from './Codes'
 import { AppSettingsContext, ListOptionsContext } from '~/context'
 import { copyToClipboard } from '~/utils'
+
+// HACK: this fixes type incompatibility
+const Draggable = _Draggable as unknown as FC<DraggableProps>
 
 const ListItem = styled(MuiListItem)`
   cursor: pointer;

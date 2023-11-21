@@ -1,6 +1,12 @@
 import { appWindow } from '@tauri-apps/api/window'
-import { useContext, useEffect, useState } from 'react'
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd'
+import { FC, useContext, useEffect, useState } from 'react'
+import {
+  DragDropContext as _DragDropContext,
+  Droppable as _Droppable,
+  DragDropContextProps,
+  DroppableProps,
+  DropResult,
+} from 'react-beautiful-dnd'
 import Box from '@mui/material/Box'
 import MuiList from '@mui/material/List'
 import Grid from '@mui/material/Grid'
@@ -10,6 +16,10 @@ import { AppSettingsContext, ListOptionsContext, SearchContext, SortContext } fr
 import QRCodeModal from '~/components/modals/QRCode'
 import EntryListItem from './EntryListItem'
 import type { ListEntry } from './Codes'
+
+// HACK: this fixes type incompatibility
+const DragDropContext = _DragDropContext as unknown as FC<DragDropContextProps>
+const Droppable = _Droppable as unknown as FC<DroppableProps>
 
 type ListProps = {
   className?: string
@@ -105,7 +115,7 @@ const EntryList = ({ className, entries }: ListProps) => {
                         setQrEntry={setQrEntry}
                       />
                     ))}
-                    {provided.placeholder}
+                    {provided.placeholder as string}
                   </MuiList>
                 )}
               </Droppable>
