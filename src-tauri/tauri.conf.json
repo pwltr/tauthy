@@ -94,7 +94,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' style-src: 'unsafe-inline'"
+      "csp": "default-src: 'self' style-src: 'unsafe-inline'"
     }
   }
 }

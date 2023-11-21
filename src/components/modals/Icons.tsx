@@ -7,13 +7,14 @@ import TextField from '@mui/material/TextField'
 import { imageToBase64 } from '~/utils'
 import Modal from '~/components/Modal'
 
-const modules = import.meta.glob('../../../assets/*.svg', { eager: true })
-const urls = Object.keys(modules).map((path) => new URL(path, import.meta.url).toString())
-const sortedIcons = urls.sort((a, b) => (a.toUpperCase() < b.toUpperCase() ? -1 : 1))
-const icons = sortedIcons.map((url) => ({
-  name: decodeURIComponent(url.split('assets/').pop()!.split('.svg').shift() as string),
-  url,
-}))
+const modules = import.meta.glob('/assets/*.svg', { as: 'raw', eager: true })
+const icons = Object.entries(modules).map(([key, value]) => {
+  const name = decodeURIComponent(key.split('assets/').pop()!.split('.svg').shift() as string)
+  const svg = new Blob([value], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(svg)
+  return { name, url }
+})
+const sortedIcons = icons.sort((a, b) => (a.name.toUpperCase() < b.name.toUpperCase() ? -1 : 1))
 
 type Icon = {
   name: string
@@ -47,7 +48,7 @@ const IconsModal = ({
   const { t } = useTranslation()
   const [, startTransition] = useTransition()
   const [searchTerm, setSearchTerm] = useState('')
-  const [filteredIcons, setFilteredIcons] = useState(icons)
+  const [filteredIcons, setFilteredIcons] = useState(sortedIcons)
 
   const onInputChange = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const searchTerm = event.target.value
