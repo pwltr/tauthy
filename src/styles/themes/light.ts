@@ -2,9 +2,17 @@ import { type } from '@tauri-apps/api/os'
 import { alpha, lighten, darken } from '@mui/material/styles'
 import { grey } from '@mui/material/colors'
 
-const isMac = (await type()) === 'Darwin'
+const platform = await type()
 
-const primary = isMac ? '#363636' : '#31363b'
+let primary = '#31363b'
+
+if (platform === 'Darwin') {
+  primary = '#363636'
+}
+
+if (platform === 'Windows_NT') {
+  primary = '#191919'
+}
 
 export default {
   mui: {
