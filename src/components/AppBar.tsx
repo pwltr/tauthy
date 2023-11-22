@@ -169,21 +169,21 @@ const AppBar = () => {
             </IconButton>
           )}
 
-          {isSearching && location.pathname === '/' ? (
-            <Search
-              autoFocus
-              placeholder={t('appBar.search')}
-              inputProps={{ 'aria-label': t('appBar.search') }}
-              value={searchTerm}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
-            />
-          ) : (
-            <PageTitle variant="h6" noWrap>
-              {location.pathname === '/' ? <b>Tauthy</b> : appBarTitle}
-            </PageTitle>
-          )}
-
-          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ flexGrow: 1 }} onClick={() => setIsSearching(true)}>
+            {isSearching && location.pathname === '/' ? (
+              <Search
+                autoFocus
+                placeholder={t('appBar.search')}
+                inputProps={{ 'aria-label': t('appBar.search') }}
+                value={searchTerm}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
+              />
+            ) : (
+              <PageTitle variant="h6" noWrap>
+                {location.pathname === '/' ? <b>Tauthy</b> : appBarTitle}
+              </PageTitle>
+            )}
+          </Box>
 
           {location.pathname === '/' && (
             <>

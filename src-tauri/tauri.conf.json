@@ -90,7 +90,11 @@
         "width": 380,
         "height": 700,
         "resizable": false,
-        "fullscreen": false
+        "fullscreen": false,
+        "center": true,
+        "contentProtected": true,
+        "hiddenTitle": true,
+        "acceptFirstMouse": true
       }
     ],
     "security": {
