@@ -441,12 +441,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@commitlint/config-conventional@npm:^18.4.3":
-  version: 18.4.3
-  resolution: "@commitlint/config-conventional@npm:18.4.3"
+"@commitlint/config-conventional@npm:^19.0.3":
+  version: 19.0.3
+  resolution: "@commitlint/config-conventional@npm:19.0.3"
   dependencies:
+    "@commitlint/types": "npm:^19.0.3"
     conventional-changelog-conventionalcommits: "npm:^7.0.2"
-  checksum: bb6c1559979002e79c5e7c575f57fd713638523cdadfa61754eaabb8aad042d688c859e82ccf58589bb9aa2a4497e820702744095c9b82f6018fbb3b5d75d08d
+  checksum: 6fa0aec688739c5da97848ff42d17625f4f81b282a512049f16a2699ecfbbd06673ea04a10dba6d4756414aded858cadccf7b8cb8a50e74174a7268dd7c4b2cc
   languageName: node
   linkType: hard
 
@@ -613,6 +614,16 @@ __metadata:
   dependencies:
     chalk: "npm:^4.1.0"
   checksum: 52dfc0ee835f3030fff25e45b4568e83eef818126a30f60860637c74de4919c5f9f1eab157622bb70facf9483f07898cfcb47efa484caf6443dd866942e460ec
+  languageName: node
+  linkType: hard
+
+"@commitlint/types@npm:^19.0.3":
+  version: 19.0.3
+  resolution: "@commitlint/types@npm:19.0.3"
+  dependencies:
+    "@types/conventional-commits-parser": "npm:^5.0.0"
+    chalk: "npm:^5.3.0"
+  checksum: 44e67f4861f9b137f43a441f8ab255676b7a276c82ca46ba7846ca1057d170af92a87d3e2a1378713dc4e33a68c8af513683cb96dcd29544e48e2c825109ea6f
   languageName: node
   linkType: hard
 
@@ -1698,6 +1709,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/conventional-commits-parser@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "@types/conventional-commits-parser@npm:5.0.0"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 0992617c7274e9ddcbdb30cc5b735fa067343c40e16f539615b3ad9213cacbe9a32483bc8e0302d297c6de9cc7fd3794549635761a66bd9dc220d609822d86e7
+  languageName: node
+  linkType: hard
+
 "@types/history@npm:^4.7.11":
   version: 4.7.11
   resolution: "@types/history@npm:4.7.11"
@@ -1726,6 +1746,15 @@ __metadata:
   version: 1.2.2
   resolution: "@types/minimist@npm:1.2.2"
   checksum: b8da83c66eb4aac0440e64674b19564d9d86c80ae273144db9681e5eeff66f238ade9515f5006ffbfa955ceff8b89ad2bd8ec577d7caee74ba101431fb07045d
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:*":
+  version: 20.11.24
+  resolution: "@types/node@npm:20.11.24"
+  dependencies:
+    undici-types: "npm:~5.26.4"
+  checksum: 7f34bfae5f9b98b9910230af4b4c52dc7fb2d1e96fdebfbc3d7576f8ab3d100076f193f9469add9e7418b455294155e7e6a028498cc5e98f9d49349875a459cf
   languageName: node
   linkType: hard
 
@@ -2489,7 +2518,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chalk@npm:5.3.0":
+"chalk@npm:5.3.0, chalk@npm:^5.3.0":
   version: 5.3.0
   resolution: "chalk@npm:5.3.0"
   checksum: 6373caaab21bd64c405bfc4bd9672b145647fc9482657b5ea1d549b3b2765054e9d3d928870cdf764fb4aad67555f5061538ff247b8310f110c5c888d92397ea
@@ -7001,7 +7030,7 @@ __metadata:
   dependencies:
     "@actions/github": "npm:^6.0.0"
     "@commitlint/cli": "npm:^18.4.3"
-    "@commitlint/config-conventional": "npm:^18.4.3"
+    "@commitlint/config-conventional": "npm:^19.0.3"
     "@mui/icons-material": "npm:^5.14.18"
     "@mui/lab": "npm:5.0.0-alpha.153"
     "@mui/material": "npm:^5.14.18"
