@@ -6038,16 +6038,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-window@npm:^1.8.9":
-  version: 1.8.9
-  resolution: "react-window@npm:1.8.9"
+"react-window@npm:^1.8.10":
+  version: 1.8.10
+  resolution: "react-window@npm:1.8.10"
   dependencies:
     "@babel/runtime": "npm:^7.0.0"
     memoize-one: "npm:>=3.1.1 <6"
   peerDependencies:
     react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
     react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
-  checksum: 946bf990b58cafe054c6a36ae9f56ce084a94ab69366c7bc6c9117d8ec94227fd0d0e8efc39f1aa0f9dc13e29b7f6bb7d0e7284d0c7546a50a9e51465269e221
+  checksum: 6f4a713a2012d605370ef4c7026a45ddd6801e428faa4cad558b12b05ba54c00de72de9a360db109db9666f972a3d955b63af9e5a4cd5fbc52411a382273107b
   languageName: node
   linkType: hard
 
@@ -7038,7 +7038,7 @@ __metadata:
     react-i18next: "npm:^13.5.0"
     react-idle-timer: "npm:^5.7.2"
     react-router-dom: "npm:^6.19.0"
-    react-window: "npm:^1.8.9"
+    react-window: "npm:^1.8.10"
     styled-components: "npm:6.1.1"
     tauri-plugin-stronghold-api: "link:./tauri-plugin-stronghold"
     typescript: "npm:^5.3.2"
