@@ -1,0 +1,27 @@
+{
+  "identifier": "migrated",
+  "description": "permissions that were migrated from v1",
+  "local": true,
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-minimize",
+    "clipboard-manager:allow-write-text",
+    "dialog:allow-ask",
+    "dialog:allow-save",
+    "fs:allow-write-text-file",
+    "fs:allow-copy-file",
+    "fs:allow-mkdir",
+    "fs:allow-remove",
+    {
+      "identifier": "fs:scope",
+      "allow": ["$DATA/**"]
+    },
+    "os:allow-os-type",
+    "process:allow-restart",
+    "shell:allow-open",
+    "updater:default"
+  ]
+}

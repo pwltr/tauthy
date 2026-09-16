@@ -1,89 +1,58 @@
 {
-  "package": {
-    "productName": "Tauthy",
-    "version": "0.2.8"
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "externalBin": [],
+    "copyright": "GPL-3.0",
+    "category": "Utility",
+    "shortDescription": "Tauthy",
+    "longDescription": "A cross-platform TOTP authentication client built with tauri",
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null
+    },
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "createUpdaterArtifacts": "v1Compatible"
   },
   "build": {
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
   },
-  "tauri": {
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.pwltr.tauthy",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "resources": [],
-      "externalBin": [],
-      "copyright": "GPL-3.0",
-      "category": "Utility",
-      "shortDescription": "Tauthy",
-      "longDescription": "A cross-platform TOTP authentication client built with tauri",
-      "deb": {
-        "depends": []
-      },
-      "macOS": {
-        "frameworks": [],
-        "minimumSystemVersion": "",
-        "exceptionDomain": "",
-        "signingIdentity": null,
-        "entitlements": null
-      },
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
+  "productName": "Tauthy",
+  "mainBinaryName": "Tauthy",
+  "version": "0.3.0",
+  "identifier": "com.pwltr.tauthy",
+  "plugins": {
     "updater": {
-      "active": true,
-      "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE3MERFQUNBN0E3RUI2QjEKUldTeHRuNTZ5dW9ORjJTcTBhUFQrVU5ocUNuRVBMSkMxcXJsTS9qRnFjeGs5U1FjMWJMRmVheGwK",
-      "endpoints": ["https://github.com/pwltr/tauthy/releases/latest/download/latest.json"]
-    },
-    "allowlist": {
-      "all": false,
-      "clipboard": {
-        "writeText": true
-      },
-      "dialog": {
-        "all": false,
-        "open": true,
-        "save": true
-      },
-      "shell": {
-        "execute": false,
-        "open": true
-      },
-      "os": {
-        "all": true
-      },
-      "path": {
-        "all": true
-      },
-      "fs": {
-        "all": true,
-        "writeFile": true,
-        "copyFile": true,
-        "createDir": true,
-        "removeDir": true,
-        "removeFile": true,
-        "renameFile": true,
-        "scope": ["$DATA/**"]
-      },
-      "window": {
-        "minimize": true
-      }
-    },
+      "endpoints": [
+        "https://github.com/pwltr/tauthy/releases/latest/download/latest.json"
+      ]
+    }
+  },
+  "app": {
     "windows": [
       {
         "title": "Tauthy",
@@ -94,11 +63,13 @@
         "center": true,
         "contentProtected": true,
         "hiddenTitle": true,
-        "acceptFirstMouse": true
+        "acceptFirstMouse": true,
+        "useHttpsScheme": true
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
-    }
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost"
+    },
+    "withGlobalTauri": false
   }
 }

@@ -1,4 +1,4 @@
-import { appWindow } from '@tauri-apps/api/window'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { FC, useContext, useEffect, useState } from 'react'
 import {
   DragDropContext as _DragDropContext,
@@ -16,6 +16,7 @@ import { AppSettingsContext, ListOptionsContext, SearchContext, SortContext } fr
 import QRCodeModal from '~/components/modals/QRCode'
 import EntryListItem from './EntryListItem'
 import type { ListEntry } from './Codes'
+const appWindow = getCurrentWebviewWindow()
 
 // HACK: this fixes type incompatibility
 const DragDropContext = _DragDropContext as unknown as FC<DragDropContextProps>

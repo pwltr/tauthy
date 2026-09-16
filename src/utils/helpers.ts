@@ -1,4 +1,4 @@
-import { clipboard } from '@tauri-apps/api'
+import { writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { toast } from 'react-hot-toast'
 import { v4 as uuidv4 } from 'uuid'
 import i18n from './i18n'
@@ -43,7 +43,7 @@ export const reorderList = <T>(list: T[], startIndex: number, endIndex: number):
 }
 
 export const copyToClipboard = (text: string) => {
-  clipboard.writeText(String(text))
+  writeText(String(text))
   toast.success(i18n.t('toasts.copied'), {
     id: 'clipboard',
     duration: 1200,

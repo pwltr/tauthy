@@ -1,4 +1,4 @@
-import { type } from '@tauri-apps/api/os'
+import { type } from '@tauri-apps/plugin-os'
 import { lighten, darken } from '@mui/material/styles'
 
 const platform = await type()
@@ -6,12 +6,12 @@ const platform = await type()
 let secondary = '#31363b'
 let background = '#232629'
 
-if (platform === 'Darwin') {
+if (platform === 'macos') {
   secondary = '#363636'
   background = '#282828'
 }
 
-if (platform === 'Windows_NT') {
+if (platform === 'windows') {
   secondary = '#191919'
   background = '#202020'
 }
