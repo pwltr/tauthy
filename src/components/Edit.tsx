@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext, startTransition } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Buffer } from 'buffer'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import FormGroup from '@mui/material/FormGroup'
@@ -29,6 +28,12 @@ const Icon = styled('div')`
   height: 70px;
   width: 70px;
   position: relative;
+`
+
+const ServiceIcon = styled('img')`
+  display: block;
+  height: 100%;
+  width: 100%;
 `
 
 const Avatar = styled(MuiAvatar)`
@@ -141,11 +146,7 @@ const Edit = () => {
         <IconWrapper>
           <Icon onClick={() => setOpenIconsModal(true)}>
             {form.icon ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: Buffer.from(form.icon, 'base64').toString('utf8'),
-                }}
-              />
+              <ServiceIcon src={`data:image/svg+xml;base64,${form.icon}`} alt="" />
             ) : (
               <Avatar>
                 <DescriptionIcon />

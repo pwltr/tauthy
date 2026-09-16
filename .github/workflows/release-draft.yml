@@ -8,21 +8,34 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
+
     runs-on: ${{ matrix.platform }}
 
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.97.0
+
+      - name: Install macOS Rust targets
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -30,19 +43,19 @@ jobs:
           workspaces: './src-tauri -> target'
 
       - name: Setup Node and yarn cache
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: '22'
           cache: 'yarn'
 
       - name: Install dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 librsvg2-dev patchelf
 
       - name: Install dependencies
-        run: yarn
+        run: yarn install --immutable
 
       - name: Build frontend
         run: yarn build
@@ -58,3 +71,4 @@ jobs:
           releaseName: ${{ github.ref_name }}
           releaseDraft: true
           prerelease: false
+          args: ${{ matrix.args }}

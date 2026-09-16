@@ -1,7 +1,7 @@
 {
   "package": {
     "productName": "Tauthy",
-    "version": "0.2.7"
+    "version": "0.2.8"
   },
   "build": {
     "beforeDevCommand": "yarn dev",
@@ -98,7 +98,7 @@
       }
     ],
     "security": {
-      "csp": "default-src: 'self' style-src: 'unsafe-inline'"
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
     }
   }
 }

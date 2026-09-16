@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Buffer } from 'buffer'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import FormGroup from '@mui/material/FormGroup'
@@ -28,6 +27,12 @@ const Icon = styled('div')`
   height: 70px;
   width: 70px;
   position: relative;
+`
+
+const ServiceIcon = styled('img')`
+  display: block;
+  height: 100%;
+  width: 100%;
 `
 
 const Avatar = styled(MuiAvatar)`
@@ -113,13 +118,7 @@ const Create = () => {
 
   const getIcon = () => {
     if (form.icon) {
-      return (
-        <div
-          dangerouslySetInnerHTML={{
-            __html: Buffer.from(form.icon, 'base64').toString('utf8'),
-          }}
-        />
-      )
+      return <ServiceIcon src={`data:image/svg+xml;base64,${form.icon}`} alt="" />
     }
 
     if (form.name) {
