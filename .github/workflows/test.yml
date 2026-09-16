@@ -22,7 +22,7 @@ jobs:
           node-version: 22
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.97.0
+        uses: dtolnay/rust-toolchain@1.120.0
 
       - name: Install native dependencies
         run: |
