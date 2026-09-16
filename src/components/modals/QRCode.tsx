@@ -1,5 +1,4 @@
 import { QRCodeSVG } from 'qrcode.react'
-import { Buffer } from 'buffer'
 import { styled } from '@mui/material/styles'
 
 import Modal from '~/components/Modal'
@@ -29,7 +28,7 @@ const Code = styled('div')`
   padding: 16px;
 `
 
-const Icon = styled('div')`
+const Icon = styled('img')`
   height: 70px;
   width: 70px;
   position: absolute;
@@ -57,13 +56,7 @@ const QRCodeModal = ({
           size={280}
         />
 
-        {entry.icon && (
-          <Icon
-            dangerouslySetInnerHTML={{
-              __html: Buffer.from(entry.icon, 'base64').toString('utf8'),
-            }}
-          />
-        )}
+        {entry.icon && <Icon src={`data:image/svg+xml;base64,${entry.icon}`} alt="" />}
       </Code>
 
       <Text>

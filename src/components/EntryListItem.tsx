@@ -1,7 +1,6 @@
 import { appWindow } from '@tauri-apps/api/window'
 import { FC, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Buffer } from 'buffer'
 import { DraggableProps, Draggable as _Draggable } from 'react-beautiful-dnd'
 import MuiListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -35,7 +34,7 @@ const ListItem = styled(MuiListItem)`
   }
 `
 
-const Icon = styled('div')(
+const Icon = styled('img')(
   ({ theme }) => `
   background: ${theme.palette.background.default};
   height: 40px;
@@ -123,11 +122,7 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
             <ListItemAvatar>
               <Avatar>
                 {item.icon ? (
-                  <Icon
-                    dangerouslySetInnerHTML={{
-                      __html: Buffer.from(item.icon, 'base64').toString('utf8'),
-                    }}
-                  />
+                  <Icon src={`data:image/svg+xml;base64,${item.icon}`} alt="" />
                 ) : (
                   item.name.charAt(0).toUpperCase()
                 )}

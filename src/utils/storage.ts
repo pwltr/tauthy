@@ -38,11 +38,6 @@ export class Vault {
   }
 
   async save(record: string) {
-    console.log('save: record', record)
-
-    const recordJSON = JSON.parse(record)
-    console.log('save: recordJSON', recordJSON)
-
     await this.store.insert(this.location, record)
     await this.stronghold.save()
   }
@@ -88,19 +83,40 @@ export class Vault {
     // read current vault
     const currentVault = await this.store.get(this.location)
 
-    // delete current vault
-    await this.stronghold.unload()
-    await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+    try {
+      // delete current vault
+      await this.stronghold.unload()
+      await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
 
-    // create new stronghold with new password
-    this.stronghold = new Stronghold(vaultPath, password)
-    this.store = this.stronghold.getStore('vault', [])
+      // create new stronghold with new password
+      this.stronghold = new Stronghold(vaultPath, password)
+      this.store = this.stronghold.getStore('vault', [])
 
-    // save old record to new stronghold store
-    await this.store.insert(this.location, currentVault)
-    await this.stronghold.save()
+      // save old record to new stronghold store
+      await this.store.insert(this.location, currentVault)
+      await this.stronghold.save()
 
-    // delete backup
-    await removeFile(`${appName}/${vaultName}.backup`, { dir: Dir.Data })
+      // only remove the backup after the replacement was saved successfully
+      await removeFile(`${appName}/${vaultName}.backup`, { dir: Dir.Data })
+    } catch (error) {
+      // Restore the original encrypted snapshot. The old password remains valid
+      // after restarting the app, even if writing the replacement failed.
+      try {
+        await this.stronghold.unload()
+      } catch {
+        // The replacement may not have initialized far enough to unload.
+      }
+
+      try {
+        await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+      } catch {
+        // There may be no partial replacement to remove.
+      }
+
+      await copyFile(`${appName}/${vaultName}.backup`, `${appName}/${vaultName}`, {
+        dir: Dir.Data,
+      })
+      throw error
+    }
   }
 }

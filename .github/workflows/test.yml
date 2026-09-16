@@ -8,25 +8,29 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: ['16']
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.97.0
+
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 librsvg2-dev
 
       - name: Install dependencies
-        run: yarn
+        run: yarn install --immutable
 
       - name: Run type check
         run: yarn run tsc:check
@@ -34,5 +38,11 @@ jobs:
       - name: Run lint check
         run: yarn run lint:check
 
-      # - name: Run tests
-      #   run: yarn test
+      - name: Run format check
+        run: yarn run format:check
+
+      - name: Build frontend
+        run: yarn run build
+
+      - name: Run Rust tests
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
