@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -52,18 +50,3 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           working-directory: src-tauri
-          # These enter exclusively through the legacy Stronghold compatibility
-          # engine and must be removed with the post-v0.3.0 storage migration.
-          ignore: >-
-            RUSTSEC-2020-0071,
-            RUSTSEC-2021-0073,
-            RUSTSEC-2021-0076,
-            RUSTSEC-2021-0130,
-            RUSTSEC-2022-0084,
-            RUSTSEC-2022-0093,
-            RUSTSEC-2023-0052,
-            RUSTSEC-2024-0011,
-            RUSTSEC-2024-0336,
-            RUSTSEC-2024-0344,
-            RUSTSEC-2024-0421,
-            RUSTSEC-2025-0009

@@ -9,6 +9,7 @@ mod menu;
 
 fn main() {
   let builder = tauri::Builder::default()
+    .manage(legacy_vault::VaultState::default())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())

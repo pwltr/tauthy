@@ -1,4 +1,0 @@
-[submodule "tauri-plugin-stronghold"]
-	path = tauri-plugin-stronghold
-	url = https://github.com/pwltr/tauri-plugin-stronghold
-
