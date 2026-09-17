@@ -6,6 +6,7 @@
     "start": "tauri dev",
     "dev": "vite",
     "build": "tsc && vite build",
+    "icons:update": "bash scripts/update-aegis-icons.sh",
     "preview": "vite preview",
     "tauri": "tauri",
     "tsc:check": "tsc -p tsconfig.json --noEmit",
