@@ -23,12 +23,12 @@ export class Vault {
   }
 
   private load(password: string) {
-    return invoke<void>('vault_load', { snapshotPath: vaultPath, password })
+    return invoke<void>('vault_load', { password })
   }
 
   async checkVault() {
     await this.ready
-    return await invoke<string>('vault_get', { snapshotPath: vaultPath })
+    return await invoke<string>('vault_get')
   }
 
   async getVault() {
@@ -39,7 +39,7 @@ export class Vault {
 
   async save(record: string) {
     await this.ready
-    await invoke('vault_save', { snapshotPath: vaultPath, record })
+    await invoke('vault_save', { record })
   }
 
   async reset() {
@@ -52,7 +52,7 @@ export class Vault {
   }
 
   async getStatus() {
-    return await invoke('vault_status', { snapshotPath: vaultPath })
+    return await invoke('vault_status')
   }
 
   onStatusChange() {
@@ -61,7 +61,7 @@ export class Vault {
 
   async lock() {
     console.info('locking vault...')
-    await invoke('vault_unload', { snapshotPath: vaultPath })
+    await invoke('vault_unload')
     console.info('vault locked.')
   }
 

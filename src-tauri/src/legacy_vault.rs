@@ -4,27 +4,40 @@
 
 use std::{convert::TryInto, path::PathBuf, time::Duration};
 
+use async_std::sync::Mutex;
+
 #[allow(dead_code, unused_mut)]
 #[rustfmt::skip]
 #[path = "../../tauri-plugin-stronghold/src/stronghold.rs"]
 mod stronghold;
 
 use iota_stronghold::Location;
+use once_cell::sync::Lazy;
 use stronghold::Api;
+use tauri::{AppHandle, Manager};
+use zeroize::Zeroize;
 
+const APP_DATA_DIRECTORY: &str = "tauthy";
+const SNAPSHOT_FILE_NAME: &str = "vault.stronghold";
 const STORE_NAME: &str = "vault";
 const VAULT_NAME: &str = "vault";
 const RECORD_NAME: &str = "record";
+const INVALID_LOCKED_KEY: [u8; 32] = [0; 32];
+
+static VAULT_OPERATION_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
 fn password_to_key(password: &str) -> Vec<u8> {
   let mut derived_key = [0; 64];
   crypto::keys::pbkdf::PBKDF2_HMAC_SHA512(password.as_bytes(), b"tauri", 100, &mut derived_key)
     .expect("PBKDF2 rounds are non-zero");
 
-  let key: [u8; 32] = derived_key[0..32]
+  let mut key: [u8; 32] = derived_key[0..32]
     .try_into()
     .expect("the derived key has at least 32 bytes");
-  key.to_vec()
+  derived_key.zeroize();
+  let key_bytes = key.to_vec();
+  key.zeroize();
+  key_bytes
 }
 
 fn api(snapshot_path: PathBuf) -> Api {
@@ -35,18 +48,29 @@ fn record_location() -> Location {
   Location::generic(VAULT_NAME, RECORD_NAME)
 }
 
-#[tauri::command]
-pub async fn vault_load(snapshot_path: PathBuf, password: String) -> Result<(), String> {
-  api(snapshot_path)
-    .load(password_to_key(&password))
-    .await
-    .map_err(|error| error.to_string())?;
+fn snapshot_path(app: &AppHandle) -> Result<PathBuf, String> {
+  app
+    .path()
+    .data_dir()
+    .map(|path| path.join(APP_DATA_DIRECTORY).join(SNAPSHOT_FILE_NAME))
+    .map_err(|error| error.to_string())
+}
+
+async fn vault_load_at(snapshot_path: PathBuf, mut password: String) -> Result<(), String> {
+  let key = password_to_key(&password);
+  password.zeroize();
+  let api = api(snapshot_path);
+
+  // A failed read with a locked/incorrect key can leave the legacy engine's
+  // actor selected. Clear that state before installing a newly supplied key;
+  // otherwise Api::load may persist the selected actor with the old key.
+  api.unload(false).await.map_err(|error| error.to_string())?;
+  api.load(key).await.map_err(|error| error.to_string())?;
   stronghold::set_password_clear_interval(Duration::ZERO).await;
   Ok(())
 }
 
-#[tauri::command]
-pub async fn vault_get(snapshot_path: PathBuf) -> Result<String, String> {
+async fn vault_get_at(snapshot_path: PathBuf) -> Result<String, String> {
   api(snapshot_path)
     .get_store(STORE_NAME, vec![])
     .get_record(record_location())
@@ -54,8 +78,7 @@ pub async fn vault_get(snapshot_path: PathBuf) -> Result<String, String> {
     .map_err(|error| error.to_string())
 }
 
-#[tauri::command]
-pub async fn vault_save(snapshot_path: PathBuf, record: String) -> Result<(), String> {
+async fn vault_save_at(snapshot_path: PathBuf, record: String) -> Result<(), String> {
   let api = api(snapshot_path);
   api
     .get_store(STORE_NAME, vec![])
@@ -65,18 +88,50 @@ pub async fn vault_save(snapshot_path: PathBuf, record: String) -> Result<(), St
   api.save().await.map_err(|error| error.to_string())
 }
 
-#[tauri::command]
-pub async fn vault_unload(snapshot_path: PathBuf) -> Result<(), String> {
+async fn vault_unload_at(snapshot_path: PathBuf) -> Result<(), String> {
+  let api = api(snapshot_path);
+  api.unload(false).await.map_err(|error| error.to_string())?;
+
+  // The legacy engine normally retains the derived key until its background
+  // sweeper runs. Replace it before returning so a completed lock operation
+  // cannot reopen the snapshot without another password.
+  api.set_password(INVALID_LOCKED_KEY.to_vec()).await;
   stronghold::set_password_clear_interval(Duration::from_secs(1)).await;
-  api(snapshot_path)
-    .unload(false)
-    .await
-    .map_err(|error| error.to_string())
+  Ok(())
+}
+
+async fn vault_status_at(snapshot_path: PathBuf) -> Result<serde_json::Value, String> {
+  serde_json::to_value(api(snapshot_path).get_status().await).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
-pub async fn vault_status(snapshot_path: PathBuf) -> Result<serde_json::Value, String> {
-  serde_json::to_value(api(snapshot_path).get_status().await).map_err(|error| error.to_string())
+pub async fn vault_load(app: AppHandle, password: String) -> Result<(), String> {
+  let _operation = VAULT_OPERATION_LOCK.lock().await;
+  vault_load_at(snapshot_path(&app)?, password).await
+}
+
+#[tauri::command]
+pub async fn vault_get(app: AppHandle) -> Result<String, String> {
+  let _operation = VAULT_OPERATION_LOCK.lock().await;
+  vault_get_at(snapshot_path(&app)?).await
+}
+
+#[tauri::command]
+pub async fn vault_save(app: AppHandle, record: String) -> Result<(), String> {
+  let _operation = VAULT_OPERATION_LOCK.lock().await;
+  vault_save_at(snapshot_path(&app)?, record).await
+}
+
+#[tauri::command]
+pub async fn vault_unload(app: AppHandle) -> Result<(), String> {
+  let _operation = VAULT_OPERATION_LOCK.lock().await;
+  vault_unload_at(snapshot_path(&app)?).await
+}
+
+#[tauri::command]
+pub async fn vault_status(app: AppHandle) -> Result<serde_json::Value, String> {
+  let _operation = VAULT_OPERATION_LOCK.lock().await;
+  vault_status_at(snapshot_path(&app)?).await
 }
 
 #[cfg(test)]
@@ -105,23 +160,24 @@ mod tests {
         ));
         let record = r#"[{"id":"compatibility-test"}]"#.to_string();
 
-        vault_load(snapshot_path.clone(), "correct horse".into())
+        vault_load_at(snapshot_path.clone(), "correct horse".into())
           .await
           .unwrap();
-        vault_save(snapshot_path.clone(), record.clone()).await.unwrap();
-        vault_unload(snapshot_path.clone()).await.unwrap();
+        vault_save_at(snapshot_path.clone(), record.clone()).await.unwrap();
+        vault_unload_at(snapshot_path.clone()).await.unwrap();
+        assert!(vault_get_at(snapshot_path.clone()).await.is_err());
 
-        vault_load(snapshot_path.clone(), "wrong password".into())
+        vault_load_at(snapshot_path.clone(), "wrong password".into())
           .await
           .unwrap();
-        assert!(vault_get(snapshot_path.clone()).await.is_err());
-        vault_unload(snapshot_path.clone()).await.unwrap();
+        assert!(vault_get_at(snapshot_path.clone()).await.is_err());
+        vault_unload_at(snapshot_path.clone()).await.unwrap();
 
-        vault_load(snapshot_path.clone(), "correct horse".into())
+        vault_load_at(snapshot_path.clone(), "correct horse".into())
           .await
           .unwrap();
-        assert_eq!(vault_get(snapshot_path.clone()).await.unwrap(), record);
-        vault_unload(snapshot_path.clone()).await.unwrap();
+        assert_eq!(vault_get_at(snapshot_path.clone()).await.unwrap(), record);
+        vault_unload_at(snapshot_path.clone()).await.unwrap();
 
         std::fs::remove_file(snapshot_path).unwrap();
       });
