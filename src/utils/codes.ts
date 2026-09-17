@@ -157,7 +157,7 @@ export const exportCodes = async () => {
 
   try {
     await writeTextFile(filePath, file)
-  } catch (err) {
+  } catch {
     throw Error('exportFailed')
   }
 
