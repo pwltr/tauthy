@@ -4752,6 +4752,7 @@ dependencies = [
 name = "tauthy"
 version = "0.3.0"
 dependencies = [
+ "data-encoding",
  "iota-crypto",
  "iota_stronghold",
  "rand",
