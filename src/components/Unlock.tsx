@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
-import MuiButton from '@mui/material/Button'
-import CircularProgress from '@mui/material/CircularProgress'
+import MuiLoadingButton from '@mui/lab/LoadingButton'
 
 import { vault } from '~/App'
 
@@ -23,7 +22,7 @@ const Subtitle = styled(Typography)`
   font-size: 1.2rem;
 `
 
-const Button = styled(MuiButton)`
+const Button = styled(MuiLoadingButton)`
   margin-top: 1.8rem;
 `
 
@@ -109,11 +108,9 @@ const Unlock = () => {
 
         <Button
           aria-label={t('unlock.unlock')}
-          aria-busy={isDisabled}
           color="primary"
           variant="contained"
-          disabled={isDisabled}
-          startIcon={isDisabled ? <CircularProgress color="inherit" size={16} /> : undefined}
+          loading={isDisabled}
           onClick={onSubmit}
         >
           {t('unlock.unlock')}

@@ -6,7 +6,7 @@ import {
   DragDropContextProps,
   DroppableProps,
   DropResult,
-} from '@hello-pangea/dnd'
+} from 'react-beautiful-dnd'
 import Box from '@mui/material/Box'
 import MuiList from '@mui/material/List'
 import Grid from '@mui/material/Grid'

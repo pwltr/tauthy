@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { css } from '@emotion/react'
-import { styled } from '@mui/material/styles'
+import styled, { css } from 'styled-components'
 import Fab from '@mui/material/Fab'
 import AddIcon from '@mui/icons-material/Add'
 import { Typography } from '@mui/material'
@@ -23,8 +22,8 @@ const StyledProgressBar = styled(ProgressBar)<{ animate: boolean }>`
   top: 3.5rem;
   z-index: 1;
 
-  ${({ animate }) =>
-    !animate &&
+  ${(props) =>
+    !props.animate &&
     css`
       animation: none;
     `}

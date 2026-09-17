@@ -63,6 +63,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, SetValue<T
 
   useEffect(() => {
     setStoredValue(readValue())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleStorageChange = () => {
@@ -83,7 +84,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, SetValue<T
 function parseJSON<T>(value: string | null): T | undefined {
   try {
     return value === 'undefined' ? undefined : JSON.parse(value ?? '')
-  } catch {
+  } catch (error) {
     console.log('parsing error on', { value })
     return undefined
   }

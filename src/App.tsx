@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import CssBaseline from '@mui/material/CssBaseline'
-import GlobalStyles from '@mui/material/GlobalStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
-import globalStyles from '~/styles/global'
+import GlobalStyle from '~/styles/global'
 import { getDesignTokens, PaletteMode } from '~/styles/theme'
 import { checkUpdate, setupVault } from '~/utils'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
@@ -52,7 +51,7 @@ const App = () => {
   return (
     <>
       <CssBaseline />
-      <GlobalStyles styles={globalStyles} />
+      <GlobalStyle />
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
         <ThemeContext.Provider value={{ theme: mode, setTheme: setMode }}>

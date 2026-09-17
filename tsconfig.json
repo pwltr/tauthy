@@ -16,6 +16,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
+      "@mui/styled-engine": ["./node_modules/@mui/styled-engine-sc"],
       "~/*": ["./src/*"],
       "~/components/*": ["./src/components/*"],
       "~/hooks/*": ["./src/hooks/*"],

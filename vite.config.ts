@@ -23,12 +23,13 @@ export default defineConfig({
     // Tauri uses Chromium on Windows and WebKit on macOS and Linux
     target: process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15',
     // don't minify for debug builds
-    minify: !process.env.TAURI_DEBUG ? 'oxc' : false,
+    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
   },
   resolve: {
     alias: {
+      '@mui/styled-engine': '@mui/styled-engine-sc',
       '~/': join(PACKAGE_ROOT, 'src') + '/',
       '~/components/': join(PACKAGE_ROOT, 'src') + '/components/',
       '~/hooks/': join(PACKAGE_ROOT, 'src') + '/hooks/',
