@@ -1,7 +1,7 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Draggable } from '@hello-pangea/dnd'
+import { Draggable, DraggableStyle } from '@hello-pangea/dnd'
 import MuiListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
@@ -17,6 +17,15 @@ import { ListEntry } from './Codes'
 import { AppSettingsContext, ListOptionsContext } from '~/context'
 import { copyToClipboard } from '~/utils'
 const appWindow = getCurrentWebviewWindow()
+
+const lockToVerticalAxis = (style?: DraggableStyle): DraggableStyle | undefined => {
+  if (!style?.transform) return style
+
+  return {
+    ...style,
+    transform: style.transform.replace(/^translate\([^,]+,/, 'translate(0px,'),
+  }
+}
 
 const ListItem = styled(MuiListItem)`
   cursor: pointer;
@@ -74,10 +83,15 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
 
   return (
     <Draggable draggableId={item.uuid} index={index}>
-      {(provided) => (
+      {(provided, snapshot) => (
         <ListItem
           ref={provided.innerRef}
           {...provided.draggableProps}
+          style={
+            snapshot.isDragging
+              ? lockToVerticalAxis(provided.draggableProps.style)
+              : provided.draggableProps.style
+          }
           {...provided.dragHandleProps}
           disablePadding
           secondaryAction={
