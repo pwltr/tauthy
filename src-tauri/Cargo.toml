@@ -13,8 +13,8 @@ edition = "2021"
 tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
-rust-otp = "3.0.0"
 data-encoding = "2.11.1"
+ring = "0.17.14"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tauri = { version = "2.11.5", features = [] }

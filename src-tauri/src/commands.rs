@@ -2,15 +2,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use data_encoding::BASE32_NOPAD;
 
-const INTERVAL: u64 = 30;
 const SKEW: u64 = 2;
 
 const INVALID_SECRET: &str = "could not generate totp; `secret` may be invalid.";
 
 fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
-  // Decode independently from rust-otp so existing unpadded secrets keep
-  // working. rust-otp 3.0.0 incorrectly rejects some valid Base32 lengths
-  // while trying to add RFC 4648 padding itself.
   let normalized = argument
     .chars()
     .filter(|character| !character.is_ascii_whitespace())
@@ -24,14 +20,7 @@ fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
     .decode(secret.as_bytes())
     .map_err(|_| INVALID_SECRET.to_string())?;
 
-  let totp = rust_otp::TOTP::builder()
-    .secret(secret)
-    .digits(6)
-    .time_step(INTERVAL)
-    .build()
-    .map_err(|_| INVALID_SECRET.to_string())?;
-
-  Ok(totp.generate_formatted_at(timestamp))
+  Ok(crate::otp::generate_totp_sha1(&secret, timestamp))
 }
 
 #[tauri::command]

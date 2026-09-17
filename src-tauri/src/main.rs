@@ -3,6 +3,7 @@
 
 mod commands;
 mod legacy_vault;
+mod otp;
 
 #[cfg(target_os = "macos")]
 mod menu;
