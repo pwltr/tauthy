@@ -1,7 +1,7 @@
 import { ChangeEvent } from 'react'
-import { save } from '@tauri-apps/api/dialog'
-import { invoke } from '@tauri-apps/api/tauri'
-import { writeTextFile } from '@tauri-apps/api/fs'
+import { save } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
+import { writeTextFile } from '@tauri-apps/plugin-fs'
 
 import { vault } from '~/App'
 import { generateUUID } from '~/utils'

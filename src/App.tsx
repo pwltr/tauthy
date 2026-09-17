@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, PaletteMode } from '~/styles/theme'
-import { setupVault } from '~/utils'
+import { checkUpdate, setupVault } from '~/utils'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
@@ -38,6 +38,12 @@ const App = () => {
     dense: false,
     groupByTwos: false,
   })
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      checkUpdate()
+    }
+  }, [])
 
   // Update the theme only if the mode changes
   const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode])

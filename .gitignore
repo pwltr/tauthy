@@ -11,3 +11,7 @@ dist-ssr
 !.yarn/releases
 
 vault.stronghold
+
+# Tauri-generated schemas and legacy Stronghold test snapshots
+src-tauri/gen/
+src-tauri/test-storage/

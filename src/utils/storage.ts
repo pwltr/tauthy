@@ -1,121 +1,101 @@
-import { dataDir } from '@tauri-apps/api/path'
-import { createDir, copyFile, removeFile, Dir } from '@tauri-apps/api/fs'
-import { Stronghold, Store, Location, setPasswordClearInterval } from 'tauri-plugin-stronghold-api'
+import { invoke } from '@tauri-apps/api/core'
+import { dataDir, join } from '@tauri-apps/api/path'
+import { copyFile, mkdir, remove } from '@tauri-apps/plugin-fs'
 
 import { VaultEntry } from '~/types'
 
 const appName = 'tauthy'
-const dataDirectory = `${await dataDir()}${appName}`
 const vaultName = 'vault.stronghold'
-const vaultPath = `${dataDirectory}/${vaultName}`
+const dataDirectory = await join(await dataDir(), appName)
+const vaultPath = await join(dataDirectory, vaultName)
+const backupPath = await join(dataDirectory, `${vaultName}.backup`)
 
 export const setupVault = async () => {
-  // create dataDirectory if it doesn't exist
-  await createDir(appName, { dir: Dir.Data, recursive: true })
+  await mkdir(dataDirectory, { recursive: true })
   return new Vault('')
 }
 
 export class Vault {
-  stronghold: Stronghold
-  store: Store
-  location: Location
+  private ready: Promise<void>
 
   constructor(password: string) {
-    this.stronghold = new Stronghold(vaultPath, password)
-    this.store = this.stronghold.getStore('vault', [])
-    this.location = Location.generic('vault', 'record')
+    this.ready = this.load(password)
+  }
+
+  private load(password: string) {
+    return invoke<void>('vault_load', { password })
   }
 
   async checkVault() {
-    return await this.store.get(this.location)
+    await this.ready
+    return await invoke<string>('vault_get')
   }
 
   async getVault() {
-    // TODO: add error handling
-    const vault = await this.store.get(this.location)
+    const vault = await this.checkVault()
     const vaultJSON: VaultEntry[] = JSON.parse(vault)
     return vaultJSON
   }
 
   async save(record: string) {
-    await this.store.insert(this.location, record)
-    await this.stronghold.save()
+    await this.ready
+    await invoke('vault_save', { record })
   }
 
   async reset() {
-    await this.store.insert(this.location, '[]')
-    await this.stronghold.save()
+    await this.save('[]')
   }
 
   async destroy() {
-    await this.stronghold.unload()
-    await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+    await this.lock()
+    await remove(vaultPath)
   }
 
-  getStatus() {
-    return this.stronghold.getStatus()
+  async getStatus() {
+    return await invoke('vault_status')
   }
 
   onStatusChange() {
-    this.stronghold.onStatusChange((status) => {
-      console.info('Stronghold status changed: ', status)
-    })
+    // The compatibility layer locks explicitly, so no status event is emitted.
   }
 
-  async lock(interval = 1) {
+  async lock() {
     console.info('locking vault...')
-    await setPasswordClearInterval({ secs: interval, nanos: 0 })
+    await invoke('vault_unload')
     console.info('vault locked.')
   }
 
   async unlock(password: string) {
-    await this.stronghold.reload(password)
-    // NOTE: never lock automatically
-    await setPasswordClearInterval({ secs: 0, nanos: 0 })
+    this.ready = this.load(password)
+    await this.ready
   }
 
   async changePassword(password: string) {
-    // backup current vault
-    await copyFile(`${appName}/${vaultName}`, `${appName}/${vaultName}.backup`, {
-      dir: Dir.Data,
-    })
-
-    // read current vault
-    const currentVault = await this.store.get(this.location)
+    await copyFile(vaultPath, backupPath)
+    const currentVault = await this.checkVault()
 
     try {
-      // delete current vault
-      await this.stronghold.unload()
-      await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+      await this.lock()
+      await remove(vaultPath)
 
-      // create new stronghold with new password
-      this.stronghold = new Stronghold(vaultPath, password)
-      this.store = this.stronghold.getStore('vault', [])
+      await this.unlock(password)
+      await this.save(currentVault)
 
-      // save old record to new stronghold store
-      await this.store.insert(this.location, currentVault)
-      await this.stronghold.save()
-
-      // only remove the backup after the replacement was saved successfully
-      await removeFile(`${appName}/${vaultName}.backup`, { dir: Dir.Data })
+      await remove(backupPath)
     } catch (error) {
-      // Restore the original encrypted snapshot. The old password remains valid
-      // after restarting the app, even if writing the replacement failed.
       try {
-        await this.stronghold.unload()
+        await this.lock()
       } catch {
         // The replacement may not have initialized far enough to unload.
       }
 
       try {
-        await removeFile(`${appName}/${vaultName}`, { dir: Dir.Data })
+        await remove(vaultPath)
       } catch {
         // There may be no partial replacement to remove.
       }
 
-      await copyFile(`${appName}/${vaultName}.backup`, `${appName}/${vaultName}`, {
-        dir: Dir.Data,
-      })
+      await copyFile(backupPath, vaultPath)
       throw error
     }
   }

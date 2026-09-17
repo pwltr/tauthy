@@ -1,6 +1,7 @@
-import { useEffect, useContext } from 'react'
+import { useEffect, useContext, useState } from 'react'
+import { getVersion } from '@tauri-apps/api/app'
 import { useTranslation } from 'react-i18next'
-import { open } from '@tauri-apps/api/shell'
+import { open } from '@tauri-apps/plugin-shell'
 import { styled } from '@mui/material/styles'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -30,9 +31,11 @@ const Header = styled('div')`
 const About = () => {
   const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
+  const [version, setVersion] = useState('')
 
   useEffect(() => {
     setAppBarTitle(t('about.pageTitle'))
+    getVersion().then(setVersion)
   }, [])
 
   return (
@@ -70,7 +73,7 @@ const About = () => {
             <ListItemIcon>
               <CodeIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary={t('about.version')} secondary="0.2.7" />
+            <ListItemText primary={t('about.version')} secondary={version} />
           </ListItemButton>
         </ListItem>
 

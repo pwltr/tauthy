@@ -12,22 +12,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.97.0
+        uses: dtolnay/rust-toolchain@86e7197484018ef6aaa9255d186f6ce1754276dd # 1.97.0
 
       - name: Install native dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 librsvg2-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev librsvg2-dev
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -46,3 +46,24 @@ jobs:
 
       - name: Run Rust tests
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+
+      - name: Audit Rust dependencies
+        uses: rustsec/audit-check@858dc40f52ca2b8570b7a997c1c4e35c6fc9a432 # Node 24
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: src-tauri
+          # These enter exclusively through the legacy Stronghold compatibility
+          # engine and must be removed with the post-v0.3.0 storage migration.
+          ignore: >-
+            RUSTSEC-2020-0071,
+            RUSTSEC-2021-0073,
+            RUSTSEC-2021-0076,
+            RUSTSEC-2021-0130,
+            RUSTSEC-2022-0084,
+            RUSTSEC-2022-0093,
+            RUSTSEC-2023-0052,
+            RUSTSEC-2024-0011,
+            RUSTSEC-2024-0336,
+            RUSTSEC-2024-0344,
+            RUSTSEC-2024-0421,
+            RUSTSEC-2025-0009
