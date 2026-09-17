@@ -71,4 +71,5 @@ jobs:
           releaseName: ${{ github.ref_name }}
           releaseDraft: true
           prerelease: false
+          retryAttempts: 3
           args: ${{ matrix.args }}
