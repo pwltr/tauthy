@@ -1,7 +1,7 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { FC, useContext } from 'react'
+import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DraggableProps, Draggable as _Draggable } from 'react-beautiful-dnd'
+import { Draggable } from '@hello-pangea/dnd'
 import MuiListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
@@ -17,9 +17,6 @@ import { ListEntry } from './Codes'
 import { AppSettingsContext, ListOptionsContext } from '~/context'
 import { copyToClipboard } from '~/utils'
 const appWindow = getCurrentWebviewWindow()
-
-// HACK: this fixes type incompatibility
-const Draggable = _Draggable as unknown as FC<DraggableProps>
 
 const ListItem = styled(MuiListItem)`
   cursor: pointer;
