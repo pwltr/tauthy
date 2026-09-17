@@ -7,7 +7,7 @@ import TextField from '@mui/material/TextField'
 import { imageToBase64 } from '~/utils'
 import Modal from '~/components/Modal'
 
-const modules = import.meta.glob<string>('/assets/*.svg', {
+const modules = import.meta.glob<string>('/assets/aegis-icons/**/*.svg', {
   query: '?url',
   import: 'default',
   eager: true,
