@@ -300,15 +300,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/runtime@npm:^7.0.0, @babel/runtime@npm:^7.5.5, @babel/runtime@npm:^7.8.7":
-  version: 7.17.9
-  resolution: "@babel/runtime@npm:7.17.9"
-  dependencies:
-    regenerator-runtime: "npm:^0.13.4"
-  checksum: 571f476feaf34dd81b94246de69f93a511e02a96e33c27889f150ed0000b068c70e102588a2a9c579d767f35a869663b21b79b36414b64e866e91861a137e7f4
-  languageName: node
-  linkType: hard
-
 "@babel/runtime@npm:^7.15.4, @babel/runtime@npm:^7.22.5, @babel/runtime@npm:^7.9.2":
   version: 7.22.5
   resolution: "@babel/runtime@npm:7.22.5"
@@ -324,6 +315,15 @@ __metadata:
   dependencies:
     regenerator-runtime: "npm:^0.14.0"
   checksum: 6ef4f6dcc4ec4d74cb9f6c26a26e92d016b36debd167be48cae293fbd990b3157fb1d8d21c531285da15a5bda9ccb23e651b56234941e03d91c8af69d4c593a9
+  languageName: node
+  linkType: hard
+
+"@babel/runtime@npm:^7.5.5, @babel/runtime@npm:^7.8.7":
+  version: 7.17.9
+  resolution: "@babel/runtime@npm:7.17.9"
+  dependencies:
+    regenerator-runtime: "npm:^0.13.4"
+  checksum: 571f476feaf34dd81b94246de69f93a511e02a96e33c27889f150ed0000b068c70e102588a2a9c579d767f35a869663b21b79b36414b64e866e91861a137e7f4
   languageName: node
   linkType: hard
 
@@ -1722,12 +1722,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-window@npm:^1.8.8":
-  version: 1.8.8
-  resolution: "@types/react-window@npm:1.8.8"
+"@types/react-window@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@types/react-window@npm:2.0.0"
   dependencies:
-    "@types/react": "npm:*"
-  checksum: 79b70b7c33161efb14bf69115792843de8e038594136a8373cfbbcc4066c49fd611dd2d3592a9a81d19d21c075bf14e5e73a64f4d9ad32e45d4d5493f5f53918
+    react-window: "npm:*"
+  checksum: 4c11d4e1e6b95ab482b79a6aaff87a8cd2978a08925c6b0fff7e856716608ccb50162e5cbf9ad02bff892681c7795cc9f3e376ede994ebfbcc55161fe8ab0517
   languageName: node
   linkType: hard
 
@@ -4913,7 +4913,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"memoize-one@npm:>=3.1.1 <6, memoize-one@npm:^5.1.1":
+"memoize-one@npm:^5.1.1":
   version: 5.2.1
   resolution: "memoize-one@npm:5.2.1"
   checksum: b7141dc148b5c6fdd51e77ecf0421fd2581681eb8756e0b3dfbd4fe765b5e2b5a6bc90214bb6f19a96b6aed44de17eda3407142a7be9e24ccd0774bbd9874d1b
@@ -5798,16 +5798,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-window@npm:^1.8.9":
-  version: 1.8.9
-  resolution: "react-window@npm:1.8.9"
-  dependencies:
-    "@babel/runtime": "npm:^7.0.0"
-    memoize-one: "npm:>=3.1.1 <6"
+"react-window@npm:*, react-window@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "react-window@npm:2.3.1"
   peerDependencies:
-    react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
-    react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
-  checksum: 946bf990b58cafe054c6a36ae9f56ce084a94ab69366c7bc6c9117d8ec94227fd0d0e8efc39f1aa0f9dc13e29b7f6bb7d0e7284d0c7546a50a9e51465269e221
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  checksum: 1c76b54159910cc35ade8a7b7eda67d1ee86c49d798f3fa12f34904adeee4ee105c9e8ad22e4592710a197d4a3eeb0b2b142fc27c15847f1277fe01cf0b26f8c
   languageName: node
   linkType: hard
 
@@ -6727,7 +6724,7 @@ __metadata:
     "@types/react": "npm:^18.2.38"
     "@types/react-beautiful-dnd": "npm:^13.1.7"
     "@types/react-dom": "npm:^18.2.17"
-    "@types/react-window": "npm:^1.8.8"
+    "@types/react-window": "npm:^2.0.0"
     "@types/uuid": "npm:^9.0.7"
     "@typescript-eslint/eslint-plugin": "npm:^6.12.0"
     "@typescript-eslint/parser": "npm:^6.12.0"
@@ -6750,7 +6747,7 @@ __metadata:
     react-i18next: "npm:^13.5.0"
     react-idle-timer: "npm:^5.7.2"
     react-router-dom: "npm:^7.18.4"
-    react-window: "npm:^1.8.9"
+    react-window: "npm:^2.3.1"
     styled-components: "npm:6.1.1"
     typescript: "npm:^5.3.2"
     uuid: "npm:^9.0.1"
