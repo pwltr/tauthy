@@ -63,7 +63,6 @@ vault, so restoring an older release also requires restoring the exported backup
 - [Aegis](https://github.com/beemdevelopment/Aegis)
 - [aegis-icons](https://github.com/aegis-icons/aegis-icons)
 - [Tauri](https://tauri.studio)
-- [TimDumol/rust-otp](https://github.com/TimDumol/rust-otp)
 
 ## Support
 

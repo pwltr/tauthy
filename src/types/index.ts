@@ -16,7 +16,7 @@ export type VaultEntry = {
 }
 
 export type AegisEntry = {
-  type: 'totp'
+  type: string
   uuid: string
   name: string
   issuer: string
@@ -26,9 +26,10 @@ export type AegisEntry = {
   icon_mime?: string
   info: {
     secret: string
-    algo: 'SHA1'
+    algo: string
     digits: number
-    period: number
+    period?: number
+    counter?: number
   }
 }
 

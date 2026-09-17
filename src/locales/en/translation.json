@@ -76,7 +76,7 @@
     "import": "Import",
     "importDescription": "Import backups from other apps",
     "export": "Export",
-    "exportDescription": "Backup your vault",
+    "exportDescription": "Export an unencrypted JSON backup",
     "reset": "Delete Vault",
     "resetDescription": "Delete the current vault forever"
   },
@@ -100,6 +100,7 @@
     "passwordNoMatch": "Passwords don't match",
     "selectImport": "Select import",
     "deleteWarning": "This will delete your vault and can not be undone. Are you sure?",
+    "exportWarning": "This export is not encrypted and contains your authentication secrets. Store it securely. Continue?",
     "noResults": "No matching results",
     "confirm": "Confirm",
     "delete": "Delete",
@@ -108,6 +109,9 @@
   "toasts": {
     "copied": "Copied to clipboard",
     "imported": "Vault imported successfully",
+    "importAegisEncrypted": "Encrypted Aegis exports are not supported. Export an unencrypted JSON vault from Aegis and try again.",
+    "importUnsupportedOtp": "The backup contains OTP formats Tauthy does not support yet. Only 6-digit SHA-1 TOTP entries with a 30-second period can be imported.",
+    "importFailed": "Import failed. Check that you selected the correct backup format.",
     "exportSuccess": "Vault exported.",
     "exportEmpty": "Vault is empty.",
     "exportCancelled": "Export cancelled.",

@@ -70,7 +70,27 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
           let importedEntries: VaultEntry[] = []
 
           if (format === 'aegis') {
+            if (typeof json?.db === 'string') {
+              throw Error('importAegisEncrypted')
+            }
+
+            if (!Array.isArray(json?.db?.entries)) {
+              throw Error('importFailed')
+            }
+
             const entries: AegisEntry[] = json.db.entries
+            const containsUnsupportedEntries = entries.some(
+              (entry) =>
+                entry.type !== 'totp' ||
+                entry.info?.algo !== 'SHA1' ||
+                entry.info?.digits !== 6 ||
+                entry.info?.period !== 30,
+            )
+
+            if (containsUnsupportedEntries) {
+              throw Error('importUnsupportedOtp')
+            }
+
             importedEntries = entries.map((entry) => ({
               uuid: entry.uuid,
               name: entry.name,
@@ -104,6 +124,10 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
               secret: entry.secret,
               icon: entry.icon,
             }))
+          }
+
+          if (importedEntries.length === 0) {
+            throw Error('importFailed')
           }
 
           const entries = [...currentVault, ...importedEntries]
