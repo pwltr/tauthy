@@ -3505,17 +3505,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-otp"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e56bacdbbf1bbbad06e1f9dc20e86f9ccf7ee4ffca93f881d9e70d6778cd709"
-dependencies = [
- "data-encoding",
- "ring",
- "thiserror 1.0.40",
-]
-
-[[package]]
 name = "rustc-hash"
 version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4752,10 +4741,11 @@ dependencies = [
 name = "tauthy"
 version = "0.3.0"
 dependencies = [
+ "data-encoding",
  "iota-crypto",
  "iota_stronghold",
  "rand",
- "rust-otp",
+ "ring",
  "serde",
  "serde_json",
  "tauri",
