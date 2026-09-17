@@ -1,6 +1,7 @@
 import { useEffect, useContext, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
+import { confirm } from '@tauri-apps/plugin-dialog'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -24,6 +25,15 @@ const Import = () => {
   const handleCloseResetModal = () => setIsResetModalOpen(false)
 
   const handleExportVault = async () => {
+    const confirmed = await confirm(t('modals.exportWarning'), {
+      title: t('import.export'),
+      kind: 'warning',
+      okLabel: t('import.export'),
+      cancelLabel: t('modals.cancel'),
+    })
+
+    if (!confirmed) return
+
     try {
       await exportCodes()
       toast.success(t('toasts.exportSuccess'))

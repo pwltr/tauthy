@@ -30,10 +30,22 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
           accept=".json"
           style={{ display: 'none' }}
           onChange={async (event) => {
+            const input = event.currentTarget
             if (format) {
-              await importCodes(event, format)
-              toast.success(t('toasts.imported'))
-              navigate('/')
+              try {
+                await importCodes(event, format)
+                toast.success(t('toasts.imported'))
+                navigate('/')
+              } catch (err) {
+                const knownErrors = ['importAegisEncrypted', 'importUnsupportedOtp', 'importFailed']
+                const error =
+                  err instanceof Error && knownErrors.includes(err.message)
+                    ? err.message
+                    : 'importFailed'
+                toast.error(t(`toasts.${error}`))
+              } finally {
+                input.value = ''
+              }
             }
           }}
         />

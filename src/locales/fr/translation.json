@@ -76,7 +76,7 @@
     "import": "Importer",
     "importDescription": "Importer des sauvegardes d'autres applications",
     "export": "Exporter",
-    "exportDescription": "Sauvegarder votre coffre-fort",
+    "exportDescription": "Exporter une sauvegarde JSON non chiffrée",
     "reset": "Supprimer le coffre-fort",
     "resetDescription": "Supprimer le coffre-fort actuel définitivement"
   },
@@ -100,6 +100,7 @@
     "passwordNoMatch": "Les mots de passe ne correspondent pas",
     "selectImport": "Sélectionner l'importation",
     "deleteWarning": "Cela supprimera votre coffre-fort et ne pourra pas être annulé. Êtes-vous sûr ?",
+    "exportWarning": "Cette exportation n’est pas chiffrée et contient vos secrets d’authentification. Conservez-la en lieu sûr. Continuer ?",
     "noResults": "Aucun résultat correspondant",
     "confirm": "Confirmer",
     "delete": "Supprimer",
@@ -108,6 +109,9 @@
   "toasts": {
     "copied": "Copié dans le presse-papiers",
     "imported": "Coffre-fort importé avec succès",
+    "importAegisEncrypted": "Les exportations Aegis chiffrées ne sont pas prises en charge. Exportez un coffre-fort JSON non chiffré depuis Aegis, puis réessayez.",
+    "importUnsupportedOtp": "La sauvegarde contient des formats OTP que Tauthy ne prend pas encore en charge. Seules les entrées TOTP SHA-1 à 6 chiffres avec une période de 30 secondes peuvent être importées.",
+    "importFailed": "Échec de l’importation. Vérifiez que vous avez sélectionné le bon format de sauvegarde.",
     "exportSuccess": "Coffre-fort exporté.",
     "exportEmpty": "Le coffre-fort est vide.",
     "exportCancelled": "Exportation annulée.",

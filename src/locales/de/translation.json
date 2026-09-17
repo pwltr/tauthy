@@ -76,7 +76,7 @@
     "import": "Importieren",
     "importDescription": "Sicherungen aus anderen Apps importieren",
     "export": "Exportieren",
-    "exportDescription": "Sicherung des aktuellen Tresors erstellen",
+    "exportDescription": "Unverschlüsselte JSON-Sicherung exportieren",
     "reset": "Tresor löschen",
     "resetDescription": "Aktuellen Tresor endgültig löschen"
   },
@@ -100,6 +100,7 @@
     "passwordNoMatch": "Passwörter stimmen nicht überein",
     "selectImport": "Import wählen",
     "deleteWarning": "Diese Aktion wird deinen Tresor löschen und kann nicht rückgängig gemacht werden. Bist du sicher?",
+    "exportWarning": "Dieser Export ist nicht verschlüsselt und enthält deine Authentifizierungsgeheimnisse. Bewahre ihn sicher auf. Fortfahren?",
     "noResults": "Keine Ergebnisse",
     "confirm": "Bestätigen",
     "delete": "Löschen",
@@ -108,6 +109,9 @@
   "toasts": {
     "copied": "In Zwischenablage kopiert",
     "imported": "Tresor erfolgreich importiert",
+    "importAegisEncrypted": "Verschlüsselte Aegis-Exporte werden nicht unterstützt. Exportiere einen unverschlüsselten JSON-Tresor aus Aegis und versuche es erneut.",
+    "importUnsupportedOtp": "Die Sicherung enthält OTP-Formate, die Tauthy noch nicht unterstützt. Es können nur 6-stellige SHA-1-TOTP-Einträge mit einem 30-Sekunden-Zeitraum importiert werden.",
+    "importFailed": "Import fehlgeschlagen. Prüfe, ob du das richtige Sicherungsformat ausgewählt hast.",
     "exportSuccess": "Tresor exportiert.",
     "exportEmpty": "Tresor ist leer.",
     "exportCancelled": "Export abgebrochen.",

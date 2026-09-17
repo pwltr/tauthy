@@ -76,7 +76,7 @@
     "import": "Importar",
     "importDescription": "Importa copias de seguridad desde otras apps",
     "export": "Exportar",
-    "exportDescription": "Crea una copia de seguridad del baúl",
+    "exportDescription": "Exportar una copia JSON sin cifrar",
     "reset": "Eliminar el baúl",
     "resetDescription": "Elimina todo el baúl para siempre"
   },
@@ -100,6 +100,7 @@
     "passwordNoMatch": "Las contraseñas no coinciden",
     "selectImport": "Selecciona un fichero para importar",
     "deleteWarning": "Esto eliminará tu baúl y no se puede deshacer. ¿Estás seguro?",
+    "exportWarning": "Esta exportación no está cifrada y contiene tus secretos de autenticación. Guárdala de forma segura. ¿Continuar?",
     "noResults": "No hay resultados",
     "confirm": "Confirmar",
     "delete": "Eliminar",
@@ -108,6 +109,9 @@
   "toasts": {
     "copied": "Copiado al portapapeles.",
     "imported": "Baúl importado correctamente.",
+    "importAegisEncrypted": "Las exportaciones cifradas de Aegis no son compatibles. Exporta un baúl JSON sin cifrar desde Aegis e inténtalo de nuevo.",
+    "importUnsupportedOtp": "La copia contiene formatos OTP que Tauthy aún no admite. Solo se pueden importar entradas TOTP SHA-1 de 6 dígitos con un periodo de 30 segundos.",
+    "importFailed": "Error al importar. Comprueba que has seleccionado el formato de copia correcto.",
     "exportSuccess": "Baúl exportado.",
     "exportEmpty": "El baúl está vacío.",
     "exportCancelled": "Exportación cancelada.",
