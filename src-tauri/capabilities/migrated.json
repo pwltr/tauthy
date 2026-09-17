@@ -13,6 +13,7 @@
     "dialog:allow-save",
     "fs:allow-write-text-file",
     "fs:allow-copy-file",
+    "fs:allow-exists",
     "fs:allow-mkdir",
     "fs:allow-remove",
     {
