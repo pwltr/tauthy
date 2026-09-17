@@ -163,12 +163,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
 
 [[package]]
-name = "ascii"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d92bec98840b8f03a5ff5413de5293bfcd8bf96467cf5452609f939ec6f5de16"
-
-[[package]]
 name = "asn1_der"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1109,9 +1103,9 @@ dependencies = [
 
 [[package]]
 name = "data-encoding"
-version = "2.4.0"
+version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2e66c9d817f1720209181c316d28635c050fa304f9c79e47a520882661b7308"
+checksum = "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
 
 [[package]]
 name = "dbus"
@@ -1462,20 +1456,6 @@ dependencies = [
  "serde 1.0.229",
  "serde_core",
  "typeid",
-]
-
-[[package]]
-name = "err-derive"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22deed3a8124cff5fa835713fa105621e43bbdc46690c3a6b68328a012d350d4"
-dependencies = [
- "proc-macro-error",
- "proc-macro2 1.0.107",
- "quote 1.0.47",
- "rustversion",
- "syn 1.0.109",
- "synstructure 0.12.6",
 ]
 
 [[package]]
@@ -3817,17 +3797,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "otp"
-version = "1.0.0"
-source = "git+https://github.com/TimDumol/rust-otp#dd96dee878012ab7a9969e75b4427607ca4e7f6f"
-dependencies = [
- "ascii",
- "data-encoding",
- "err-derive",
- "ring 0.16.20",
-]
-
-[[package]]
 name = "pango"
 version = "0.18.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4681,6 +4650,17 @@ name = "rust-ini"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e52c148ef37f8c375d49d5a73aa70713125b7f19095948a923f80afdeb22ec2"
+
+[[package]]
+name = "rust-otp"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e56bacdbbf1bbbad06e1f9dc20e86f9ccf7ee4ffca93f881d9e70d6778cd709"
+dependencies = [
+ "data-encoding",
+ "ring 0.17.14",
+ "thiserror 1.0.40",
+]
 
 [[package]]
 name = "rustc-hash"
@@ -6140,9 +6120,9 @@ dependencies = [
  "iota-crypto",
  "iota_stronghold",
  "once_cell",
- "otp",
  "rand 0.8.5",
  "riker",
+ "rust-otp",
  "rusty-fork",
  "serde 1.0.229",
  "serde_json",
