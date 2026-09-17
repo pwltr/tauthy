@@ -10,8 +10,11 @@ use std::{
   io::Read,
   num::NonZeroU32,
   path::{Path, PathBuf},
-  sync::Mutex,
+  sync::{Arc, Mutex},
 };
+
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 use crypto::hashes::blake2b::Blake2b256;
 use iota_stronghold::{
@@ -31,11 +34,12 @@ const SNAPSHOT_V2: [u8; 2] = [2, 0];
 const SNAPSHOT_V3: [u8; 2] = [3, 0];
 const INVALID_PASSWORD_MESSAGE: &str = "Unable to unlock the vault. Please try another password.";
 
-pub struct VaultState(Mutex<Option<UnlockedVault>>);
+#[derive(Clone)]
+pub struct VaultState(Arc<Mutex<Option<UnlockedVault>>>);
 
 impl Default for VaultState {
   fn default() -> Self {
-    Self(Mutex::new(None))
+    Self(Arc::new(Mutex::new(None)))
   }
 }
 
@@ -89,6 +93,25 @@ fn migration_backup_path(snapshot_path: &Path) -> PathBuf {
   snapshot_path.with_extension("stronghold.v2-backup")
 }
 
+#[cfg(unix)]
+fn restrict_snapshot_permissions(snapshot_path: &Path) -> Result<(), String> {
+  if !snapshot_path.exists() {
+    return Ok(());
+  }
+
+  let mut permissions = std::fs::metadata(snapshot_path)
+    .map_err(|error| format!("Unable to read vault permissions: {error}"))?
+    .permissions();
+  permissions.set_mode(0o600);
+  std::fs::set_permissions(snapshot_path, permissions)
+    .map_err(|error| format!("Unable to restrict vault permissions: {error}"))
+}
+
+#[cfg(not(unix))]
+fn restrict_snapshot_permissions(_snapshot_path: &Path) -> Result<(), String> {
+  Ok(())
+}
+
 fn snapshot_version(snapshot_path: &Path) -> Result<[u8; 2], String> {
   let mut header = [0; 7];
   File::open(snapshot_path)
@@ -136,7 +159,8 @@ fn migrate_legacy_snapshot(snapshot_path: &Path, password: &str) -> Result<Unloc
 
   if backup_path.exists() {
     return Err(
-      "A previous vault migration backup already exists. Restart Tauthy to recover it.".into(),
+      "A legacy vault and migration backup both exist. Move the .v2-backup file out of the Tauthy data directory, then try again."
+        .into(),
     );
   }
   if temporary_path.exists() {
@@ -156,6 +180,11 @@ fn migrate_legacy_snapshot(snapshot_path: &Path, password: &str) -> Result<Unloc
     return Err(INVALID_PASSWORD_MESSAGE.into());
   }
 
+  if let Err(error) = restrict_snapshot_permissions(&temporary_path) {
+    let _ = std::fs::remove_file(&temporary_path);
+    return Err(error);
+  }
+
   // Never replace the user's vault until the migrated snapshot can be opened.
   let verified = match open_current_snapshot(&temporary_path, password) {
     Ok(verified) => verified,
@@ -169,6 +198,7 @@ fn migrate_legacy_snapshot(snapshot_path: &Path, password: &str) -> Result<Unloc
     .clear()
     .map_err(|error| error.to_string())?;
 
+  restrict_snapshot_permissions(snapshot_path)?;
   std::fs::rename(snapshot_path, &backup_path)
     .map_err(|error| format!("Unable to back up the legacy vault: {error}"))?;
 
@@ -239,6 +269,8 @@ fn vault_load_at(
   password.zeroize();
   let opened = opened?;
 
+  restrict_snapshot_permissions(&opened.snapshot_path)?;
+
   let backup_path = migration_backup_path(&opened.snapshot_path);
   if backup_path.exists() {
     std::fs::remove_file(backup_path)
@@ -285,7 +317,8 @@ fn vault_save_at(state: &VaultState, record: String) -> Result<(), String> {
       &SnapshotPath::from_path(&vault.snapshot_path),
       &vault.key_provider,
     )
-    .map_err(|error| error.to_string())
+    .map_err(|error| error.to_string())?;
+  restrict_snapshot_permissions(&vault.snapshot_path)
 }
 
 fn vault_unload_at(state: &VaultState) -> Result<(), String> {
@@ -316,7 +349,11 @@ pub async fn vault_load(
   state: State<'_, VaultState>,
   password: String,
 ) -> Result<(), String> {
-  vault_load_at(&state, snapshot_path(&app)?, password)
+  let snapshot_path = snapshot_path(&app)?;
+  let state = state.inner().clone();
+  tauri::async_runtime::spawn_blocking(move || vault_load_at(&state, snapshot_path, password))
+    .await
+    .map_err(|error| format!("Vault task failed: {error}"))?
 }
 
 #[tauri::command]
@@ -326,7 +363,10 @@ pub async fn vault_get(state: State<'_, VaultState>) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn vault_save(state: State<'_, VaultState>, record: String) -> Result<(), String> {
-  vault_save_at(&state, record)
+  let state = state.inner().clone();
+  tauri::async_runtime::spawn_blocking(move || vault_save_at(&state, record))
+    .await
+    .map_err(|error| format!("Vault task failed: {error}"))?
 }
 
 #[tauri::command]
@@ -365,6 +405,27 @@ mod tests {
     std::fs::copy(fixture, destination).unwrap();
   }
 
+  #[cfg(unix)]
+  fn assert_private_permissions(snapshot: &Path) {
+    assert_eq!(
+      std::fs::metadata(snapshot).unwrap().permissions().mode() & 0o777,
+      0o600
+    );
+  }
+
+  #[cfg(not(unix))]
+  fn assert_private_permissions(_snapshot: &Path) {}
+
+  #[cfg(unix)]
+  fn make_permissions_insecure(snapshot: &Path) {
+    let mut permissions = std::fs::metadata(snapshot).unwrap().permissions();
+    permissions.set_mode(0o644);
+    std::fs::set_permissions(snapshot, permissions).unwrap();
+  }
+
+  #[cfg(not(unix))]
+  fn make_permissions_insecure(_snapshot: &Path) {}
+
   #[test]
   fn password_derivation_matches_the_legacy_plugin() {
     assert_eq!(
@@ -392,9 +453,11 @@ mod tests {
     );
     assert!(!migration_path(&snapshot).exists());
     assert!(!migration_backup_path(&snapshot).exists());
+    assert_private_permissions(&snapshot);
 
     let updated = r#"[{"id":"after-migration"}]"#.to_string();
     vault_save_at(&state, updated.clone()).unwrap();
+    assert_private_permissions(&snapshot);
     vault_unload_at(&state).unwrap();
 
     vault_load_at(&state, snapshot.clone(), "correct horse".into()).unwrap();
@@ -421,6 +484,24 @@ mod tests {
   }
 
   #[test]
+  fn conflicting_legacy_backup_has_actionable_recovery_instructions() {
+    initialize_tests();
+    let snapshot = temporary_snapshot("conflicting-backup");
+    let backup = migration_backup_path(&snapshot);
+    copy_legacy_fixture(&snapshot);
+    copy_legacy_fixture(&backup);
+    let state = VaultState::default();
+
+    let error = vault_load_at(&state, snapshot.clone(), "correct horse".into()).unwrap_err();
+
+    assert!(error.contains("Move the .v2-backup file"));
+    assert!(snapshot.exists());
+    assert!(backup.exists());
+    std::fs::remove_file(snapshot).unwrap();
+    std::fs::remove_file(backup).unwrap();
+  }
+
+  #[test]
   fn current_snapshot_round_trips_and_rejects_a_wrong_password() {
     initialize_tests();
     let snapshot = temporary_snapshot("round-trip");
@@ -429,13 +510,18 @@ mod tests {
 
     vault_load_at(&state, snapshot.clone(), "correct horse".into()).unwrap();
     vault_save_at(&state, record.clone()).unwrap();
+    assert_private_permissions(&snapshot);
     vault_unload_at(&state).unwrap();
     assert!(vault_get_at(&state).is_err());
+
+    // A successful unlock also hardens snapshots created by older releases.
+    make_permissions_insecure(&snapshot);
 
     let error = vault_load_at(&state, snapshot.clone(), "wrong password".into()).unwrap_err();
     assert!(error.contains("Please try another password."));
 
     vault_load_at(&state, snapshot.clone(), "correct horse".into()).unwrap();
+    assert_private_permissions(&snapshot);
     assert_eq!(vault_get_at(&state).unwrap(), record);
     vault_unload_at(&state).unwrap();
     std::fs::remove_file(snapshot).unwrap();
