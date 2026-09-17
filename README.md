@@ -39,6 +39,13 @@ A cross-platform TOTP authentication client built with <a href="https://github.c
 
 [Download](https://github.com/pwltr/tauthy/releases/latest) or [Build it from source](./Build.md).
 
+### Upgrading from 0.2.8 or earlier
+
+Export a backup before upgrading. Tauthy 0.3 migrates the encrypted vault to the current Stronghold
+format on the first successful unlock. Until that unlock, the vault remains protected by the legacy
+password derivation. The migration is one-way: Tauthy 0.2.8 and earlier cannot open the migrated
+vault, so restoring an older release also requires restoring the exported backup.
+
 ## Todo
 
 - [x] automatic updates

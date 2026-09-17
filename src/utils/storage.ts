@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { dataDir, join } from '@tauri-apps/api/path'
-import { copyFile, mkdir, remove } from '@tauri-apps/plugin-fs'
+import { copyFile, exists, mkdir, remove } from '@tauri-apps/plugin-fs'
 
 import { VaultEntry } from '~/types'
 
@@ -9,6 +9,12 @@ const vaultName = 'vault.stronghold'
 const dataDirectory = await join(await dataDir(), appName)
 const vaultPath = await join(dataDirectory, vaultName)
 const backupPath = await join(dataDirectory, `${vaultName}.backup`)
+const migrationPath = await join(dataDirectory, `${vaultName}.migrating`)
+const migrationBackupPath = await join(dataDirectory, `${vaultName}.v2-backup`)
+
+const removeIfExists = async (path: string) => {
+  if (await exists(path)) await remove(path)
+}
 
 export const setupVault = async () => {
   await mkdir(dataDirectory, { recursive: true })
@@ -48,7 +54,9 @@ export class Vault {
 
   async destroy() {
     await this.lock()
-    await remove(vaultPath)
+    await Promise.all(
+      [vaultPath, backupPath, migrationPath, migrationBackupPath].map(removeIfExists),
+    )
   }
 
   async getStatus() {
