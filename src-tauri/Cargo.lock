@@ -2940,7 +2940,7 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "rand 0.8.5",
+ "rand 0.8.6",
  "smallvec",
  "socket2 0.4.9",
  "void",
@@ -2960,7 +2960,7 @@ dependencies = [
  "log",
  "prost",
  "prost-build",
- "rand 0.8.5",
+ "rand 0.8.6",
  "sha2 0.9.9",
  "snow",
  "static_assertions",
@@ -4372,9 +4372,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
@@ -5313,7 +5313,7 @@ dependencies = [
  "aes-gcm",
  "blake2",
  "chacha20poly1305",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rand_core 0.6.4",
  "ring 0.16.20",
  "rustc_version 0.3.3",
@@ -5506,7 +5506,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5b49c55f0623dfa18aab47372e93ca941d415f7cb6b9504d51a868f31e59ab1"
 dependencies = [
  "futures",
- "rand 0.8.5",
+ "rand 0.8.6",
  "riker",
  "stronghold-derive",
 ]
@@ -6120,7 +6120,7 @@ dependencies = [
  "iota-crypto",
  "iota_stronghold",
  "once_cell",
- "rand 0.8.5",
+ "rand 0.8.6",
  "riker",
  "rust-otp",
  "rusty-fork",
@@ -6576,7 +6576,7 @@ dependencies = [
  "ipnet",
  "lazy_static",
  "log",
- "rand 0.8.5",
+ "rand 0.8.6",
  "smallvec",
  "thiserror 1.0.40",
  "tinyvec",
@@ -7905,7 +7905,7 @@ dependencies = [
  "log",
  "nohash-hasher",
  "parking_lot 0.11.2",
- "rand 0.8.5",
+ "rand 0.8.6",
  "static_assertions",
 ]
 
