@@ -30,6 +30,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Read release notes
+        id: release-notes
+        shell: bash
+        run: |
+          {
+            echo 'body<<EOF'
+            cat .github/release-notes.md
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@86e7197484018ef6aaa9255d186f6ce1754276dd # 1.97.0
 
@@ -69,6 +79,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
+          releaseBody: ${{ steps.release-notes.outputs.body }}
           releaseDraft: true
           prerelease: false
           retryAttempts: 3
