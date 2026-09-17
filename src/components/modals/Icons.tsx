@@ -7,12 +7,14 @@ import TextField from '@mui/material/TextField'
 import { imageToBase64 } from '~/utils'
 import Modal from '~/components/Modal'
 
-const modules = import.meta.glob('/assets/*.svg', { as: 'raw', eager: true })
+const modules = import.meta.glob<string>('/assets/*.svg', {
+  query: '?url',
+  import: 'default',
+  eager: true,
+})
 const icons = Object.entries(modules).map(([key, value]) => {
-  const name = decodeURIComponent(key.split('assets/').pop()!.split('.svg').shift() as string)
-  const svg = new Blob([value], { type: 'image/svg+xml' })
-  const url = URL.createObjectURL(svg)
-  return { name, url }
+  const name = decodeURIComponent(key.split('/').pop()!.split('.svg').shift() as string)
+  return { name, url: value }
 })
 const sortedIcons = icons.sort((a, b) => (a.name.toUpperCase() < b.name.toUpperCase() ? -1 : 1))
 
