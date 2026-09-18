@@ -154,7 +154,7 @@ const AppBar = () => {
 
   return (
     <>
-      <MuiAppBar position="fixed" color="secondary">
+      <MuiAppBar data-tauthy-app-bar position="fixed" color="secondary">
         <Toolbar>
           {location.pathname !== '/' && (
             <IconButton

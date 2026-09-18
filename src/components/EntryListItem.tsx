@@ -21,9 +21,24 @@ const appWindow = getCurrentWebviewWindow()
 const lockToVerticalAxis = (style?: DraggableStyle): DraggableStyle | undefined => {
   if (!style?.transform) return style
 
+  const translation = style.transform.match(
+    /^translate\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px\)/,
+  )
+  if (!translation) return style
+
+  const headerBottom = document
+    .querySelector<HTMLElement>('[data-tauthy-app-bar]')
+    ?.getBoundingClientRect().bottom
+  const initialTop = 'top' in style ? style.top : undefined
+  const verticalOffset = Number(translation[2])
+  const constrainedOffset =
+    headerBottom !== undefined && initialTop !== undefined
+      ? Math.max(verticalOffset, headerBottom - initialTop)
+      : verticalOffset
+
   return {
     ...style,
-    transform: style.transform.replace(/^translate\([^,]+,/, 'translate(0px,'),
+    transform: style.transform.replace(translation[0], `translate(0px, ${constrainedOffset}px)`),
   }
 }
 
