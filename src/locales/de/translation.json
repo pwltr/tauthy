@@ -65,7 +65,9 @@
     "grouping": "Zweier-Gruppierung",
     "editGroups": "Gruppen bearbeiten",
     "usage": "Benutzung",
-    "minimize": "Nach dem Kopieren minimieren"
+    "minimize": "Nach dem Kopieren minimieren",
+    "tray": "Menüleistensymbol anzeigen",
+    "trayDescription": "Codes schnell kopieren, solange Tauthy läuft"
   },
   "security": {
     "pageTitle": "Sicherheit",
@@ -112,6 +114,16 @@
     "confirm": "Bestätigen",
     "delete": "Löschen",
     "cancel": "Abbrechen"
+  },
+  "tray": {
+    "locked": "Tauthy entsperren, um Konten anzuzeigen",
+    "empty": "Noch keine Konten",
+    "unavailable": "Konten sind nicht verfügbar",
+    "open": "Tauthy öffnen",
+    "quit": "Tauthy beenden",
+    "tooltip": "Tauthy",
+    "copied": "Code kopiert",
+    "copyFailed": "Code konnte nicht kopiert werden"
   },
   "toasts": {
     "copied": "In Zwischenablage kopiert",

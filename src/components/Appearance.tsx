@@ -32,7 +32,7 @@ const Appearance = () => {
   const { t, i18n } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const { theme } = useContext(ThemeContext)
-  const { minimizeOnCopy, setAppSettings } = useContext(AppSettingsContext)
+  const { minimizeOnCopy, showTrayIcon, setAppSettings } = useContext(AppSettingsContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
   const [openThemeModal, setOpenThemeModal] = useState(false)
   const [openLanguageModal, setOpenLanguageModal] = useState(false)
@@ -104,10 +104,23 @@ const Appearance = () => {
           <ListItem
             disablePadding
             secondaryAction={<Switch checked={minimizeOnCopy} />}
-            onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy })}
+            onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
           >
             <ListItemButton>
               <ListItemText primary={t('appearance.minimize')} />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem
+            disablePadding
+            secondaryAction={<Switch checked={showTrayIcon} />}
+            onClick={() => setAppSettings({ minimizeOnCopy, showTrayIcon: !showTrayIcon })}
+          >
+            <ListItemButton>
+              <ListItemText
+                primary={t('appearance.tray')}
+                secondary={t('appearance.trayDescription')}
+              />
             </ListItemButton>
           </ListItem>
         </ListSection>

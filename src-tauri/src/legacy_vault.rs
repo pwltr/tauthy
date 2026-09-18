@@ -284,21 +284,27 @@ fn vault_load_at(
   Ok(())
 }
 
-fn vault_get_at(state: &VaultState) -> Result<String, String> {
+pub(crate) fn vault_record_at(state: &VaultState) -> Result<Option<String>, String> {
   let guard = state
     .0
     .lock()
     .map_err(|_| "The vault state lock is unavailable.".to_string())?;
-  let vault = guard
-    .as_ref()
-    .ok_or_else(|| "vault is locked".to_string())?;
+  let Some(vault) = guard.as_ref() else {
+    return Ok(None);
+  };
   let record = vault
     .client
     .store()
     .get(&store_key())
     .map_err(|error| error.to_string())?
     .ok_or_else(|| "record not found".to_string())?;
-  String::from_utf8(record).map_err(|error| error.to_string())
+  String::from_utf8(record)
+    .map(Some)
+    .map_err(|error| error.to_string())
+}
+
+fn vault_get_at(state: &VaultState) -> Result<String, String> {
+  vault_record_at(state)?.ok_or_else(|| "vault is locked".to_string())
 }
 
 fn vault_save_at(state: &VaultState, record: String) -> Result<(), String> {
@@ -356,7 +362,9 @@ pub async fn vault_load(
   let state = state.inner().clone();
   tauri::async_runtime::spawn_blocking(move || vault_load_at(&state, snapshot_path, password))
     .await
-    .map_err(|error| format!("Vault task failed: {error}"))?
+    .map_err(|error| format!("Vault task failed: {error}"))??;
+  let _ = crate::tray::refresh_menu(&app);
+  Ok(())
 }
 
 #[tauri::command]
@@ -365,16 +373,24 @@ pub async fn vault_get(state: State<'_, VaultState>) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn vault_save(state: State<'_, VaultState>, record: String) -> Result<(), String> {
+pub async fn vault_save(
+  app: AppHandle,
+  state: State<'_, VaultState>,
+  record: String,
+) -> Result<(), String> {
   let state = state.inner().clone();
   tauri::async_runtime::spawn_blocking(move || vault_save_at(&state, record))
     .await
-    .map_err(|error| format!("Vault task failed: {error}"))?
+    .map_err(|error| format!("Vault task failed: {error}"))??;
+  let _ = crate::tray::refresh_menu(&app);
+  Ok(())
 }
 
 #[tauri::command]
-pub async fn vault_unload(state: State<'_, VaultState>) -> Result<(), String> {
-  vault_unload_at(&state)
+pub async fn vault_unload(app: AppHandle, state: State<'_, VaultState>) -> Result<(), String> {
+  vault_unload_at(&state)?;
+  let _ = crate::tray::refresh_menu(&app);
+  Ok(())
 }
 
 #[tauri::command]

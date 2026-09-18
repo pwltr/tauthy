@@ -65,7 +65,9 @@
     "grouping": "Agrupar por 2 dígitos",
     "editGroups": "Editar grupos",
     "usage": "Uso",
-    "minimize": "Minimizar después de copiar"
+    "minimize": "Minimizar después de copiar",
+    "tray": "Mostrar icono en la barra de menús",
+    "trayDescription": "Copia códigos rápidamente mientras Tauthy está abierto"
   },
   "security": {
     "pageTitle": "Seguridad",
@@ -112,6 +114,16 @@
     "confirm": "Confirmar",
     "delete": "Eliminar",
     "cancel": "Cancelar"
+  },
+  "tray": {
+    "locked": "Desbloquea Tauthy para mostrar las cuentas",
+    "empty": "Aún no hay cuentas",
+    "unavailable": "Las cuentas no están disponibles",
+    "open": "Abrir Tauthy",
+    "quit": "Salir de Tauthy",
+    "tooltip": "Tauthy",
+    "copied": "Código copiado",
+    "copyFailed": "No se pudo copiar el código"
   },
   "toasts": {
     "copied": "Copiado al portapapeles.",
