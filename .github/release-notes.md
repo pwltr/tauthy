@@ -1,4 +1,4 @@
-## What's new
+## What's new in 0.3.1
 
 - Faster startup and account refresh, especially for password-protected vaults.
 - Added system-aware themes and reduced-motion support.
