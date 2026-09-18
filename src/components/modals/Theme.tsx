@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
 
 import { AppBarTitleContext, ThemeContext } from '~/context'
 import { ThemePreference } from '~/styles/theme'
@@ -11,7 +13,7 @@ import ListItem from '~/components/ListItem'
 
 const Theme = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { setAppBarTitle } = useContext(AppBarTitleContext)
-  const { setTheme } = useContext(ThemeContext)
+  const { theme, setTheme } = useContext(ThemeContext)
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -25,31 +27,41 @@ const Theme = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
 
   return (
     <Modal open={open} onClose={onClose}>
-      <List>
-        <ListItem disablePadding onClick={() => handleClick('system')}>
-          <ListItemButton>
-            <ListItemText primary={t('appearance.themes.system')} />
-          </ListItemButton>
-        </ListItem>
+      <RadioGroup
+        aria-label={t('appearance.theme')}
+        value={theme}
+        onChange={(_, value) => handleClick(value as ThemePreference)}
+      >
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton component="label">
+              <Radio edge="start" value="system" />
+              <ListItemText primary={t('appearance.themes.system')} />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem disablePadding onClick={() => handleClick('light')}>
-          <ListItemButton>
-            <ListItemText primary={t('appearance.themes.light')} />
-          </ListItemButton>
-        </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component="label">
+              <Radio edge="start" value="light" />
+              <ListItemText primary={t('appearance.themes.light')} />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem disablePadding onClick={() => handleClick('dark')}>
-          <ListItemButton>
-            <ListItemText primary={t('appearance.themes.dark')} />
-          </ListItemButton>
-        </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component="label">
+              <Radio edge="start" value="dark" />
+              <ListItemText primary={t('appearance.themes.dark')} />
+            </ListItemButton>
+          </ListItem>
 
-        <ListItem disablePadding onClick={() => handleClick('black')}>
-          <ListItemButton>
-            <ListItemText primary={t('appearance.themes.black')} />
-          </ListItemButton>
-        </ListItem>
-      </List>
+          <ListItem disablePadding>
+            <ListItemButton component="label">
+              <Radio edge="start" value="black" />
+              <ListItemText primary={t('appearance.themes.black')} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </RadioGroup>
     </Modal>
   )
 }
