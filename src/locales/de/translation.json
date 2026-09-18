@@ -52,6 +52,13 @@
   "appearance": {
     "pageTitle": "Erscheinungsbild",
     "theme": "Farbschema",
+    "selectTheme": "Farbschema auswählen",
+    "themes": {
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel",
+      "black": "Schwarz"
+    },
     "language": "Sprache",
     "entries": "Liste",
     "compact": "Kompakt",

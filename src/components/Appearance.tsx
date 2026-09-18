@@ -6,7 +6,6 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 
 import { AppBarTitleContext, ThemeContext, AppSettingsContext, ListOptionsContext } from '~/context'
-import { capitalize } from '~/utils'
 import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
 import ListSection from '~/components/ListSection'
@@ -54,7 +53,10 @@ const Appearance = () => {
           <ListSubheader>App</ListSubheader>
           <ListItem disablePadding onClick={handleOpenThemeModal}>
             <ListItemButton>
-              <ListItemText primary={t('appearance.theme')} secondary={capitalize(theme)} />
+              <ListItemText
+                primary={t('appearance.theme')}
+                secondary={t(`appearance.themes.${theme}`)}
+              />
             </ListItemButton>
           </ListItem>
 

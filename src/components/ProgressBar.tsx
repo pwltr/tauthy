@@ -1,7 +1,9 @@
 import { styled } from '@mui/material/styles'
 
-const Wrapper = styled('div')(
-  ({ theme }) => `
+const Wrapper = styled('div', {
+  shouldForwardProp: (prop: PropertyKey) => prop !== 'durationMs',
+})<{ durationMs: number }>(
+  ({ durationMs, theme }) => `
     background: ${theme.palette.background.paper};
     display: flex;
     height: 5px;
@@ -13,7 +15,11 @@ const Wrapper = styled('div')(
       to {transform: scaleX(0);}
     }
 
-    animation: 30s slide infinite linear;
+    animation: ${durationMs}ms slide linear;
+
+    @media (prefers-reduced-motion: reduce) {
+      display: none;
+    }
   `,
 )
 
@@ -26,12 +32,12 @@ const Bar = styled('div')(
 
 type ProgressBarProps = {
   className?: string
-  animate?: boolean
+  durationMs: number
 }
 
-const ProgressBar = ({ className }: ProgressBarProps) => {
+const ProgressBar = ({ className, durationMs }: ProgressBarProps) => {
   return (
-    <Wrapper className={className}>
+    <Wrapper className={className} durationMs={durationMs}>
       <Bar />
     </Wrapper>
   )

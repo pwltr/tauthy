@@ -52,6 +52,13 @@
   "appearance": {
     "pageTitle": "Apariencia",
     "theme": "Tema",
+    "selectTheme": "Seleccionar tema",
+    "themes": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "black": "Negro"
+    },
     "language": "Idioma",
     "entries": "Entradas",
     "compact": "Compacto",
