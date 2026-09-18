@@ -40,7 +40,7 @@ const Welcome = () => {
       <img src={logo} width="140" />
 
       <Typography variant="h6" align="center" color="primary" mt={3} mb={4}>
-        {t('welcome.beta')}
+        {t('welcome.intro')}
       </Typography>
 
       <FormGroup>

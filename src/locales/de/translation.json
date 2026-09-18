@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "beta": "Diese App nutzt Software, die sich noch in der Beta-Phase befindet.",
+    "intro": "Willkommen bei Tauthy – deiner privaten Authenticator-App.",
     "backup": "Ich stelle sicher jederzeit ein Backup zu haben",
     "start": "Los geht's"
   },
