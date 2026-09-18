@@ -9,10 +9,17 @@ const vault = vi.hoisted(() => ({
   reset: vi.fn(),
   unlock: vi.fn(),
 }))
+const idleTimer = vi.hoisted(() => ({
+  onIdle: undefined as (() => Promise<void>) | undefined,
+}))
 
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/components/AppBar', () => ({ default: () => <div>Header</div> }))
-vi.mock('react-idle-timer', () => ({ useIdleTimer: vi.fn() }))
+vi.mock('react-idle-timer', () => ({
+  useIdleTimer: vi.fn(({ onIdle }: { onIdle: () => Promise<void> }) => {
+    idleTimer.onIdle = onIdle
+  }),
+}))
 
 import Main from '~/components/Main'
 
@@ -41,6 +48,7 @@ describe('vault initialization', () => {
     window.localStorage.setItem('isPasswordSet', 'false')
     window.localStorage.setItem('shouldAutoLock', 'false')
 
+    idleTimer.onIdle = undefined
     Object.values(vault).forEach((mock) => mock.mockReset())
     vault.checkVault.mockResolvedValue('[]')
     vault.isUnlocked.mockResolvedValue(true)
@@ -56,6 +64,24 @@ describe('vault initialization', () => {
 
     expect(screen.getByText('Welcome')).toBeInTheDocument()
     expect(vault.checkVault).not.toHaveBeenCalled()
+  })
+
+  it('opens the account screen when the existing vault can be read', async () => {
+    renderMain()
+    await flushPromises()
+
+    expect(vault.checkVault).toHaveBeenCalledOnce()
+    expect(vault.reset).not.toHaveBeenCalled()
+    expect(screen.getByText('Accounts')).toBeInTheDocument()
+  })
+
+  it('recovers from a stale password setting by showing the unlock screen', async () => {
+    vault.checkVault.mockRejectedValueOnce(new Error('Please try another password.'))
+    renderMain()
+    await flushPromises()
+
+    expect(vault.lock).toHaveBeenCalledOnce()
+    expect(screen.getByText('Unlock')).toBeInTheDocument()
   })
 
   it('initializes a missing vault record and opens the account screen', async () => {
@@ -79,5 +105,20 @@ describe('vault initialization', () => {
 
     expect(vault.unlock).toHaveBeenCalledWith('')
     expect(screen.getByText('Accounts')).toBeInTheDocument()
+  })
+
+  it('locks a password-protected vault after the configured idle timeout', async () => {
+    window.localStorage.setItem('isPasswordSet', 'true')
+    window.localStorage.setItem('shouldAutoLock', 'true')
+    renderMain()
+    await flushPromises()
+
+    expect(screen.getByText('Accounts')).toBeInTheDocument()
+    expect(idleTimer.onIdle).toBeDefined()
+
+    await act(async () => idleTimer.onIdle?.())
+
+    expect(vault.lock).toHaveBeenCalledOnce()
+    expect(screen.getByText('Unlock')).toBeInTheDocument()
   })
 })
