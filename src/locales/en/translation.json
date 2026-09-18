@@ -115,10 +115,11 @@
   },
   "updater": {
     "title": "Tauthy update",
+    "version": "Version {{version}}",
     "available": "Tauthy {{version}} is now available — you have {{currentVersion}}.",
     "installPrompt": "Would you like to install it now?",
     "releaseNotes": "Release notes",
-    "later": "Later",
+    "later": "Not now",
     "update": "Update",
     "retry": "Try again",
     "downloading": "Downloading update…",

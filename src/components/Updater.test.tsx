@@ -7,10 +7,11 @@ vi.mock('react-i18next', () => ({
     t: (key: string, values?: Record<string, string | number>) =>
       ({
         'updater.title': 'Tauthy update',
+        'updater.version': `Version ${values?.version}`,
         'updater.available': `Tauthy ${values?.version} is available; you have ${values?.currentVersion}.`,
         'updater.installPrompt': 'Install it now?',
         'updater.releaseNotes': 'Release notes',
-        'updater.later': 'Later',
+        'updater.later': 'Not now',
         'updater.update': 'Update',
         'updater.retry': 'Try again',
         'updater.downloading': 'Downloading update…',
@@ -28,7 +29,7 @@ import Updater from '~/components/Updater'
 const update = {
   currentVersion: '0.3.1',
   version: '0.3.2',
-  body: 'A useful fix.\nAnother improvement.',
+  body: '## Improvements\n\n- A useful fix\n- Another improvement',
 } as Update
 
 const defaultProps = {
@@ -48,10 +49,12 @@ describe('Updater', () => {
     render(<Updater {...defaultProps} onInstall={onInstall} onDismiss={onDismiss} />)
 
     expect(screen.getByText('Tauthy 0.3.2 is available; you have 0.3.1.')).toBeInTheDocument()
-    expect(screen.getByText(/A useful fix/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Improvements' })).toBeInTheDocument()
+    expect(screen.getByRole('list')).toBeInTheDocument()
+    expect(screen.getByText('A useful fix')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Update' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Later' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
     expect(onInstall).toHaveBeenCalledOnce()
     expect(onDismiss).toHaveBeenCalledOnce()
   })

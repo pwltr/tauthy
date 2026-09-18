@@ -115,10 +115,11 @@
   },
   "updater": {
     "title": "Mise à jour de Tauthy",
+    "version": "Version {{version}}",
     "available": "Tauthy {{version}} est disponible — vous utilisez la version {{currentVersion}}.",
     "installPrompt": "Voulez-vous l’installer maintenant ?",
     "releaseNotes": "Notes de version",
-    "later": "Plus tard",
+    "later": "Pas maintenant",
     "update": "Mettre à jour",
     "retry": "Réessayer",
     "downloading": "Téléchargement de la mise à jour…",

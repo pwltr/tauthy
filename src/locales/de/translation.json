@@ -115,10 +115,11 @@
   },
   "updater": {
     "title": "Tauthy-Update",
+    "version": "Version {{version}}",
     "available": "Tauthy {{version}} ist jetzt verfügbar — installiert ist {{currentVersion}}.",
     "installPrompt": "Möchtest du das Update jetzt installieren?",
     "releaseNotes": "Versionshinweise",
-    "later": "Später",
+    "later": "Nicht jetzt",
     "update": "Aktualisieren",
     "retry": "Erneut versuchen",
     "downloading": "Update wird heruntergeladen…",

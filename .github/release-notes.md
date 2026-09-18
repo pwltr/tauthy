@@ -1,7 +1,7 @@
 ## What's new
 
 - Prevented multiple Tauthy instances from accessing the vault simultaneously.
-- Added download and installation progress to the in-app updater.
+- Added a clearer in-app updater with formatted release notes and download and installation progress.
 - Improved the code-expiration animation so it starts at the correct position.
 
 ### Windows upgrade notice
