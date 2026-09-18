@@ -4,7 +4,7 @@ import { copyFile, exists, mkdir, remove } from '@tauri-apps/plugin-fs'
 
 import { VaultEntry } from '~/types'
 
-const appName = 'tauthy'
+const appName = import.meta.env.DEV ? 'tauthy-dev' : 'tauthy'
 const vaultName = 'vault.stronghold'
 const dataDirectory = await join(await dataDir(), appName)
 const vaultPath = await join(dataDirectory, vaultName)
