@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { Trans, useTranslation } from 'react-i18next'
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
 import Fab from '@mui/material/Fab'
 import AddIcon from '@mui/icons-material/Add'
 import { Link, Typography } from '@mui/material'
 
 import { vault } from '~/utils/storage'
-import { useInterval } from '~/hooks/useInterval'
-import { generateTOTPs } from '~/utils'
+import { generateTOTPs, getTOTPRefreshDelay } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
 import EntryList from '~/components/EntryList'
 import type { VaultEntry } from '~/types'
@@ -17,16 +16,10 @@ export type ListEntry = VaultEntry & {
   token?: string
 }
 
-const StyledProgressBar = styled(ProgressBar)<{ animate: boolean }>`
+const StyledProgressBar = styled(ProgressBar)`
   position: fixed;
   top: 3.5rem;
   z-index: 1;
-
-  ${(props) =>
-    !props.animate &&
-    css`
-      animation: none;
-    `}
 `
 
 const StyledList = styled(EntryList)`
@@ -51,37 +44,35 @@ const Button = styled(Fab)`
   right: 16px;
 `
 
-const INTERVAL_FAST = 1000
-const INTERVAL_STANDARD = 30000
-
 const Codes = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [items, setItems] = useState<ListEntry[]>([])
-  const [animate, setAnimate] = useState(true)
-  const [delay, setDelay] = useState<number>(INTERVAL_FAST)
+  const [refreshDelay, setRefreshDelay] = useState<number | null>(null)
+  const [progressDuration, setProgressDuration] = useState(30_000)
+  const [progressKey, setProgressKey] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
-  const generateTokens = async (items: ListEntry[]) => {
-    const tokens = await generateTOTPs(items.map((item) => item.secret))
-    const itemsWithTokens = items.map((item, index) => {
-      const token = tokens[index] ?? ''
-      return {
-        ...item,
-        issuer: token ? item.issuer : t('codes.invalid'),
-        token,
-      }
-    })
+  const generateTokens = useCallback(
+    async (entries: ListEntry[]) => {
+      const { codes, expiresAtMs } = await generateTOTPs(entries.map((item) => item.secret))
+      const itemsWithTokens = entries.map((item, index) => {
+        const token = codes[index] ?? ''
+        return {
+          ...item,
+          issuer: token ? item.issuer : t('codes.invalid'),
+          token,
+        }
+      })
 
-    if (!items[0]?.token) {
+      const duration = getTOTPRefreshDelay(expiresAtMs)
       setItems(itemsWithTokens)
-    }
-
-    if (items[0]?.token && items[0].token !== itemsWithTokens[0].token) {
-      setItems(itemsWithTokens)
-      reset()
-    }
-  }
+      setRefreshDelay(duration)
+      setProgressDuration(duration)
+      setProgressKey((key) => key + 1)
+    },
+    [t],
+  )
 
   // get tokens on mount
   useEffect(() => {
@@ -89,26 +80,21 @@ const Codes = () => {
       setIsLoading(true)
       const currentVault = await vault.getVault()
       setItems(currentVault)
-      await generateTokens(currentVault)
+      if (currentVault.length > 0) await generateTokens(currentVault)
       setIsLoading(false)
     }
 
     getEntries()
-  }, [])
+  }, [generateTokens])
 
-  // and after specified delay
-  useInterval(() => {
-    generateTokens(items)
-  }, delay)
+  // Refresh at the exact rollover returned by the backend. A timeout is
+  // rescheduled after every response so suspended apps cannot accumulate drift.
+  useEffect(() => {
+    if (refreshDelay === null || items.length === 0) return
 
-  const reset = () => {
-    // set normal interval
-    setDelay(INTERVAL_STANDARD)
-
-    // reset progressbar
-    setAnimate(false)
-    setTimeout(() => setAnimate(true), 10)
-  }
+    const timeout = window.setTimeout(() => void generateTokens(items), refreshDelay)
+    return () => window.clearTimeout(timeout)
+  }, [generateTokens, items, refreshDelay])
 
   if (isLoading) {
     return null
@@ -132,7 +118,7 @@ const Codes = () => {
 
       {items.length > 0 && (
         <>
-          <StyledProgressBar animate={animate} />
+          <StyledProgressBar key={progressKey} durationMs={progressDuration} />
           <StyledList entries={items} />
         </>
       )}

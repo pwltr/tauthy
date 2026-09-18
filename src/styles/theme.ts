@@ -30,10 +30,16 @@ declare module '@mui/material/styles' {
 }
 
 export type PaletteMode = 'light' | 'dark' | 'black'
+export type ThemePreference = PaletteMode | 'system'
+
+export const resolvePaletteMode = (
+  preference: ThemePreference,
+  prefersDarkMode: boolean,
+): PaletteMode => (preference === 'system' ? (prefersDarkMode ? 'dark' : 'light') : preference)
 
 const defaultTheme = createTheme(themes.light.mui)
 
-export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
+export const getDesignTokens = (mode: PaletteMode, reduceMotion = false): ThemeOptions => ({
   ...defaultTheme,
   palette: {
     ...defaultTheme.palette,
@@ -50,6 +56,23 @@ export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
   },
   typography: { fontFamily: 'inherit' },
   components: {
+    MuiButtonBase: {
+      defaultProps: {
+        disableRipple: reduceMotion,
+      },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            scrollBehavior: 'auto !important',
+            transitionDuration: '0.01ms !important',
+          },
+        },
+      },
+    },
     MuiButton: {
       variants: [
         {

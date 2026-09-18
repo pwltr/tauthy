@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import { PaletteMode } from '~/styles/theme'
+import { ThemePreference } from '~/styles/theme'
 
 export const AppBarTitleContext = createContext<{
   appBarTitle: string
@@ -10,8 +10,8 @@ export const AppBarTitleContext = createContext<{
 })
 
 export const ThemeContext = createContext<{
-  theme: PaletteMode
-  setTheme: (mode: PaletteMode) => void
+  theme: ThemePreference
+  setTheme: (mode: ThemePreference) => void
 }>({
   theme: 'light',
   setTheme: () => {},

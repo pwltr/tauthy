@@ -1,8 +1,11 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use data_encoding::BASE32_NOPAD;
 
+const PERIOD_SECONDS: u64 = 30;
+const PERIOD_MILLISECONDS: u128 = PERIOD_SECONDS as u128 * 1_000;
 const SKEW: u64 = 2;
+const SKEW_MILLISECONDS: u128 = SKEW as u128 * 1_000;
 
 const INVALID_SECRET: &str = "could not generate totp; `secret` may be invalid.";
 
@@ -23,11 +26,27 @@ fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
   Ok(crate::otp::generate_totp_sha1(&secret, timestamp))
 }
 
-fn current_timestamp() -> Result<u64, String> {
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GeneratedTotps {
+  codes: Vec<Option<String>>,
+  expires_at_ms: u64,
+}
+
+fn current_time() -> Result<Duration, String> {
   SystemTime::now()
     .duration_since(UNIX_EPOCH)
     .map_err(|_| "system time was before the Unix epoch.".to_string())
-    .map(|duration| duration.as_secs().saturating_add(SKEW))
+}
+
+fn timestamp_with_skew(duration: Duration) -> u64 {
+  duration.as_secs().saturating_add(SKEW)
+}
+
+fn next_expiration_ms(elapsed_ms: u128) -> u64 {
+  let adjusted_ms = elapsed_ms.saturating_add(SKEW_MILLISECONDS);
+  let next_boundary = (adjusted_ms / PERIOD_MILLISECONDS + 1) * PERIOD_MILLISECONDS;
+  next_boundary.saturating_sub(SKEW_MILLISECONDS) as u64
 }
 
 #[tauri::command]
@@ -36,18 +55,22 @@ pub fn generate_totp(argument: String) -> Result<String, String> {
     return Err("`secret` was empty; it must be nonempty.".into());
   }
 
-  generate_totp_at(&argument, current_timestamp()?)
+  generate_totp_at(&argument, timestamp_with_skew(current_time()?))
 }
 
 #[tauri::command]
-pub fn generate_totps(arguments: Vec<String>) -> Result<Vec<Option<String>>, String> {
-  let timestamp = current_timestamp()?;
-  Ok(
-    arguments
-      .iter()
-      .map(|argument| generate_totp_at(argument, timestamp).ok())
-      .collect(),
-  )
+pub fn generate_totps(arguments: Vec<String>) -> Result<GeneratedTotps, String> {
+  let current_time = current_time()?;
+  let timestamp = timestamp_with_skew(current_time);
+  let codes = arguments
+    .iter()
+    .map(|argument| generate_totp_at(argument, timestamp).ok())
+    .collect();
+
+  Ok(GeneratedTotps {
+    codes,
+    expires_at_ms: next_expiration_ms(current_time.as_millis()),
+  })
 }
 
 #[cfg(test)]
@@ -109,5 +132,12 @@ mod tests {
       .collect::<Vec<_>>();
 
     assert_eq!(results, vec![Some("260182".into()), None]);
+  }
+
+  #[test]
+  fn expiration_matches_the_skewed_totp_boundary() {
+    assert_eq!(next_expiration_ms(0), 28_000);
+    assert_eq!(next_expiration_ms(27_999), 28_000);
+    assert_eq!(next_expiration_ms(28_000), 58_000);
   }
 }

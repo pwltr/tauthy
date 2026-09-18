@@ -4,7 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import GlobalStyle from '~/styles/global'
-import { getDesignTokens, PaletteMode } from '~/styles/theme'
+import { getDesignTokens, resolvePaletteMode, ThemePreference } from '~/styles/theme'
 import { checkUpdate } from '~/utils'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
@@ -24,11 +24,12 @@ import '~/utils/i18n'
 
 const App = () => {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const [appBarTitle, setAppBarTitle] = useState('Tauthy')
   const [searchTerm, setSearch] = useState('')
   const [sortOption, setSortOption] = useLocalStorage<SortOption>('sortOption', 'custom')
   const [customOrder, setCustomOrder] = useLocalStorage<string[]>('customOrder', [])
-  const [mode, setMode] = useLocalStorage<PaletteMode>('theme', prefersDarkMode ? 'dark' : 'light')
+  const [themePreference, setThemePreference] = useLocalStorage<ThemePreference>('theme', 'system')
   const [appSettings, setAppSettings] = useLocalStorage('appSettings', {
     minimizeOnCopy: false,
   })
@@ -43,8 +44,11 @@ const App = () => {
     }
   }, [])
 
-  // Update the theme only if the mode changes
-  const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode])
+  const mode = resolvePaletteMode(themePreference, prefersDarkMode)
+  const theme = useMemo(
+    () => createTheme(getDesignTokens(mode, prefersReducedMotion)),
+    [mode, prefersReducedMotion],
+  )
 
   return (
     <>
@@ -52,7 +56,7 @@ const App = () => {
       <GlobalStyle />
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
-        <ThemeContext.Provider value={{ theme: mode, setTheme: setMode }}>
+        <ThemeContext.Provider value={{ theme: themePreference, setTheme: setThemePreference }}>
           <AppSettingsContext.Provider value={{ ...appSettings, setAppSettings }}>
             <ListOptionsContext.Provider value={{ ...listOptions, setListOptions }}>
               <SearchContext.Provider value={{ searchTerm, setSearch }}>
