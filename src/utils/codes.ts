@@ -9,11 +9,12 @@ import type { FormData, VaultEntry, AegisEntry, AuthyEntry } from '~/types'
 
 export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
 
-export const generateTOTP = async (secret: string) => {
+export const generateTOTPs = async (secrets: string[]) => {
   try {
-    return await invoke<string>('generate_totp', { argument: secret })
+    return await invoke<Array<string | null>>('generate_totps', { arguments: secrets })
   } catch (err) {
     console.error('error from backend:', err)
+    return secrets.map(() => null)
   }
 }
 
