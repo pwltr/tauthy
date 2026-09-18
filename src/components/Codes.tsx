@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Trans, useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
 import Fab from '@mui/material/Fab'
 import AddIcon from '@mui/icons-material/Add'
-import { Typography } from '@mui/material'
+import { Link, Typography } from '@mui/material'
 
 import { vault } from '~/utils/storage'
 import { useInterval } from '~/hooks/useInterval'
@@ -117,7 +117,13 @@ const Codes = () => {
       {items.length === 0 && (
         <Container>
           <Typography color="primary" align="center">
-            {t('codes.empty')}
+            <Trans
+              i18nKey="codes.empty"
+              components={{
+                add: <Link component={RouterLink} to="/create" />,
+                import: <Link component={RouterLink} to="/import" />,
+              }}
+            />
           </Typography>
         </Container>
       )}

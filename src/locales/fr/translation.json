@@ -12,7 +12,7 @@
     "unlock": "Déverrouiller"
   },
   "codes": {
-    "empty": "Ajoutez une entrée ou importez une sauvegarde",
+    "empty": "<add>Ajoutez une entrée</add> ou <import>importez une sauvegarde</import>",
     "invalid": "Secret invalide"
   },
   "appBar": {

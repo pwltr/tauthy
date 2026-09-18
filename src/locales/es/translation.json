@@ -12,7 +12,7 @@
     "unlock": "Desbloquear"
   },
   "codes": {
-    "empty": "Añadir entrada o importar una copia de seguridad",
+    "empty": "<add>Añadir entrada</add> o <import>importar una copia de seguridad</import>",
     "invalid": "Secreto incorrecto"
   },
   "appBar": {

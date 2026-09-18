@@ -12,7 +12,7 @@
     "unlock": "Unlock"
   },
   "codes": {
-    "empty": "Add an entry or import a backup",
+    "empty": "<add>Add an entry</add> or <import>import a backup</import>",
     "invalid": "Invalid secret"
   },
   "appBar": {

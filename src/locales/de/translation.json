@@ -12,7 +12,7 @@
     "unlock": "Entsperren"
   },
   "codes": {
-    "empty": "Konto hinzufügen oder Backup importieren",
+    "empty": "<add>Konto hinzufügen</add> oder <import>Backup importieren</import>",
     "invalid": "Schlüssel ungültig"
   },
   "appBar": {
