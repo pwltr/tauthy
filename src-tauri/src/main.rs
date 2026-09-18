@@ -9,7 +9,22 @@ mod otp;
 mod menu;
 
 fn main() {
-  let builder = tauri::Builder::default()
+  let builder = tauri::Builder::default();
+
+  // Register this first so duplicate launches are stopped before any other
+  // plugin or vault initialization can run.
+  #[cfg(desktop)]
+  let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+    use tauri::Manager;
+
+    if let Some(window) = app.get_webview_window("main") {
+      let _ = window.unminimize();
+      let _ = window.show();
+      let _ = window.set_focus();
+    }
+  }));
+
+  let builder = builder
     .manage(legacy_vault::VaultState::default())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_dialog::init())
