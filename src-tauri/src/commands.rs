@@ -23,19 +23,31 @@ fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
   Ok(crate::otp::generate_totp_sha1(&secret, timestamp))
 }
 
+fn current_timestamp() -> Result<u64, String> {
+  SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .map_err(|_| "system time was before the Unix epoch.".to_string())
+    .map(|duration| duration.as_secs().saturating_add(SKEW))
+}
+
 #[tauri::command]
 pub fn generate_totp(argument: String) -> Result<String, String> {
   if argument.is_empty() {
     return Err("`secret` was empty; it must be nonempty.".into());
   }
 
-  let timestamp = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .map_err(|_| "system time was before the Unix epoch.".to_string())?
-    .as_secs()
-    .saturating_add(SKEW);
+  generate_totp_at(&argument, current_timestamp()?)
+}
 
-  generate_totp_at(&argument, timestamp)
+#[tauri::command]
+pub fn generate_totps(arguments: Vec<String>) -> Result<Vec<Option<String>>, String> {
+  let timestamp = current_timestamp()?;
+  Ok(
+    arguments
+      .iter()
+      .map(|argument| generate_totp_at(argument, timestamp).ok())
+      .collect(),
+  )
 }
 
 #[cfg(test)]
@@ -86,5 +98,16 @@ mod tests {
       generate_totp("".into()),
       Err("`secret` was empty; it must be nonempty.".into())
     );
+  }
+
+  #[test]
+  fn batch_generation_preserves_invalid_entries() {
+    let arguments: Vec<String> = vec!["BASE32SECRET3232".into(), "invalid_secret".into()];
+    let results = arguments
+      .iter()
+      .map(|argument| generate_totp_at(argument, 0).ok())
+      .collect::<Vec<_>>();
+
+    assert_eq!(results, vec![Some("260182".into()), None]);
   }
 }

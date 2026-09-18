@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { styled } from '@mui/material/styles'
 
@@ -5,13 +6,16 @@ import Welcome from '~/components/Welcome'
 import Unlock from '~/components/Unlock'
 import Main from '~/components/Main'
 import Codes from '~/components/Codes'
-import Create from '~/components/Create'
-import Edit from '~/components/Edit'
-import Settings from '~/components/Settings'
-import Appearance from '~/components/Appearance'
-import Security from '~/components/Security'
-import Import from '~/components/Import'
-import About from '~/components/About'
+
+const Create = lazy(() => import('~/components/Create'))
+const Edit = lazy(() => import('~/components/Edit'))
+const Settings = lazy(() => import('~/components/Settings'))
+const Appearance = lazy(() => import('~/components/Appearance'))
+const Security = lazy(() => import('~/components/Security'))
+const Import = lazy(() => import('~/components/Import'))
+const About = lazy(() => import('~/components/About'))
+
+const deferred = (component: ReactNode) => <Suspense fallback={null}>{component}</Suspense>
 
 const Wrapper = styled('div')(
   ({ theme }) => `
@@ -32,13 +36,13 @@ const AppRouter = () => (
 
         <Route path="/" element={<Main />}>
           <Route index element={<Codes />} />
-          <Route path="create" element={<Create />} />
-          <Route path="edit/:id" element={<Edit />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="appearance" element={<Appearance />} />
-          <Route path="security" element={<Security />} />
-          <Route path="import" element={<Import />} />
-          <Route path="about" element={<About />} />
+          <Route path="create" element={deferred(<Create />)} />
+          <Route path="edit/:id" element={deferred(<Edit />)} />
+          <Route path="settings" element={deferred(<Settings />)} />
+          <Route path="appearance" element={deferred(<Appearance />)} />
+          <Route path="security" element={deferred(<Security />)} />
+          <Route path="import" element={deferred(<Import />)} />
+          <Route path="about" element={deferred(<About />)} />
         </Route>
       </Routes>
     </Wrapper>

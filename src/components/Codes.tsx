@@ -8,7 +8,7 @@ import { Link, Typography } from '@mui/material'
 
 import { vault } from '~/utils/storage'
 import { useInterval } from '~/hooks/useInterval'
-import { generateTOTP } from '~/utils'
+import { generateTOTPs } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
 import EntryList from '~/components/EntryList'
 import type { VaultEntry } from '~/types'
@@ -63,13 +63,15 @@ const Codes = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   const generateTokens = async (items: ListEntry[]) => {
-    const promises = items.map((item) => generateTOTP(item.secret))
-    const tokens = await Promise.all(promises)
-    const itemsWithTokens = items.map((item, index) => ({
-      ...item,
-      issuer: tokens[index] ? item.issuer : t('codes.invalid'),
-      token: tokens[index] ? tokens[index] : '',
-    }))
+    const tokens = await generateTOTPs(items.map((item) => item.secret))
+    const itemsWithTokens = items.map((item, index) => {
+      const token = tokens[index] ?? ''
+      return {
+        ...item,
+        issuer: token ? item.issuer : t('codes.invalid'),
+        token,
+      }
+    })
 
     if (!items[0]?.token) {
       setItems(itemsWithTokens)

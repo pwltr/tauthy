@@ -18,14 +18,16 @@ const removeIfExists = async (path: string) => {
 
 export const setupVault = async () => {
   await mkdir(dataDirectory, { recursive: true })
-  return new Vault('')
+  const passwordIsSet = localStorage.getItem('isPasswordSet') === 'true'
+  return new Vault(passwordIsSet ? undefined : '')
 }
 
 export class Vault {
   private ready: Promise<void>
+  private cachedRecord?: string
 
-  constructor(password: string) {
-    this.ready = this.load(password)
+  constructor(password?: string) {
+    this.ready = password === undefined ? Promise.resolve() : this.load(password)
   }
 
   private load(password: string) {
@@ -33,8 +35,11 @@ export class Vault {
   }
 
   async checkVault() {
+    if (this.cachedRecord !== undefined) return this.cachedRecord
+
     await this.ready
-    return await invoke<string>('vault_get')
+    this.cachedRecord = await invoke<string>('vault_get')
+    return this.cachedRecord
   }
 
   async getVault() {
@@ -46,6 +51,7 @@ export class Vault {
   async save(record: string) {
     await this.ready
     await invoke('vault_save', { record })
+    this.cachedRecord = record
   }
 
   async reset() {
@@ -60,7 +66,11 @@ export class Vault {
   }
 
   async getStatus() {
-    return await invoke('vault_status')
+    return await invoke<{ status: 'locked' | 'unlocked' }>('vault_status')
+  }
+
+  async isUnlocked() {
+    return (await this.getStatus()).status === 'unlocked'
   }
 
   onStatusChange() {
@@ -70,10 +80,12 @@ export class Vault {
   async lock() {
     console.info('locking vault...')
     await invoke('vault_unload')
+    this.cachedRecord = undefined
     console.info('vault locked.')
   }
 
   async unlock(password: string) {
+    this.cachedRecord = undefined
     this.ready = this.load(password)
     await this.ready
   }

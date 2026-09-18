@@ -20,6 +20,7 @@ fn main() {
     .plugin(tauri_plugin_updater::Builder::new().build())
     .invoke_handler(tauri::generate_handler![
       commands::generate_totp,
+      commands::generate_totps,
       legacy_vault::vault_load,
       legacy_vault::vault_get,
       legacy_vault::vault_save,

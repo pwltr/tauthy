@@ -50,6 +50,11 @@ const Main = () => {
       setInitializationError('')
 
       try {
+        if (isPasswordSet && !reload && !(await vault.isUnlocked())) {
+          navigate('unlock')
+          return
+        }
+
         if (reload) await vault.unlock('')
         console.info('looking for unlocked vault...')
         await vault.checkVault()
@@ -76,7 +81,7 @@ const Main = () => {
         setIsLoading(false)
       }
     },
-    [navigate, showWelcome],
+    [isPasswordSet, navigate, showWelcome],
   )
 
   useEffect(() => {
