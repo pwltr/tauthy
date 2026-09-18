@@ -37,13 +37,8 @@ custom-protocol = ["tauri/custom-protocol"]
 [dev-dependencies]
 rand = "0.8"
 
-# Stronghold's password derivation is prohibitively slow without optimization.
-# Keep application code debuggable while making development vault operations responsive.
-[profile.dev.package.iota_stronghold]
-opt-level = 3
-
-[profile.dev.package."iota-crypto"]
-opt-level = 3
-
-[profile.dev.package."rust-argon2"]
+# Stronghold's password derivation crosses several transitive crypto crates and
+# is prohibitively slow when any of them are left unoptimized. Keep Tauthy's own
+# code debuggable while compiling dependencies at release speed.
+[profile.dev.package."*"]
 opt-level = 3
