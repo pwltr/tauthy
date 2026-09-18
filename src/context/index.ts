@@ -19,9 +19,11 @@ export const ThemeContext = createContext<{
 
 export const AppSettingsContext = createContext<{
   minimizeOnCopy: boolean
-  setAppSettings: (options: { minimizeOnCopy: boolean }) => void
+  showTrayIcon: boolean
+  setAppSettings: (options: { minimizeOnCopy: boolean; showTrayIcon: boolean }) => void
 }>({
   minimizeOnCopy: false,
+  showTrayIcon: false,
   setAppSettings: () => {},
 })
 

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 import { Toaster } from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
@@ -23,6 +25,7 @@ import {
 import '~/utils/i18n'
 
 const App = () => {
+  const { t, i18n } = useTranslation()
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const [appBarTitle, setAppBarTitle] = useState('Tauthy')
@@ -32,11 +35,30 @@ const App = () => {
   const [themePreference, setThemePreference] = useLocalStorage<ThemePreference>('theme', 'system')
   const [appSettings, setAppSettings] = useLocalStorage('appSettings', {
     minimizeOnCopy: false,
+    showTrayIcon: false,
   })
+  const minimizeOnCopy = appSettings.minimizeOnCopy ?? false
+  const showTrayIcon = appSettings.showTrayIcon ?? false
   const [listOptions, setListOptions] = useLocalStorage('listOptions', {
     dense: false,
     groupByTwos: false,
   })
+
+  useEffect(() => {
+    void invoke('tray_configure', {
+      enabled: showTrayIcon,
+      labels: {
+        locked: t('tray.locked'),
+        empty: t('tray.empty'),
+        unavailable: t('tray.unavailable'),
+        open: t('tray.open'),
+        quit: t('tray.quit'),
+        tooltip: t('tray.tooltip'),
+        copied: t('tray.copied'),
+        copyFailed: t('tray.copyFailed'),
+      },
+    })
+  }, [i18n.language, showTrayIcon, t])
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -57,7 +79,7 @@ const App = () => {
 
       <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
         <ThemeContext.Provider value={{ theme: themePreference, setTheme: setThemePreference }}>
-          <AppSettingsContext.Provider value={{ ...appSettings, setAppSettings }}>
+          <AppSettingsContext.Provider value={{ minimizeOnCopy, showTrayIcon, setAppSettings }}>
             <ListOptionsContext.Provider value={{ ...listOptions, setListOptions }}>
               <SearchContext.Provider value={{ searchTerm, setSearch }}>
                 <SortContext.Provider

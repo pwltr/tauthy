@@ -1,9 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri::Manager;
+
 mod commands;
 mod legacy_vault;
 mod otp;
+mod tray;
 
 #[cfg(target_os = "macos")]
 mod menu;
@@ -15,17 +18,15 @@ fn main() {
   // plugin or vault initialization can run.
   #[cfg(desktop)]
   let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-    use tauri::Manager;
-
-    if let Some(window) = app.get_webview_window("main") {
-      let _ = window.unminimize();
-      let _ = window.show();
-      let _ = window.set_focus();
-    }
+    tray::show_main_window(app);
   }));
 
   let builder = builder
     .manage(legacy_vault::VaultState::default())
+    .manage(tray::TrayLabelState::default())
+    .manage(tray::TrayMenuState::default())
+    .manage(tray::TrayEnabledState::default())
+    .manage(tray::TrayFeedbackState::default())
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
@@ -41,11 +42,25 @@ fn main() {
       legacy_vault::vault_save,
       legacy_vault::vault_unload,
       legacy_vault::vault_status,
+      tray::tray_configure,
     ]);
 
-  // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
-  #[cfg(target_os = "macos")]
-  let builder = builder.setup(menu::setup);
+  let builder = builder
+    .setup(|app| {
+      // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
+      #[cfg(target_os = "macos")]
+      menu::setup(app)?;
+
+      Ok(())
+    })
+    .on_window_event(|window, event| {
+      if window.label() == "main" && tray::is_enabled(window.app_handle()) {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+          api.prevent_close();
+          let _ = window.hide();
+        }
+      }
+    });
 
   builder
     .run(tauri::generate_context!())
