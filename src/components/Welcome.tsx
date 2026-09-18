@@ -61,7 +61,7 @@ const Welcome = () => {
         aria-label="accept"
         color="primary"
         variant="contained"
-        // disabled={!checked}
+        disabled={!checked}
         onClick={handleSubmit}
       >
         {t('welcome.start')}
