@@ -113,6 +113,22 @@
     "delete": "Löschen",
     "cancel": "Abbrechen"
   },
+  "updater": {
+    "title": "Tauthy-Update",
+    "version": "Version {{version}}",
+    "available": "Tauthy {{version}} ist jetzt verfügbar — installiert ist {{currentVersion}}.",
+    "installPrompt": "Möchtest du das Update jetzt installieren?",
+    "releaseNotes": "Versionshinweise",
+    "later": "Nicht jetzt",
+    "update": "Aktualisieren",
+    "retry": "Erneut versuchen",
+    "downloading": "Update wird heruntergeladen…",
+    "downloadingProgress": "Update wird heruntergeladen… {{progress}} %",
+    "downloadProgress": "Downloadfortschritt des Updates",
+    "installing": "Update wird installiert… Tauthy wird anschließend neu gestartet.",
+    "installProgress": "Installationsfortschritt des Updates",
+    "error": "Das Update konnte nicht installiert werden."
+  },
   "toasts": {
     "copied": "In Zwischenablage kopiert",
     "imported": "Tresor erfolgreich importiert",

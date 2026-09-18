@@ -113,6 +113,22 @@
     "delete": "Eliminar",
     "cancel": "Cancelar"
   },
+  "updater": {
+    "title": "Actualización de Tauthy",
+    "version": "Versión {{version}}",
+    "available": "Tauthy {{version}} ya está disponible; tienes la versión {{currentVersion}}.",
+    "installPrompt": "¿Quieres instalarla ahora?",
+    "releaseNotes": "Notas de la versión",
+    "later": "Ahora no",
+    "update": "Actualizar",
+    "retry": "Intentar de nuevo",
+    "downloading": "Descargando la actualización…",
+    "downloadingProgress": "Descargando la actualización… {{progress}} %",
+    "downloadProgress": "Progreso de descarga de la actualización",
+    "installing": "Instalando la actualización… Tauthy se reiniciará cuando esté lista.",
+    "installProgress": "Progreso de instalación de la actualización",
+    "error": "No se pudo instalar la actualización."
+  },
   "toasts": {
     "copied": "Copiado al portapapeles.",
     "imported": "Baúl importado correctamente.",

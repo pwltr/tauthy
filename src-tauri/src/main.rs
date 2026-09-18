@@ -43,9 +43,24 @@ fn main() {
       legacy_vault::vault_status,
     ]);
 
-  // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
-  #[cfg(target_os = "macos")]
-  let builder = builder.setup(menu::setup);
+  let builder = builder.setup(|app| {
+    // Keep secrets out of screen captures in production. Debug builds and
+    // explicitly marked test builds remain capturable for UI verification.
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    if !cfg!(debug_assertions) && option_env!("TAUTHY_ALLOW_SCREENSHOTS").is_none() {
+      use tauri::Manager;
+
+      if let Some(window) = app.get_webview_window("main") {
+        window.set_content_protected(true)?;
+      }
+    }
+
+    // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
+    #[cfg(target_os = "macos")]
+    menu::setup(app)?;
+
+    Ok(())
+  });
 
   builder
     .run(tauri::generate_context!())

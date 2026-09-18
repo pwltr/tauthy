@@ -5,10 +5,10 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, resolvePaletteMode, ThemePreference } from '~/styles/theme'
-import { checkUpdate } from '~/utils'
-import { useLocalStorage, useMediaQuery } from '~/hooks'
+import { useLocalStorage, useMediaQuery, useUpdater } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
+import Updater from '~/components/Updater'
 import {
   AppBarTitleContext,
   ThemeContext,
@@ -37,12 +37,13 @@ const App = () => {
     dense: false,
     groupByTwos: false,
   })
+  const updater = useUpdater()
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
-      checkUpdate()
+      void updater.checkForUpdate()
     }
-  }, [])
+  }, [updater.checkForUpdate])
 
   const mode = resolvePaletteMode(themePreference, prefersDarkMode)
   const theme = useMemo(
@@ -65,9 +66,18 @@ const App = () => {
                 >
                   <ThemeProvider theme={theme}>
                     <AppRouter />
+                    <Updater
+                      update={updater.update}
+                      status={updater.status}
+                      downloadedBytes={updater.downloadedBytes}
+                      contentLength={updater.contentLength}
+                      error={updater.error}
+                      onInstall={updater.installUpdate}
+                      onDismiss={updater.dismissUpdate}
+                    />
                     <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
 
-                    {import.meta.env.DEV && <AppDebugger />}
+                    {import.meta.env.DEV && <AppDebugger onCheckUpdate={updater.checkForUpdate} />}
                   </ThemeProvider>
                 </SortContext.Provider>
               </SearchContext.Provider>

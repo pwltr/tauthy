@@ -64,7 +64,7 @@
         "resizable": false,
         "fullscreen": false,
         "center": true,
-        "contentProtected": true,
+        "contentProtected": false,
         "hiddenTitle": true,
         "acceptFirstMouse": true,
         "useHttpsScheme": true

@@ -3,7 +3,6 @@ import { styled } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 
 import { vault } from '~/utils/storage'
-import { checkUpdate } from '~/utils'
 
 const Container = styled('div')`
   position: fixed;
@@ -32,7 +31,7 @@ const Output = styled('pre')`
 
 const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
-const AppDebugger = () => {
+const AppDebugger = ({ onCheckUpdate }: { onCheckUpdate: () => Promise<boolean> }) => {
   const [output, setOutput] = useState('')
   const [isClearing, setIsClearing] = useState(false)
 
@@ -78,7 +77,7 @@ const AppDebugger = () => {
 
   const handleDebug = async () => {
     try {
-      const result = await checkUpdate()
+      const result = await onCheckUpdate()
       setOutput(result ? 'An update is available.' : 'No update is available.')
     } catch (err) {
       setOutput(`Update check failed: ${formatError(err)}`)
