@@ -113,6 +113,21 @@
     "delete": "Delete",
     "cancel": "Cancel"
   },
+  "updater": {
+    "title": "Tauthy update",
+    "available": "Tauthy {{version}} is now available — you have {{currentVersion}}.",
+    "installPrompt": "Would you like to install it now?",
+    "releaseNotes": "Release notes",
+    "later": "Later",
+    "update": "Update",
+    "retry": "Try again",
+    "downloading": "Downloading update…",
+    "downloadingProgress": "Downloading update… {{progress}}%",
+    "downloadProgress": "Update download progress",
+    "installing": "Installing update… Tauthy will restart when it is ready.",
+    "installProgress": "Update installation progress",
+    "error": "The update could not be installed."
+  },
   "toasts": {
     "copied": "Copied to clipboard",
     "imported": "Vault imported successfully",
