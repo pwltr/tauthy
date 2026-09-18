@@ -4,3 +4,4 @@
 - Added system-aware themes and reduced-motion support.
 - Made theme and language selection clearer.
 - Improved the accuracy of the code-expiration indicator.
+- Updated the macOS dark theme to better match current native system colors.
