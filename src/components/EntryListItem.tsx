@@ -1,7 +1,7 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { FC, useContext } from 'react'
+import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DraggableProps, Draggable as _Draggable } from 'react-beautiful-dnd'
+import { Draggable, DraggableStyle } from '@hello-pangea/dnd'
 import MuiListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
@@ -18,8 +18,29 @@ import { AppSettingsContext, ListOptionsContext } from '~/context'
 import { copyToClipboard } from '~/utils'
 const appWindow = getCurrentWebviewWindow()
 
-// HACK: this fixes type incompatibility
-const Draggable = _Draggable as unknown as FC<DraggableProps>
+const lockToVerticalAxis = (style?: DraggableStyle): DraggableStyle | undefined => {
+  if (!style?.transform) return style
+
+  const translation = style.transform.match(
+    /^translate\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px\)/,
+  )
+  if (!translation) return style
+
+  const headerBottom = document
+    .querySelector<HTMLElement>('[data-tauthy-app-bar]')
+    ?.getBoundingClientRect().bottom
+  const initialTop = 'top' in style ? style.top : undefined
+  const verticalOffset = Number(translation[2])
+  const constrainedOffset =
+    headerBottom !== undefined && initialTop !== undefined
+      ? Math.max(verticalOffset, headerBottom - initialTop)
+      : verticalOffset
+
+  return {
+    ...style,
+    transform: style.transform.replace(translation[0], `translate(0px, ${constrainedOffset}px)`),
+  }
+}
 
 const ListItem = styled(MuiListItem)`
   cursor: pointer;
@@ -77,10 +98,15 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
 
   return (
     <Draggable draggableId={item.uuid} index={index}>
-      {(provided) => (
+      {(provided, snapshot) => (
         <ListItem
           ref={provided.innerRef}
           {...provided.draggableProps}
+          style={
+            snapshot.isDragging
+              ? lockToVerticalAxis(provided.draggableProps.style)
+              : provided.draggableProps.style
+          }
           {...provided.dragHandleProps}
           disablePadding
           secondaryAction={

@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "beta": "Cette application utilise un logiciel encore en version bêta.",
+    "intro": "Bienvenue dans Tauthy, votre application d’authentification privée.",
     "backup": "Je vais m'assurer de sauvegarder mes données.",
     "start": "Commençons"
   },
@@ -12,7 +12,7 @@
     "unlock": "Déverrouiller"
   },
   "codes": {
-    "empty": "Ajoutez une entrée ou importez une sauvegarde",
+    "empty": "<add>Ajoutez une entrée</add> ou <import>importez une sauvegarde</import>",
     "invalid": "Secret invalide"
   },
   "appBar": {

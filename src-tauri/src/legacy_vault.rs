@@ -25,7 +25,10 @@ use iota_stronghold::{
 use tauri::{AppHandle, Manager, State};
 use zeroize::Zeroize;
 
+#[cfg(not(debug_assertions))]
 const APP_DATA_DIRECTORY: &str = "tauthy";
+#[cfg(debug_assertions)]
+const APP_DATA_DIRECTORY: &str = "tauthy-dev";
 const SNAPSHOT_FILE_NAME: &str = "vault.stronghold";
 const CLIENT_NAME: &[u8] = b"vault";
 const STORE_NAME: &[u8] = b"vault";

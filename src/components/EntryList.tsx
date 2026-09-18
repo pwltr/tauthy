@@ -1,12 +1,6 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { FC, useContext, useEffect, useState } from 'react'
-import {
-  DragDropContext as _DragDropContext,
-  Droppable as _Droppable,
-  DragDropContextProps,
-  DroppableProps,
-  DropResult,
-} from 'react-beautiful-dnd'
+import { useContext, useEffect, useState } from 'react'
+import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
 import Box from '@mui/material/Box'
 import MuiList from '@mui/material/List'
 import Grid from '@mui/material/Grid'
@@ -17,10 +11,6 @@ import QRCodeModal from '~/components/modals/QRCode'
 import EntryListItem from './EntryListItem'
 import type { ListEntry } from './Codes'
 const appWindow = getCurrentWebviewWindow()
-
-// HACK: this fixes type incompatibility
-const DragDropContext = _DragDropContext as unknown as FC<DragDropContextProps>
-const Droppable = _Droppable as unknown as FC<DroppableProps>
 
 type ListProps = {
   className?: string

@@ -36,3 +36,9 @@ custom-protocol = ["tauri/custom-protocol"]
 
 [dev-dependencies]
 rand = "0.8"
+
+# Stronghold's password derivation crosses several transitive crypto crates and
+# is prohibitively slow when any of them are left unoptimized. Keep Tauthy's own
+# code debuggable while compiling dependencies at release speed.
+[profile.dev.package."*"]
+opt-level = 3

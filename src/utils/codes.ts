@@ -3,7 +3,7 @@ import { save } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { generateUUID } from '~/utils'
 import type { FormData, VaultEntry, AegisEntry, AuthyEntry } from '~/types'
 

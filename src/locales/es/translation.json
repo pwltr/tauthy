@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "beta": "Esta aplicación utiliza software que está en versión beta todavía.",
+    "intro": "Te damos la bienvenida a Tauthy: tu autenticador privado.",
     "backup": "Me aseguraré de realizar copias de seguridad de mis datos.",
     "start": "Empecemos"
   },
@@ -12,7 +12,7 @@
     "unlock": "Desbloquear"
   },
   "codes": {
-    "empty": "Añadir entrada o importar una copia de seguridad",
+    "empty": "<add>Añadir entrada</add> o <import>importar una copia de seguridad</import>",
     "invalid": "Secreto incorrecto"
   },
   "appBar": {

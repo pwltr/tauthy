@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import MuiLoadingButton from '@mui/lab/LoadingButton'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 
 const Container = styled('div')`
   display: flex;

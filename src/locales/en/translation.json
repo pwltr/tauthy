@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "beta": "This app makes use of software that is still in beta.",
+    "intro": "Welcome to Tauthy—your private authenticator.",
     "backup": "I'll make sure to keep backups of my data.",
     "start": "Let's get going"
   },
@@ -12,7 +12,7 @@
     "unlock": "Unlock"
   },
   "codes": {
-    "empty": "Add an entry or import a backup",
+    "empty": "<add>Add an entry</add> or <import>import a backup</import>",
     "invalid": "Invalid secret"
   },
   "appBar": {

@@ -10,7 +10,7 @@ import MuiAvatar from '@mui/material/Avatar'
 import MuiEditIcon from '@mui/icons-material/Edit'
 import DescriptionIcon from '@mui/icons-material/Description'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { AppBarTitleContext } from '~/context'
 import { deleteCode, editCode } from '~/utils'
 import IconsModal from '~/components/modals/Icons'
@@ -96,9 +96,9 @@ const Edit = () => {
   }
 
   useEffect(() => {
-    setAppBarTitle('Edit account')
+    setAppBarTitle(t('edit.pageTitle'))
     getEntry()
-  }, [])
+  }, [setAppBarTitle, t])
 
   const onIconClick = (icon: string) => {
     setForm((formData) => ({ ...formData, icon }))
@@ -203,25 +203,25 @@ const Edit = () => {
 
           <Buttons>
             <Button
-              aria-label={t('edit.add')}
+              aria-label={t('edit.delete')}
               color="error"
               variant="contained"
               size="medium"
               onClick={handleDelete}
             >
-              Delete
+              {t('edit.delete')}
             </Button>
 
             <Button
               type="submit"
-              aria-label="save"
+              aria-label={t('edit.save')}
               color="primary"
               variant="contained"
               size="medium"
               disabled={!isValid}
               onClick={onSubmit}
             >
-              Save
+              {t('edit.save')}
             </Button>
           </Buttons>
         </form>
