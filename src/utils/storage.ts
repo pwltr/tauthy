@@ -66,7 +66,11 @@ export class Vault {
   }
 
   async getStatus() {
-    return await invoke('vault_status')
+    return await invoke<{ status: 'locked' | 'unlocked' }>('vault_status')
+  }
+
+  async isUnlocked() {
+    return (await this.getStatus()).status === 'unlocked'
   }
 
   onStatusChange() {

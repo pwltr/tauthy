@@ -50,7 +50,7 @@ const Main = () => {
       setInitializationError('')
 
       try {
-        if (isPasswordSet && !reload) {
+        if (isPasswordSet && !reload && !(await vault.isUnlocked())) {
           navigate('unlock')
           return
         }
