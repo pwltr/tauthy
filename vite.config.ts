@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 const PACKAGE_ROOT = __dirname
@@ -7,6 +7,10 @@ const PACKAGE_ROOT = __dirname
 export default defineConfig({
   root: PACKAGE_ROOT,
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+  },
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   // prevent vite from obscuring rust errors
   clearScreen: false,

@@ -4,7 +4,6 @@ on:
   push:
     branches: [master]
   pull_request:
-    branches: [master]
 
 jobs:
   test:
@@ -38,6 +37,9 @@ jobs:
 
       - name: Run format check
         run: yarn run format:check
+
+      - name: Run frontend tests
+        run: yarn run test
 
       - name: Build frontend
         run: yarn run build
