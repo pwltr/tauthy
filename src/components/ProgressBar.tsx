@@ -1,5 +1,12 @@
 import { styled } from '@mui/material/styles'
 
+const TOTP_PERIOD_MS = 30_000
+
+export const getProgressAnimationDelayMs = (remainingMs: number) => {
+  const elapsedMs = Math.min(Math.max(TOTP_PERIOD_MS - remainingMs, 0), TOTP_PERIOD_MS)
+  return elapsedMs === 0 ? 0 : -elapsedMs
+}
+
 const Wrapper = styled('div', {
   shouldForwardProp: (prop: PropertyKey) => prop !== 'durationMs',
 })<{ durationMs: number }>(
@@ -15,7 +22,8 @@ const Wrapper = styled('div', {
       to {transform: scaleX(0);}
     }
 
-    animation: ${durationMs}ms slide linear;
+    animation: ${TOTP_PERIOD_MS}ms slide linear forwards;
+    animation-delay: ${getProgressAnimationDelayMs(durationMs)}ms;
 
     @media (prefers-reduced-motion: reduce) {
       display: none;
