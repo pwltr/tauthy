@@ -29,6 +29,9 @@ tauri-plugin-process = "2.3.1"
 tauri-plugin-shell = "2"
 tauri-plugin-updater = "2.11.0"
 
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2.4.4"
+
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
