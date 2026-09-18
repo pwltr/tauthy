@@ -10,7 +10,7 @@ import MuiAvatar from '@mui/material/Avatar'
 import MuiEditIcon from '@mui/icons-material/Edit'
 import DescriptionIcon from '@mui/icons-material/Description'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { AppBarTitleContext } from '~/context'
 import { deleteCode, editCode } from '~/utils'
 import IconsModal from '~/components/modals/Icons'

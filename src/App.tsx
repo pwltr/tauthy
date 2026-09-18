@@ -5,7 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, PaletteMode } from '~/styles/theme'
-import { checkUpdate, setupVault } from '~/utils'
+import { checkUpdate } from '~/utils'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
@@ -21,8 +21,6 @@ import {
 
 // init react-i18next
 import '~/utils/i18n'
-
-export const vault = await setupVault()
 
 const App = () => {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')

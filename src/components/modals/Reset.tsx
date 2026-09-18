@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import Button from '@mui/material/Button'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { useLocalStorage } from '~/hooks'
 import Modal, { Buttons } from '~/components/Modal'
 

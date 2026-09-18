@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { styled } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { checkUpdate } from '~/utils'
 
 const Container = styled('div')`

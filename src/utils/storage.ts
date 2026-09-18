@@ -12,12 +12,24 @@ const backupPath = await join(dataDirectory, `${vaultName}.backup`)
 const migrationPath = await join(dataDirectory, `${vaultName}.migrating`)
 const migrationBackupPath = await join(dataDirectory, `${vaultName}.v2-backup`)
 
+const devGlobal = globalThis as typeof globalThis & {
+  __tauthyDevVault?: Vault
+}
+
 const removeIfExists = async (path: string) => {
   if (await exists(path)) await remove(path)
 }
 
 export const setupVault = async () => {
   await mkdir(dataDirectory, { recursive: true })
+
+  // Vite re-evaluates App.tsx during hot updates. Reuse the existing client so
+  // frontend edits do not unload and reopen the same backend vault mid-session.
+  if (import.meta.env.DEV) {
+    devGlobal.__tauthyDevVault ??= new Vault('')
+    return devGlobal.__tauthyDevVault
+  }
+
   return new Vault('')
 }
 
@@ -108,3 +120,5 @@ export class Vault {
     }
   }
 }
+
+export const vault = await setupVault()

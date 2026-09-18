@@ -6,7 +6,7 @@ import Fab from '@mui/material/Fab'
 import AddIcon from '@mui/icons-material/Add'
 import { Typography } from '@mui/material'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { useInterval } from '~/hooks/useInterval'
 import { generateTOTP } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'

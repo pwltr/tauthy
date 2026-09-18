@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, Outlet } from 'react-router-dom'
 import { useIdleTimer } from 'react-idle-timer'
 import { styled } from '@mui/material/styles'
+import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { useLocalStorage } from '~/hooks'
 import AppBar from '~/components/AppBar'
 
@@ -14,56 +17,71 @@ const Wrapper = styled('div')`
   padding-top: 3.7rem;
 `
 
+const InitializationState = styled('div')`
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+`
+
+const ErrorAlert = styled(Alert)`
+  width: 100%;
+`
+
+const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
 const Main = () => {
   const navigate = useNavigate()
   const [showWelcome] = useLocalStorage('showWelcome', true)
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const [shouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const [isLoading, setIsLoading] = useState(true)
+  const [initializationError, setInitializationError] = useState('')
 
-  useEffect(() => {
-    if (showWelcome) {
-      navigate('welcome')
-      return
-    }
+  const initializeVault = useCallback(
+    async (reload = false) => {
+      if (showWelcome) {
+        navigate('welcome')
+        return
+      }
 
-    const setupVault = async () => {
       setIsLoading(true)
+      setInitializationError('')
 
       try {
-        // TODO: can we fix get_status on init?
-        // console.info('checking vault status...')
-        // const status = await vault.getStatus()
-        // console.log('status', status)
-
+        if (reload) await vault.unlock('')
         console.info('looking for unlocked vault...')
         await vault.checkVault()
         console.info('successfully read vault')
-        setIsLoading(false)
       } catch (err) {
-        if (typeof err === 'string') {
-          if (err.includes('Please try another password.')) {
+        const message = formatError(err)
+
+        try {
+          if (message.includes('Please try another password.')) {
             console.info('found existing vault but password has been changed')
             await vault.lock()
-            // TODO: timeout on lock screen only in this case
             navigate('unlock')
-            setIsLoading(false)
-          } else if (err.includes('record not found')) {
-            // initialize with empty array
+          } else if (message.includes('record not found')) {
             console.info('no vault found. initializing...')
             await vault.reset()
-            setIsLoading(false)
           } else {
-            console.error('Unhandled error', err)
+            throw err
           }
-        } else {
-          console.error('Fatal error', err)
+        } catch (recoveryError) {
+          console.error('Unable to initialize vault', recoveryError)
+          setInitializationError(formatError(recoveryError))
         }
+      } finally {
+        setIsLoading(false)
       }
-    }
+    },
+    [navigate, showWelcome],
+  )
 
-    setupVault()
-  }, [])
+  useEffect(() => {
+    void initializeVault(false)
+  }, [initializeVault])
 
   // Lock vault after idle
   useIdleTimer({
@@ -80,14 +98,33 @@ const Main = () => {
     },
   })
 
-  if (isLoading || showWelcome) {
+  if (showWelcome) {
     return null
   }
 
   return (
     <Wrapper>
       <AppBar />
-      <Outlet />
+      {isLoading ? (
+        <InitializationState>
+          <CircularProgress size={28} />
+        </InitializationState>
+      ) : initializationError ? (
+        <InitializationState>
+          <ErrorAlert
+            severity="error"
+            action={
+              <Button color="inherit" size="small" onClick={() => void initializeVault(true)}>
+                Retry
+              </Button>
+            }
+          >
+            Unable to open the vault: {initializationError}
+          </ErrorAlert>
+        </InitializationState>
+      ) : (
+        <Outlet />
+      )}
     </Wrapper>
   )
 }

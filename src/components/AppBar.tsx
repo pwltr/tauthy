@@ -16,7 +16,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import SortIcon from '@mui/icons-material/Sort'
 import MoreIcon from '@mui/icons-material/MoreVert'
 
-import { vault } from '~/App'
+import { vault } from '~/utils/storage'
 import { useLocalStorage } from '~/hooks'
 import { AppBarTitleContext, SearchContext, SortContext, SortOption } from '~/context'
 
