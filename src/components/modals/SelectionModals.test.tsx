@@ -36,8 +36,11 @@ describe('selection modals', () => {
   it('shows the active theme and applies a new selection', () => {
     const onClose = vi.fn()
     const setTheme = vi.fn()
+    const trigger = document.createElement('button')
+    document.body.appendChild(trigger)
+    trigger.focus()
 
-    render(
+    const { unmount } = render(
       <AppBarTitleContext.Provider value={{ appBarTitle: '', setAppBarTitle: vi.fn() }}>
         <ThemeContext.Provider value={{ theme: 'dark', setTheme }}>
           <Theme open onClose={onClose} />
@@ -51,12 +54,17 @@ describe('selection modals', () => {
 
     expect(setTheme).toHaveBeenCalledWith('system')
     expect(onClose).toHaveBeenCalledOnce()
+    unmount()
+    trigger.remove()
   })
 
   it('normalizes the active language and applies a new selection', () => {
     const onClose = vi.fn()
+    const trigger = document.createElement('button')
+    document.body.appendChild(trigger)
+    trigger.focus()
 
-    render(<Language open onClose={onClose} />)
+    const { unmount } = render(<Language open onClose={onClose} />)
 
     expect(screen.getByRole('radio', { name: 'Deutsch' })).toBeChecked()
 
@@ -64,5 +72,7 @@ describe('selection modals', () => {
 
     expect(mocks.changeLanguage).toHaveBeenCalledWith('fr-FR')
     expect(onClose).toHaveBeenCalledOnce()
+    unmount()
+    trigger.remove()
   })
 })

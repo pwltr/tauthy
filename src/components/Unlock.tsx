@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
-import MuiLoadingButton from '@mui/lab/LoadingButton'
+import MuiButton from '@mui/material/Button'
 
 import { vault } from '~/utils/storage'
 
@@ -22,7 +22,7 @@ const Subtitle = styled(Typography)`
   font-size: 1.2rem;
 `
 
-const Button = styled(MuiLoadingButton)`
+const Button = styled(MuiButton)`
   margin-top: 1.8rem;
 `
 
@@ -82,11 +82,11 @@ const Unlock = () => {
 
   return (
     <Container>
-      <Typography variant="h4" color="primary" mb={0}>
+      <Typography variant="h4" color="primary" sx={{ mb: 0 }}>
         {t('unlock.title')}
       </Typography>
 
-      <Subtitle variant="h5" color="primary" mt={1} mb={2}>
+      <Subtitle variant="h5" color="primary" sx={{ mt: 1, mb: 2 }}>
         {t('unlock.subtitle')}
       </Subtitle>
 

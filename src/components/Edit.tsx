@@ -142,7 +142,7 @@ const Edit = () => {
 
   return (
     <>
-      <Box p={4}>
+      <Box sx={{ p: 4 }}>
         <IconWrapper>
           <Icon onClick={() => setOpenIconsModal(true)}>
             {form.icon ? (
