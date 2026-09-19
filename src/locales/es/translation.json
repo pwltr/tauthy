@@ -128,6 +128,7 @@
   "toasts": {
     "copied": "Copiado al portapapeles.",
     "imported": "Baúl importado correctamente.",
+    "import2FasEncrypted": "Las copias de 2FAS protegidas con contraseña no son compatibles. Exporta una copia sin contraseña desde 2FAS e inténtalo de nuevo.",
     "importAegisEncrypted": "Las exportaciones cifradas de Aegis no son compatibles. Exporta un baúl JSON sin cifrar desde Aegis e inténtalo de nuevo.",
     "importUnsupportedOtp": "La copia contiene formatos OTP que Tauthy aún no admite. Solo se pueden importar entradas TOTP SHA-1 de 6 dígitos con un periodo de 30 segundos.",
     "importFailed": "Error al importar. Comprueba que has seleccionado el formato de copia correcto.",

@@ -40,6 +40,31 @@ export type AuthyEntry = {
   uri: string
 }
 
+export type TwoFasOtp = {
+  account?: string
+  algorithm?: string
+  digits?: number
+  issuer?: string
+  label?: string
+  link?: string
+  period?: number
+  source?: string
+  tokenType?: string
+}
+
+export type TwoFasService = {
+  groupId?: string
+  name?: string
+  otp?: TwoFasOtp
+  secret?: string
+}
+
+export type TwoFasBackup = {
+  groups?: Array<{ id?: string; name?: string }>
+  services?: TwoFasService[]
+  servicesEncrypted?: string
+}
+
 // i18next.d.ts
 declare module 'i18next' {
   interface CustomTypeOptions {

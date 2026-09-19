@@ -128,6 +128,7 @@
   "toasts": {
     "copied": "Copied to clipboard",
     "imported": "Vault imported successfully",
+    "import2FasEncrypted": "Password-protected 2FAS backups are not supported. Export a backup without a password from 2FAS and try again.",
     "importAegisEncrypted": "Encrypted Aegis exports are not supported. Export an unencrypted JSON vault from Aegis and try again.",
     "importUnsupportedOtp": "The backup contains OTP formats Tauthy does not support yet. Only 6-digit SHA-1 TOTP entries with a 30-second period can be imported.",
     "importFailed": "Import failed. Check that you selected the correct backup format.",

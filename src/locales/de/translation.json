@@ -128,6 +128,7 @@
   "toasts": {
     "copied": "In Zwischenablage kopiert",
     "imported": "Tresor erfolgreich importiert",
+    "import2FasEncrypted": "Passwortgeschützte 2FAS-Sicherungen werden nicht unterstützt. Exportiere eine Sicherung ohne Passwort aus 2FAS und versuche es erneut.",
     "importAegisEncrypted": "Verschlüsselte Aegis-Exporte werden nicht unterstützt. Exportiere einen unverschlüsselten JSON-Tresor aus Aegis und versuche es erneut.",
     "importUnsupportedOtp": "Die Sicherung enthält OTP-Formate, die Tauthy noch nicht unterstützt. Es können nur 6-stellige SHA-1-TOTP-Einträge mit einem 30-Sekunden-Zeitraum importiert werden.",
     "importFailed": "Import fehlgeschlagen. Prüfe, ob du das richtige Sicherungsformat ausgewählt hast.",
