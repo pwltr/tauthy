@@ -5,35 +5,47 @@
 </h1>
 
 <h3 align="center">
-A cross-platform TOTP authentication client built with <a href="https://github.com/tauri-apps/tauri">tauri</a>.
+A cross-platform TOTP authentication client built with <a href="https://tauri.app">Tauri</a>.
 </h3>
 
 <div align="center">
   
-[![Windows Support](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white)](https://github.com/pwltr/tauthy/releases/latest)
-[![MacOS Support](https://img.shields.io/badge/MacOS-adb8c5?style=flat&logo=macos&logoColor=white)](https://github.com/pwltr/tauthy/releases/latest)
-[![Linux Support](https://img.shields.io/badge/Linux-1793D1?style=flat&logo=linux&logoColor=white)](https://github.com/pwltr/tauthy/releases/latest)
+[![Download for Windows](https://img.shields.io/badge/Windows-0078D4?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/pwltr/tauthy/releases/latest)
+[![Download for macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/pwltr/tauthy/releases/latest)
+[![Download for Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/pwltr/tauthy/releases/latest)
 
 </div>
-
-## Features
-
-- modern UI
-- cross-platform
-- secure storage
-- password encryption
-- fully offline
-- import / export
-- multi-language
-- OS native themes
 
 ## Screenshots
 
 <div align="center">
-  <img src="./screenshots/light1.png" alt="light1" width="32%" />
-  <img src="./screenshots/dark1.png" alt="dark1" width="31.9%" />
-  <img src="./screenshots/black1.png" alt="black1" width="32%" />
+  <img src="./screenshots/light1.png" alt="Tauthy in light mode" width="32%" />
+  <img src="./screenshots/dark1.png" alt="Tauthy in dark mode" width="31.9%" />
+  <img src="./screenshots/black1.png" alt="Tauthy in true black mode" width="32%" />
 </div>
+
+## Features
+
+**Designed to stay out of your way—and get you to the right code the moment you need it.**
+
+- **Private and offline:** Your authentication secrets stay on your device, and codes work without
+  an internet connection.
+- **Secure local vault:** Add password protection and automatically lock Tauthy when it is idle.
+- **Ready when you need it:** Search, arrange, and recognize accounts at a glance, then copy a code
+  with one click.
+- **Easy migration:** Bring existing accounts with you, display transfer QR codes, and create
+  portable backups.
+- **At home on your desktop:** Runs on macOS, Windows, and Linux with automatic updates,
+  system-aware themes, four languages, and a true black mode.
+
+## Security & Privacy
+
+Tauthy stores authentication secrets locally in an encrypted vault. No cloud account is required,
+and code generation works offline. You can add password protection and automatic idle locking for
+additional protection.
+
+Exported JSON backups are intentionally unencrypted for portability. Tauthy warns before creating
+one; store exports securely and delete them when they are no longer needed.
 
 ## Installation
 
@@ -46,23 +58,11 @@ format on the first successful unlock. Until that unlock, the vault remains prot
 password derivation. The migration is one-way: Tauthy 0.2.8 and earlier cannot open the migrated
 vault, so restoring an older release also requires restoring the exported backup.
 
-## Todo
-
-- [x] automatic updates
-- [x] custom sorting
-- [x] auto-lock after idle
-- [ ] support other import files
-- [ ] QR code scanning
-- [ ] Nextcloud sync
-- [ ] support YubiKey / hardware authentication / biometrics
-- [ ] support HOTP
-- [ ] automatic backups
-
 ## Credits
 
 - [Aegis](https://github.com/beemdevelopment/Aegis)
 - [aegis-icons](https://github.com/aegis-icons/aegis-icons)
-- [Tauri](https://tauri.studio)
+- [Tauri](https://tauri.app)
 
 ## Support
 
