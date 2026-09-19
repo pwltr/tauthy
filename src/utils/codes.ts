@@ -5,9 +5,16 @@ import { writeTextFile } from '@tauri-apps/plugin-fs'
 
 import { vault } from '~/utils/storage'
 import { generateUUID } from '~/utils'
-import type { FormData, VaultEntry, AegisEntry, AuthyEntry } from '~/types'
+import type {
+  FormData,
+  VaultEntry,
+  AegisEntry,
+  AuthyEntry,
+  TwoFasBackup,
+  TwoFasService,
+} from '~/types'
 
-export type ImportFormat = 'aegis' | 'authy' | 'google' | 'tauthy'
+export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy'
 
 export type GeneratedTOTPs = {
   codes: Array<string | null>
@@ -16,6 +23,186 @@ export type GeneratedTOTPs = {
 
 export const getTOTPRefreshDelay = (expiresAtMs: number, now = Date.now()) =>
   Math.max(expiresAtMs - now, 1)
+
+const supportedOtpSettings = (algorithm: unknown, digits: unknown, period: unknown) =>
+  typeof algorithm === 'string' &&
+  algorithm.toUpperCase() === 'SHA1' &&
+  digits === 6 &&
+  period === 30
+
+const decodeOtpLabel = (pathname: string) => {
+  try {
+    return decodeURIComponent(pathname.replace(/^\//, ''))
+  } catch {
+    throw Error('importFailed')
+  }
+}
+
+const normalizedSecret = (secret: string) =>
+  secret.replace(/\s/g, '').toUpperCase().replace(/=+$/, '')
+
+export const parseOtpAuthUri = (value: string): VaultEntry => {
+  let uri: URL
+
+  try {
+    uri = new URL(value)
+  } catch {
+    throw Error('importFailed')
+  }
+
+  if (uri.protocol !== 'otpauth:' || uri.hostname.toLowerCase() !== 'totp') {
+    throw Error('importUnsupportedOtp')
+  }
+
+  const secret = uri.searchParams.get('secret')?.trim()
+  const label = decodeOtpLabel(uri.pathname).trim()
+  if (!secret || !label) {
+    throw Error('importFailed')
+  }
+
+  const algorithm = uri.searchParams.get('algorithm') ?? 'SHA1'
+  const digits = Number(uri.searchParams.get('digits') ?? 6)
+  const period = Number(uri.searchParams.get('period') ?? 30)
+  if (!supportedOtpSettings(algorithm, digits, period)) {
+    throw Error('importUnsupportedOtp')
+  }
+
+  const separator = label.indexOf(':')
+  const labelIssuer = separator >= 0 ? label.slice(0, separator).trim() : ''
+  const account = separator >= 0 ? label.slice(separator + 1).trim() : label
+  const issuer = uri.searchParams.get('issuer')?.trim() || labelIssuer
+
+  return {
+    uuid: generateUUID(),
+    name: account || label,
+    issuer: issuer || undefined,
+    secret,
+  }
+}
+
+const twoFasServiceToUri = (service: TwoFasService) => {
+  const otp = service.otp
+  if (!otp || !service.secret?.trim()) {
+    throw Error('importFailed')
+  }
+
+  if ((otp.tokenType ?? 'TOTP').toUpperCase() !== 'TOTP') {
+    throw Error('importUnsupportedOtp')
+  }
+
+  if (otp.link?.trim()) {
+    return otp.link
+  }
+
+  const issuer = otp.issuer?.trim() || service.name?.trim()
+  const account = otp.account?.trim() || otp.label?.trim() || service.name?.trim()
+  if (!account) {
+    throw Error('importFailed')
+  }
+
+  const uri = new URL(`otpauth://totp/${encodeURIComponent(account)}`)
+  uri.searchParams.set('secret', service.secret.trim())
+  if (issuer) uri.searchParams.set('issuer', issuer)
+  uri.searchParams.set('algorithm', otp.algorithm ?? 'SHA1')
+  uri.searchParams.set('digits', String(otp.digits ?? 6))
+  uri.searchParams.set('period', String(otp.period ?? 30))
+  return uri.toString()
+}
+
+export const parseImportedEntries = (json: unknown, format: ImportFormat): VaultEntry[] => {
+  let importedEntries: VaultEntry[] = []
+
+  if (format === '2fas') {
+    const backup = json as TwoFasBackup
+    if (typeof backup?.servicesEncrypted === 'string') {
+      throw Error('import2FasEncrypted')
+    }
+    if (!Array.isArray(backup?.services)) {
+      throw Error('importFailed')
+    }
+
+    const groupNames = new Map(
+      (Array.isArray(backup.groups) ? backup.groups : [])
+        .filter((group) => typeof group?.id === 'string' && typeof group?.name === 'string')
+        .map((group) => [group.id as string, group.name as string]),
+    )
+
+    importedEntries = backup.services.map((service) => {
+      const entry = parseOtpAuthUri(twoFasServiceToUri(service))
+      if (
+        typeof service.secret !== 'string' ||
+        normalizedSecret(entry.secret) !== normalizedSecret(service.secret)
+      ) {
+        throw Error('importFailed')
+      }
+
+      return {
+        ...entry,
+        group: service.groupId ? groupNames.get(service.groupId) : undefined,
+      }
+    })
+  }
+
+  if (format === 'aegis') {
+    const backup = json as { db?: { entries?: AegisEntry[] } | string }
+    if (typeof backup?.db === 'string') {
+      throw Error('importAegisEncrypted')
+    }
+
+    if (!Array.isArray(backup?.db?.entries)) {
+      throw Error('importFailed')
+    }
+
+    const entries = backup.db.entries
+    const containsUnsupportedEntries = entries.some(
+      (entry) =>
+        entry.type !== 'totp' ||
+        !supportedOtpSettings(entry.info?.algo, entry.info?.digits, entry.info?.period),
+    )
+
+    if (containsUnsupportedEntries) {
+      throw Error('importUnsupportedOtp')
+    }
+
+    importedEntries = entries.map((entry) => ({
+      uuid: entry.uuid,
+      name: entry.name,
+      issuer: entry.issuer,
+      group: entry.group,
+      secret: entry.info.secret,
+      icon: entry.icon,
+    }))
+  }
+
+  if (format === 'authy') {
+    if (!Array.isArray(json)) throw Error('importFailed')
+    const entries = json as AuthyEntry[]
+    importedEntries = entries.map((entry) => ({
+      uuid: generateUUID(),
+      name: entry.name,
+      secret: entry.secret,
+    }))
+  }
+
+  if (format === 'tauthy') {
+    if (!Array.isArray(json)) throw Error('importFailed')
+    const entries = json as VaultEntry[]
+    importedEntries = entries.map((entry) => ({
+      uuid: entry.uuid,
+      name: entry.name,
+      issuer: entry.issuer,
+      group: entry.group,
+      secret: entry.secret,
+      icon: entry.icon,
+    }))
+  }
+
+  if (importedEntries.length === 0) {
+    throw Error('importFailed')
+  }
+
+  return importedEntries
+}
 
 export const generateTOTPs = async (secrets: string[]) => {
   try {
@@ -79,68 +266,7 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
           const currentVault = await vault.getVault()
           const json = JSON.parse(event.target?.result as string)
 
-          let importedEntries: VaultEntry[] = []
-
-          if (format === 'aegis') {
-            if (typeof json?.db === 'string') {
-              throw Error('importAegisEncrypted')
-            }
-
-            if (!Array.isArray(json?.db?.entries)) {
-              throw Error('importFailed')
-            }
-
-            const entries: AegisEntry[] = json.db.entries
-            const containsUnsupportedEntries = entries.some(
-              (entry) =>
-                entry.type !== 'totp' ||
-                entry.info?.algo !== 'SHA1' ||
-                entry.info?.digits !== 6 ||
-                entry.info?.period !== 30,
-            )
-
-            if (containsUnsupportedEntries) {
-              throw Error('importUnsupportedOtp')
-            }
-
-            importedEntries = entries.map((entry) => ({
-              uuid: entry.uuid,
-              name: entry.name,
-              issuer: entry.issuer,
-              group: entry.group,
-              secret: entry.info.secret,
-              icon: entry.icon,
-            }))
-          }
-
-          if (format === 'authy') {
-            const entries: AuthyEntry[] = json
-            importedEntries = entries.map((entry) => ({
-              uuid: generateUUID(),
-              name: entry.name,
-              secret: entry.secret,
-            }))
-          }
-
-          // if (format === "google") {
-          //   entries = json;
-          // }
-
-          if (format === 'tauthy') {
-            const entries: VaultEntry[] = json
-            importedEntries = entries.map((entry) => ({
-              uuid: entry.uuid,
-              name: entry.name,
-              issuer: entry.issuer,
-              group: entry.group,
-              secret: entry.secret,
-              icon: entry.icon,
-            }))
-          }
-
-          if (importedEntries.length === 0) {
-            throw Error('importFailed')
-          }
+          const importedEntries = parseImportedEntries(json, format)
 
           const entries = [...currentVault, ...importedEntries]
 

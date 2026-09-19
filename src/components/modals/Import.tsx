@@ -27,7 +27,7 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
         <input
           ref={inputRef}
           type="file"
-          accept=".json"
+          accept=".json,.2fas"
           style={{ display: 'none' }}
           onChange={async (event) => {
             const input = event.currentTarget
@@ -37,7 +37,12 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
                 toast.success(t('toasts.imported'))
                 navigate('/')
               } catch (err) {
-                const knownErrors = ['importAegisEncrypted', 'importUnsupportedOtp', 'importFailed']
+                const knownErrors = [
+                  'import2FasEncrypted',
+                  'importAegisEncrypted',
+                  'importUnsupportedOtp',
+                  'importFailed',
+                ]
                 const error =
                   err instanceof Error && knownErrors.includes(err.message)
                     ? err.message
@@ -51,6 +56,12 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
         />
 
         <List disablePadding>
+          <ListItem disablePadding onClick={() => handleClick('2fas')}>
+            <ListItemButton>
+              <ListItemText primary="2FAS" />
+            </ListItemButton>
+          </ListItem>
+
           <ListItem disablePadding onClick={() => handleClick('aegis')}>
             <ListItemButton>
               <ListItemText primary="Aegis" />

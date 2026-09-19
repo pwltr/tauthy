@@ -128,6 +128,7 @@
   "toasts": {
     "copied": "Copié dans le presse-papiers",
     "imported": "Coffre-fort importé avec succès",
+    "import2FasEncrypted": "Les sauvegardes 2FAS protégées par mot de passe ne sont pas prises en charge. Exportez une sauvegarde sans mot de passe depuis 2FAS, puis réessayez.",
     "importAegisEncrypted": "Les exportations Aegis chiffrées ne sont pas prises en charge. Exportez un coffre-fort JSON non chiffré depuis Aegis, puis réessayez.",
     "importUnsupportedOtp": "La sauvegarde contient des formats OTP que Tauthy ne prend pas encore en charge. Seules les entrées TOTP SHA-1 à 6 chiffres avec une période de 30 secondes peuvent être importées.",
     "importFailed": "Échec de l’importation. Vérifiez que vous avez sélectionné le bon format de sauvegarde.",
