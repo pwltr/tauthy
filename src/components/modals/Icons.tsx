@@ -1,4 +1,5 @@
-import { FixedSizeGrid } from 'react-window'
+import { Grid as VirtualGrid } from 'react-window'
+import type { CellComponentProps } from 'react-window'
 import { useState, useTransition, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
@@ -23,10 +24,6 @@ type Icon = {
   url: string
 }
 
-const Grid = styled(FixedSizeGrid)`
-  margin-top: 1rem;
-`
-
 const Image = styled('img')`
   cursor: pointer;
   height: 44px;
@@ -37,6 +34,30 @@ const Image = styled('img')`
 const Text = styled('div')`
   margin-top: 1rem;
 `
+
+type IconCellProps = {
+  icons: Icon[]
+  onIconClick: (icon: string) => void
+}
+
+const IconCell = ({
+  columnIndex,
+  rowIndex,
+  style,
+  icons,
+  onIconClick,
+}: CellComponentProps<IconCellProps>) => {
+  const index = rowIndex * 5 + columnIndex
+  const icon = icons[index]
+
+  if (!icon) return null
+
+  return (
+    <div style={style}>
+      <Image title={icon.name} src={icon.url} onClick={() => onIconClick(icon.url)} />
+    </div>
+  )
+}
 
 const IconsModal = ({
   open,
@@ -108,40 +129,15 @@ const Images = memo(
     const columnWidth = width / columnCount
 
     return (
-      <Grid
+      <VirtualGrid<IconCellProps>
+        cellComponent={IconCell}
+        cellProps={{ icons, onIconClick }}
         columnCount={columnCount}
         rowCount={rowCount}
         columnWidth={columnWidth}
         rowHeight={70}
-        height={375}
-        width={width}
-      >
-        {({
-          columnIndex,
-          rowIndex,
-          style,
-        }: {
-          columnIndex: number
-          rowIndex: number
-          style: React.CSSProperties
-        }) => {
-          const index = rowIndex * columnCount + columnIndex
-
-          if (icons[index]) {
-            return (
-              <div style={style}>
-                <Image
-                  title={icons[index].name}
-                  src={icons[index].url}
-                  onClick={() => onIconClick(icons[index].url)}
-                />
-              </div>
-            )
-          }
-
-          return null
-        }}
-      </Grid>
+        style={{ height: 375, width, marginTop: '1rem' }}
+      />
     )
   },
   (prevProps, nextProps) => prevProps.icons === nextProps.icons,

@@ -134,7 +134,7 @@ const Create = () => {
 
   return (
     <>
-      <Box p={4}>
+      <Box sx={{ p: 4 }}>
         <IconWrapper>
           <Icon onClick={() => setOpenIconsModal(true)}>
             {getIcon()}

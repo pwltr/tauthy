@@ -39,7 +39,7 @@ const Welcome = () => {
     <Container>
       <img src={logo} width="140" />
 
-      <Typography variant="h6" align="center" color="primary" mt={3} mb={4}>
+      <Typography variant="h6" align="center" color="primary" sx={{ mt: 3, mb: 4 }}>
         {t('welcome.intro')}
       </Typography>
 

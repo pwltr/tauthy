@@ -45,12 +45,8 @@ const Security = () => {
             </ListItemButton>
           </ListItem>
 
-          <ListItem
-            disablePadding
-            disabled={!isPasswordSet}
-            onClick={() => (isPasswordSet ? handleOpenPasswordResetModal() : null)}
-          >
-            <ListItemButton>
+          <ListItem disablePadding>
+            <ListItemButton disabled={!isPasswordSet} onClick={handleOpenPasswordResetModal}>
               <ListItemText
                 primary={t('security.passwordReset')}
                 secondary={t('security.passwordResetDescription')}

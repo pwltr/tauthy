@@ -156,8 +156,10 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
               </Avatar>
             </ListItemAvatar>
             <ListItemText
-              primaryTypographyProps={{ fontSize: 12 }}
-              secondaryTypographyProps={{ fontSize: 20 }}
+              slotProps={{
+                primary: { sx: { fontSize: 12 } },
+                secondary: { sx: { fontSize: 20 } },
+              }}
               primary={
                 <Name>{`${item.issuer ?? ''} ${item.issuer ? `(${item.name})` : item.name}`}</Name>
               }

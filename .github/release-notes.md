@@ -5,4 +5,5 @@
 - Made theme and language selection clearer.
 - Improved the accuracy of the code-expiration indicator.
 - Updated the macOS dark theme to better match current native system colors.
+- Modernized the frontend with current React and Material UI releases.
 - Added optional menu bar access for quickly copying account codes.

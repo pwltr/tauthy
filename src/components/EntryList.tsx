@@ -93,7 +93,7 @@ const EntryList = ({ className, entries }: ListProps) => {
     <>
       <Box className={className} sx={{ flexGrow: 1, maxWidth: 752 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="droppable-list">
                 {(provided) => (
