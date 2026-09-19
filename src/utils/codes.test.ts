@@ -1,16 +1,122 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const invoke = vi.hoisted(() => vi.fn())
+const mockVault = vi.hoisted(() => ({ getVault: vi.fn(), save: vi.fn() }))
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }))
-vi.mock('~/utils/storage', () => ({ vault: {} }))
+vi.mock('~/utils/storage', () => ({ vault: mockVault }))
 
 import {
+  decryptAegisBackup,
   generateTOTPs,
   getTOTPRefreshDelay,
+  importFile,
+  isEncryptedAegisBackup,
+  isEncryptedImport,
   parseImportedEntries,
   parseOtpAuthUri,
 } from '~/utils/codes'
+
+describe('Aegis imports', () => {
+  beforeEach(() => {
+    invoke.mockReset()
+    mockVault.getVault.mockReset()
+    mockVault.save.mockReset()
+  })
+
+  it('detects encrypted vaults and delegates authenticated decryption to Rust', async () => {
+    const database = { version: 3, entries: [], groups: [] }
+    invoke.mockResolvedValue(database)
+    const backup = { version: 1, header: { slots: [] }, db: 'ciphertext' }
+
+    expect(isEncryptedAegisBackup(backup)).toBe(true)
+    expect(isEncryptedAegisBackup({ db: database })).toBe(false)
+    expect(isEncryptedImport(backup, 'aegis')).toBe(true)
+    expect(isEncryptedImport(backup, 'tauthy')).toBe(false)
+    await expect(decryptAegisBackup(backup, 'password')).resolves.toBe(database)
+    expect(invoke).toHaveBeenCalledWith('decrypt_aegis_vault', {
+      vault: JSON.stringify(backup),
+      password: 'password',
+    })
+  })
+
+  it('preserves backend decryption errors for actionable UI feedback', async () => {
+    invoke.mockRejectedValue('importEncryptedWrongPassword')
+
+    await expect(
+      decryptAegisBackup({ version: 1, header: {}, db: 'ciphertext' }, 'wrong'),
+    ).rejects.toThrowError('importEncryptedWrongPassword')
+  })
+
+  it('imports current Aegis groups by UUID', () => {
+    const entries = parseImportedEntries(
+      {
+        db: {
+          version: 3,
+          groups: [{ uuid: 'personal-id', name: 'Personal' }],
+          entries: [
+            {
+              type: 'totp',
+              uuid: 'entry-id',
+              name: 'alice@example.com',
+              issuer: 'Example',
+              groups: ['personal-id'],
+              info: { secret: 'ABC234', algo: 'SHA1', digits: 6, period: 30 },
+            },
+          ],
+        },
+      },
+      'aegis',
+    )
+
+    expect(entries[0]).toMatchObject({
+      uuid: 'entry-id',
+      name: 'alice@example.com',
+      issuer: 'Example',
+      group: 'Personal',
+      secret: 'ABC234',
+    })
+  })
+
+  it('requires a password before parsing encrypted Aegis data', () => {
+    expect(() => parseImportedEntries({ db: 'ciphertext' }, 'aegis')).toThrowError(
+      'importPasswordRequired',
+    )
+  })
+
+  it('decrypts, parses, and saves an encrypted Aegis import', async () => {
+    const backup = { version: 1, header: { slots: [] }, db: 'ciphertext' }
+    const file = { text: vi.fn().mockResolvedValue(JSON.stringify(backup)) } as unknown as File
+    invoke.mockResolvedValue({
+      version: 3,
+      entries: [
+        {
+          type: 'totp',
+          uuid: 'entry-id',
+          name: 'alice',
+          issuer: 'Example',
+          info: { secret: 'ABC234', algo: 'SHA1', digits: 6, period: 30 },
+        },
+      ],
+      groups: [],
+    })
+    mockVault.getVault.mockResolvedValue([])
+    mockVault.save.mockResolvedValue(undefined)
+
+    await importFile(file, 'aegis', 'password')
+
+    expect(mockVault.save).toHaveBeenCalledWith(
+      JSON.stringify([
+        {
+          uuid: 'entry-id',
+          name: 'alice',
+          issuer: 'Example',
+          secret: 'ABC234',
+        },
+      ]),
+    )
+  })
+})
 
 describe('TOTP refresh timing', () => {
   beforeEach(() => invoke.mockReset())

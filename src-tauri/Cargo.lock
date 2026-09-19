@@ -47,6 +47,7 @@ dependencies = [
  "ctr",
  "ghash",
  "subtle",
+ "zeroize",
 ]
 
 [[package]]
@@ -5049,11 +5050,13 @@ dependencies = [
 name = "tauthy"
 version = "0.3.2"
 dependencies = [
+ "aes-gcm",
  "data-encoding",
  "iota-crypto",
  "iota_stronghold",
  "rand",
  "ring",
+ "scrypt",
  "serde",
  "serde_json",
  "tauri",
