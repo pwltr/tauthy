@@ -10,7 +10,8 @@ const StyledBox = styled(Box)(
   transform: translate(-50%, -50%);
   width: 90%;
   max-height: 90vh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: ${theme.palette.background.paper};
   box-shadow: ${theme.shadows[24]};
   border-radius: 4px;

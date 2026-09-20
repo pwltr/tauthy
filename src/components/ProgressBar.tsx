@@ -13,7 +13,7 @@ const Wrapper = styled('div', {
   ({ durationMs, theme }) => `
     background: ${theme.palette.background.paper};
     display: flex;
-    height: 5px;
+    height: 4px;
     width: 100%;
     transform-origin: left;
 

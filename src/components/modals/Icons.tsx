@@ -1,6 +1,6 @@
 import { Grid as VirtualGrid } from 'react-window'
 import type { CellComponentProps } from 'react-window'
-import { useState, useTransition, memo } from 'react'
+import { useLayoutEffect, useRef, useState, useTransition, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import TextField from '@mui/material/TextField'
@@ -23,6 +23,14 @@ type Icon = {
   name: string
   url: string
 }
+
+const GridContainer = styled('div')`
+  height: 375px;
+  margin-top: 1rem;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+`
 
 const Image = styled('img')`
   cursor: pointer;
@@ -123,21 +131,39 @@ const IconsModal = ({
 
 const Images = memo(
   ({ icons, onIconClick }: { icons: Icon[]; onIconClick: (icon: string) => void }) => {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [width, setWidth] = useState(0)
     const columnCount = 5
     const rowCount = Math.ceil(icons.length / columnCount)
-    const width = 340
     const columnWidth = width / columnCount
 
+    useLayoutEffect(() => {
+      const container = containerRef.current
+      if (!container) return
+
+      const updateWidth = () => setWidth(container.clientWidth)
+      updateWidth()
+
+      const resizeObserver = new ResizeObserver(updateWidth)
+      resizeObserver.observe(container)
+
+      return () => resizeObserver.disconnect()
+    }, [])
+
     return (
-      <VirtualGrid<IconCellProps>
-        cellComponent={IconCell}
-        cellProps={{ icons, onIconClick }}
-        columnCount={columnCount}
-        rowCount={rowCount}
-        columnWidth={columnWidth}
-        rowHeight={70}
-        style={{ height: 375, width, marginTop: '1rem' }}
-      />
+      <GridContainer ref={containerRef}>
+        {width > 0 && (
+          <VirtualGrid<IconCellProps>
+            cellComponent={IconCell}
+            cellProps={{ icons, onIconClick }}
+            columnCount={columnCount}
+            rowCount={rowCount}
+            columnWidth={columnWidth}
+            rowHeight={70}
+            style={{ height: 375, width, overflowX: 'hidden' }}
+          />
+        )}
+      </GridContainer>
     )
   },
   (prevProps, nextProps) => prevProps.icons === nextProps.icons,

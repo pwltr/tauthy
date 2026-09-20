@@ -67,6 +67,7 @@
         "contentProtected": true,
         "hiddenTitle": true,
         "acceptFirstMouse": true,
+        "scrollBarStyle": "fluentOverlay",
         "useHttpsScheme": true
       }
     ],

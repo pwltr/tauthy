@@ -67,6 +67,18 @@ const App = () => {
   }, [])
 
   const mode = resolvePaletteMode(themePreference, prefersDarkMode)
+
+  useEffect(() => {
+    const root = document.documentElement
+    const previousColorScheme = root.style.colorScheme
+
+    root.style.colorScheme = mode === 'light' ? 'light' : 'dark'
+
+    return () => {
+      root.style.colorScheme = previousColorScheme
+    }
+  }, [mode])
+
   const theme = useMemo(
     () => createTheme(getDesignTokens(mode, prefersReducedMotion)),
     [mode, prefersReducedMotion],
