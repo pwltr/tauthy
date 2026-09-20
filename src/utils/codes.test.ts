@@ -2,12 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const invoke = vi.hoisted(() => vi.fn())
 const mockVault = vi.hoisted(() => ({ getVault: vi.fn(), save: vi.fn() }))
+const saveFile = vi.hoisted(() => vi.fn())
+const writeTextFile = vi.hoisted(() => vi.fn())
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }))
+vi.mock('@tauri-apps/plugin-dialog', () => ({ save: saveFile }))
+vi.mock('@tauri-apps/plugin-fs', () => ({ writeTextFile }))
 vi.mock('~/utils/storage', () => ({ vault: mockVault }))
 
 import {
   decryptAegisBackup,
+  exportCodes,
   generateTOTPs,
   getTOTPRefreshDelay,
   importFile,
@@ -115,6 +120,87 @@ describe('Aegis imports', () => {
         },
       ]),
     )
+  })
+})
+
+describe('Tauthy import and export', () => {
+  beforeEach(() => {
+    mockVault.getVault.mockReset()
+    mockVault.save.mockReset()
+    saveFile.mockReset()
+    writeTextFile.mockReset()
+    vi.useRealTimers()
+  })
+
+  it('exports the versioned v1 format with an unambiguous filename', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-20T12:30:00.000Z'))
+    mockVault.getVault.mockResolvedValue([
+      {
+        uuid: 'entry-id',
+        name: 'alice@example.com',
+        issuer: 'Example',
+        secret: 'ABC234',
+      },
+    ])
+    saveFile.mockResolvedValue('/tmp/tauthy.json')
+    writeTextFile.mockResolvedValue(undefined)
+
+    await expect(exportCodes()).resolves.toBe('exportSuccess')
+
+    expect(saveFile).toHaveBeenCalledWith({
+      defaultPath: 'tauthy-export-2026-09-20T12-30-00Z.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    })
+    const exported = JSON.parse(writeTextFile.mock.calls[0][1])
+    expect(exported).toMatchObject({
+      format: 'tauthy-backup',
+      version: 1,
+      exportedAt: '2026-09-20T12:30:00.000Z',
+      entries: [
+        {
+          id: 'entry-id',
+          name: 'alice@example.com',
+          issuer: 'Example',
+          otp: {
+            type: 'totp',
+            secret: 'ABC234',
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30,
+          },
+        },
+      ],
+    })
+  })
+
+  it('imports v1 without duplicating an identical existing entry', async () => {
+    const entry = {
+      uuid: 'entry-id',
+      name: 'alice@example.com',
+      issuer: 'Example',
+      secret: 'ABC234',
+    }
+    const backup = {
+      format: 'tauthy-backup',
+      version: 1,
+      exportedAt: '2026-09-20T12:30:00.000Z',
+      entries: [
+        {
+          id: entry.uuid,
+          name: entry.name,
+          issuer: entry.issuer,
+          otp: { type: 'totp', secret: entry.secret, algorithm: 'SHA1', digits: 6, period: 30 },
+        },
+      ],
+    }
+    const file = { text: vi.fn().mockResolvedValue(JSON.stringify(backup)) } as unknown as File
+    mockVault.getVault.mockResolvedValue([entry])
+    mockVault.save.mockResolvedValue(undefined)
+
+    await importFile(file, 'tauthy')
+
+    expect(mockVault.save).toHaveBeenCalledWith(JSON.stringify([entry]))
   })
 })
 

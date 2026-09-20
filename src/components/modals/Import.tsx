@@ -17,6 +17,9 @@ const knownImportErrors = [
   'importEncryptedNoPasswordKey',
   'importEncryptedUnsupported',
   'importEncryptedWrongPassword',
+  'importTauthyDuplicateIds',
+  'importTauthyIdConflict',
+  'importTauthyNewerVersion',
   'importUnsupportedOtp',
   'importFailed',
 ]
