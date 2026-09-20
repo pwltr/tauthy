@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
 
 import { vault } from '~/utils/storage'
+import { createTauthyBackup, mergeTauthyImport, parseTauthyBackup } from '~/utils/tauthyBackup'
 import { generateUUID } from '~/utils'
 import type {
   FormData,
@@ -236,16 +237,7 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
   }
 
   if (format === 'tauthy') {
-    if (!Array.isArray(json)) throw Error('importFailed')
-    const entries = json as VaultEntry[]
-    importedEntries = entries.map((entry) => ({
-      uuid: entry.uuid,
-      name: entry.name,
-      issuer: entry.issuer,
-      group: entry.group,
-      secret: entry.secret,
-      icon: entry.icon,
-    }))
+    importedEntries = parseTauthyBackup(json)
   }
 
   if (importedEntries.length === 0) {
@@ -322,9 +314,13 @@ export const importFile = async (file: File, format: ImportFormat, password?: st
     json = await decryptImport(json, format, password)
   }
 
-  const currentVault = await vault.getVault()
   const importedEntries = parseImportedEntries(json, format)
-  await vault.save(JSON.stringify([...currentVault, ...importedEntries]))
+  const currentVault = await vault.getVault()
+  const entries =
+    format === 'tauthy'
+      ? mergeTauthyImport(currentVault, importedEntries)
+      : [...currentVault, ...importedEntries]
+  await vault.save(JSON.stringify(entries))
   return json
 }
 
@@ -341,16 +337,13 @@ export const exportCodes = async () => {
     throw Error('exportEmpty')
   }
 
-  const date = new Date(Date.now())
-    .toLocaleDateString('en-US', {
-      year: '2-digit',
-      month: '2-digit',
-      day: '2-digit',
-    })
-    .replace(/[^\w\s]/gi, '')
-
-  const file = JSON.stringify(entries)
-  const fileName = `tauthy_export_${date}.json`
+  const exportedAt = new Date()
+  const timestamp = exportedAt
+    .toISOString()
+    .replace(/\.\d{3}Z$/, 'Z')
+    .replace(/:/g, '-')
+  const file = `${JSON.stringify(createTauthyBackup(entries, exportedAt), null, 2)}\n`
+  const fileName = `tauthy-export-${timestamp}.json`
   const filePath = await save({
     defaultPath: fileName,
     filters: [{ name: 'JSON', extensions: ['json'] }],

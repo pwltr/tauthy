@@ -45,7 +45,8 @@ and code generation works offline. You can add password protection and automatic
 additional protection.
 
 Exported JSON backups are intentionally unencrypted for portability. Tauthy warns before creating
-one; store exports securely and delete them when they are no longer needed.
+one; store exports securely and delete them when they are no longer needed. The portable format is
+documented in [Tauthy backup format v1](./docs/tauthy-backup-v1.md).
 
 ## Installation
 

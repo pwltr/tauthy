@@ -15,6 +15,31 @@ export type VaultEntry = {
   icon?: string
 }
 
+export type TauthyBackupEntryV1 = {
+  id: string
+  name: string
+  issuer?: string
+  group?: string
+  icon?: {
+    mimeType: 'image/svg+xml'
+    base64: string
+  }
+  otp: {
+    type: 'totp'
+    secret: string
+    algorithm: 'SHA1'
+    digits: 6
+    period: 30
+  }
+}
+
+export type TauthyBackupV1 = {
+  format: 'tauthy-backup'
+  version: 1
+  exportedAt: string
+  entries: TauthyBackupEntryV1[]
+}
+
 export type AegisEntry = {
   type: string
   uuid: string
