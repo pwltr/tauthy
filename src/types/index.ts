@@ -22,6 +22,7 @@ export type AegisEntry = {
   issuer: string
   note: string
   group?: string
+  groups?: string[]
   icon?: string
   icon_mime?: string
   info: {
@@ -31,6 +32,12 @@ export type AegisEntry = {
     period?: number
     counter?: number
   }
+}
+
+export type AegisDatabase = {
+  entries?: AegisEntry[]
+  groups?: Array<{ uuid?: string; name?: string }>
+  version?: number
 }
 
 export type AuthyEntry = {

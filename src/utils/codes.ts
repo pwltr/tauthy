@@ -8,7 +8,7 @@ import { generateUUID } from '~/utils'
 import type {
   FormData,
   VaultEntry,
-  AegisEntry,
+  AegisDatabase,
   AuthyEntry,
   TwoFasBackup,
   TwoFasService,
@@ -19,6 +19,49 @@ export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy'
 export type GeneratedTOTPs = {
   codes: Array<string | null>
   expiresAtMs: number
+}
+
+type EncryptedImportAdapter = {
+  isEncrypted: (json: unknown) => boolean
+  decrypt: (json: unknown, password: string) => Promise<unknown>
+}
+
+export const isEncryptedAegisBackup = (json: unknown) =>
+  typeof (json as { db?: unknown })?.db === 'string'
+
+export const decryptAegisBackup = async (json: unknown, password: string) => {
+  if (!isEncryptedAegisBackup(json)) {
+    throw Error('importFailed')
+  }
+
+  try {
+    return await invoke<AegisDatabase>('decrypt_aegis_vault', {
+      vault: JSON.stringify(json),
+      password,
+    })
+  } catch (err) {
+    if (typeof err === 'string') throw Error(err)
+    throw Error('importFailed')
+  }
+}
+
+const encryptedImportAdapters: Partial<Record<ImportFormat, EncryptedImportAdapter>> = {
+  aegis: {
+    isEncrypted: isEncryptedAegisBackup,
+    decrypt: async (json, password) => ({
+      ...(json as object),
+      db: await decryptAegisBackup(json, password),
+    }),
+  },
+}
+
+export const isEncryptedImport = (json: unknown, format: ImportFormat) =>
+  encryptedImportAdapters[format]?.isEncrypted(json) ?? false
+
+const decryptImport = async (json: unknown, format: ImportFormat, password: string) => {
+  const adapter = encryptedImportAdapters[format]
+  if (!adapter) throw Error('importEncryptedUnsupported')
+  return adapter.decrypt(json, password)
 }
 
 export const getTOTPRefreshDelay = (expiresAtMs: number, now = Date.now()) =>
@@ -144,9 +187,9 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
   }
 
   if (format === 'aegis') {
-    const backup = json as { db?: { entries?: AegisEntry[] } | string }
+    const backup = json as { db?: AegisDatabase | string }
     if (typeof backup?.db === 'string') {
-      throw Error('importAegisEncrypted')
+      throw Error('importPasswordRequired')
     }
 
     if (!Array.isArray(backup?.db?.entries)) {
@@ -154,6 +197,11 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
     }
 
     const entries = backup.db.entries
+    const groupNames = new Map(
+      (Array.isArray(backup.db.groups) ? backup.db.groups : [])
+        .filter((group) => typeof group?.uuid === 'string' && typeof group?.name === 'string')
+        .map((group) => [group.uuid as string, group.name as string]),
+    )
     const containsUnsupportedEntries = entries.some(
       (entry) =>
         entry.type !== 'totp' ||
@@ -164,14 +212,17 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
       throw Error('importUnsupportedOtp')
     }
 
-    importedEntries = entries.map((entry) => ({
-      uuid: entry.uuid,
-      name: entry.name,
-      issuer: entry.issuer,
-      group: entry.group,
-      secret: entry.info.secret,
-      icon: entry.icon,
-    }))
+    importedEntries = entries.map((entry) => {
+      const currentGroup = entry.groups?.map((group) => groupNames.get(group)).find(Boolean)
+      return {
+        uuid: entry.uuid,
+        name: entry.name,
+        issuer: entry.issuer,
+        group: currentGroup || entry.group,
+        secret: entry.info.secret,
+        icon: entry.icon,
+      }
+    })
   }
 
   if (format === 'authy') {
@@ -257,38 +308,30 @@ export const deleteCode = async (id: string) => {
   }
 }
 
+export const importFile = async (file: File, format: ImportFormat, password?: string) => {
+  let json: unknown
+  try {
+    json = JSON.parse(await file.text())
+  } catch (err) {
+    console.error('error when trying to parse json:', err)
+    throw Error('importFailed')
+  }
+
+  if (isEncryptedImport(json, format)) {
+    if (password === undefined) throw Error('importPasswordRequired')
+    json = await decryptImport(json, format, password)
+  }
+
+  const currentVault = await vault.getVault()
+  const importedEntries = parseImportedEntries(json, format)
+  await vault.save(JSON.stringify([...currentVault, ...importedEntries]))
+  return json
+}
+
 export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: ImportFormat) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (() => {
-      return async function (event) {
-        try {
-          const currentVault = await vault.getVault()
-          const json = JSON.parse(event.target?.result as string)
-
-          const importedEntries = parseImportedEntries(json, format)
-
-          const entries = [...currentVault, ...importedEntries]
-
-          if (entries) {
-            await vault.save(JSON.stringify(entries))
-            resolve(json)
-          } else {
-            console.error('no entries found')
-            reject('no entries found')
-          }
-        } catch (err) {
-          console.error('error when trying to parse json:', err)
-          reject(err)
-        }
-      }
-    })()
-    reader.onerror = reject
-
-    if (event.target.files && event.target.files[0]) {
-      reader.readAsText(event.target.files[0])
-    }
-  })
+  const file = event.target.files?.[0]
+  if (!file) return Promise.reject(Error('importFailed'))
+  return importFile(file, format)
 }
 
 export const exportCodes = async () => {
