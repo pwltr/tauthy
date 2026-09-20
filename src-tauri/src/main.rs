@@ -7,6 +7,7 @@ mod aegis;
 mod commands;
 mod legacy_vault;
 mod otp;
+mod tauthy_backup;
 mod tray;
 
 #[cfg(target_os = "macos")]
@@ -44,6 +45,8 @@ fn main() {
       legacy_vault::vault_save,
       legacy_vault::vault_unload,
       legacy_vault::vault_status,
+      tauthy_backup::decrypt_tauthy_backup,
+      tauthy_backup::encrypt_tauthy_backup,
       tray::tray_configure,
     ]);
 

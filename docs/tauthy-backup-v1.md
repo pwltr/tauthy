@@ -86,5 +86,6 @@ silently reinterpret unsupported OTP settings. A breaking schema change will use
 Tauthy continues to import its legacy unversioned top-level array format. New exports always use the
 versioned format documented here.
 
-Password-encrypted backups will use a separate authenticated-encryption envelope whose decrypted
-payload is a complete `tauthy-backup` document.
+Password-encrypted backups use a separate authenticated-encryption envelope whose decrypted payload
+is a complete `tauthy-backup` document. See
+[Tauthy encrypted backup format v1](./tauthy-encrypted-backup-v1.md).

@@ -44,9 +44,11 @@ Tauthy stores authentication secrets locally in an encrypted vault. No cloud acc
 and code generation works offline. You can add password protection and automatic idle locking for
 additional protection.
 
-Exported JSON backups are intentionally unencrypted for portability. Tauthy warns before creating
-one; store exports securely and delete them when they are no longer needed. The portable format is
-documented in [Tauthy backup format v1](./docs/tauthy-backup-v1.md).
+Password-protected backups are encrypted locally and are the recommended way to keep a portable
+copy. Plain JSON exports remain available for interoperability and should be stored securely and
+deleted when no longer needed. The formats are documented in
+[Tauthy backup format v1](./docs/tauthy-backup-v1.md) and
+[Tauthy encrypted backup format v1](./docs/tauthy-encrypted-backup-v1.md).
 
 ## Installation
 

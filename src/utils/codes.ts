@@ -46,6 +46,23 @@ export const decryptAegisBackup = async (json: unknown, password: string) => {
   }
 }
 
+export const isEncryptedTauthyBackup = (json: unknown) =>
+  (json as { format?: unknown })?.format === 'tauthy-backup-encrypted'
+
+export const decryptTauthyBackup = async (json: unknown, password: string) => {
+  if (!isEncryptedTauthyBackup(json)) throw Error('importFailed')
+
+  try {
+    return await invoke<unknown>('decrypt_tauthy_backup', {
+      backup: JSON.stringify(json),
+      password,
+    })
+  } catch (err) {
+    if (typeof err === 'string') throw Error(err)
+    throw Error('importFailed')
+  }
+}
+
 const encryptedImportAdapters: Partial<Record<ImportFormat, EncryptedImportAdapter>> = {
   aegis: {
     isEncrypted: isEncryptedAegisBackup,
@@ -53,6 +70,10 @@ const encryptedImportAdapters: Partial<Record<ImportFormat, EncryptedImportAdapt
       ...(json as object),
       db: await decryptAegisBackup(json, password),
     }),
+  },
+  tauthy: {
+    isEncrypted: isEncryptedTauthyBackup,
+    decrypt: decryptTauthyBackup,
   },
 }
 
@@ -330,7 +351,7 @@ export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: Import
   return importFile(file, format)
 }
 
-export const exportCodes = async () => {
+export const exportCodes = async (password?: string) => {
   const entries = await vault.getVault()
 
   if (entries.length === 0) {
@@ -342,11 +363,16 @@ export const exportCodes = async () => {
     .toISOString()
     .replace(/\.\d{3}Z$/, 'Z')
     .replace(/:/g, '-')
-  const file = `${JSON.stringify(createTauthyBackup(entries, exportedAt), null, 2)}\n`
-  const fileName = `tauthy-export-${timestamp}.json`
+  let backup: unknown = createTauthyBackup(entries, exportedAt)
+  const encrypted = password !== undefined
+  const fileName = encrypted
+    ? `tauthy-export-${timestamp}.tauthy`
+    : `tauthy-export-${timestamp}.json`
   const filePath = await save({
     defaultPath: fileName,
-    filters: [{ name: 'JSON', extensions: ['json'] }],
+    filters: encrypted
+      ? [{ name: 'Tauthy encrypted backup', extensions: ['tauthy'] }]
+      : [{ name: 'JSON', extensions: ['json'] }],
   })
 
   if (!filePath) {
@@ -354,6 +380,10 @@ export const exportCodes = async () => {
   }
 
   try {
+    if (encrypted) {
+      backup = await invoke<unknown>('encrypt_tauthy_backup', { backup, password })
+    }
+    const file = `${JSON.stringify(backup, null, 2)}\n`
     await writeTextFile(filePath, file)
   } catch (err) {
     throw Error('exportFailed')
