@@ -48,6 +48,9 @@ jobs:
   rust:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      checks: write
 
     steps:
       - name: Checkout repository
