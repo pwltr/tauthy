@@ -12,12 +12,14 @@ vi.mock('~/utils/storage', () => ({ vault: mockVault }))
 
 import {
   decryptAegisBackup,
+  decryptTauthyBackup,
   exportCodes,
   generateTOTPs,
   getTOTPRefreshDelay,
   importFile,
   isEncryptedAegisBackup,
   isEncryptedImport,
+  isEncryptedTauthyBackup,
   parseImportedEntries,
   parseOtpAuthUri,
 } from '~/utils/codes'
@@ -125,6 +127,7 @@ describe('Aegis imports', () => {
 
 describe('Tauthy import and export', () => {
   beforeEach(() => {
+    invoke.mockReset()
     mockVault.getVault.mockReset()
     mockVault.save.mockReset()
     saveFile.mockReset()
@@ -174,6 +177,33 @@ describe('Tauthy import and export', () => {
     })
   })
 
+  it('exports the v1 document inside an encrypted envelope', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-20T12:30:00.000Z'))
+    mockVault.getVault.mockResolvedValue([
+      { uuid: 'entry-id', name: 'alice@example.com', secret: 'ABC234' },
+    ])
+    saveFile.mockResolvedValue('/tmp/tauthy.tauthy')
+    const envelope = {
+      format: 'tauthy-backup-encrypted',
+      version: 1,
+      ciphertext: 'encrypted',
+    }
+    invoke.mockResolvedValue(envelope)
+
+    await expect(exportCodes('backup password')).resolves.toBe('exportSuccess')
+
+    expect(saveFile).toHaveBeenCalledWith({
+      defaultPath: 'tauthy-export-2026-09-20T12-30-00Z.tauthy',
+      filters: [{ name: 'Tauthy encrypted backup', extensions: ['tauthy'] }],
+    })
+    expect(invoke).toHaveBeenCalledWith('encrypt_tauthy_backup', {
+      backup: expect.objectContaining({ format: 'tauthy-backup', version: 1 }),
+      password: 'backup password',
+    })
+    expect(JSON.parse(writeTextFile.mock.calls[0][1])).toEqual(envelope)
+  })
+
   it('imports v1 without duplicating an identical existing entry', async () => {
     const entry = {
       uuid: 'entry-id',
@@ -201,6 +231,38 @@ describe('Tauthy import and export', () => {
     await importFile(file, 'tauthy')
 
     expect(mockVault.save).toHaveBeenCalledWith(JSON.stringify([entry]))
+  })
+
+  it('detects, decrypts, and imports an encrypted Tauthy backup', async () => {
+    const envelope = { format: 'tauthy-backup-encrypted', version: 1, ciphertext: 'encrypted' }
+    const backup = {
+      format: 'tauthy-backup',
+      version: 1,
+      exportedAt: '2026-09-20T12:30:00.000Z',
+      entries: [
+        {
+          id: 'entry-id',
+          name: 'alice@example.com',
+          otp: { type: 'totp', secret: 'ABC234', algorithm: 'SHA1', digits: 6, period: 30 },
+        },
+      ],
+    }
+    const file = { text: vi.fn().mockResolvedValue(JSON.stringify(envelope)) } as unknown as File
+    invoke.mockResolvedValue(backup)
+    mockVault.getVault.mockResolvedValue([])
+
+    expect(isEncryptedTauthyBackup(envelope)).toBe(true)
+    expect(isEncryptedImport(envelope, 'tauthy')).toBe(true)
+    await expect(decryptTauthyBackup(envelope, 'backup password')).resolves.toEqual(backup)
+    await importFile(file, 'tauthy', 'backup password')
+
+    expect(invoke).toHaveBeenCalledWith('decrypt_tauthy_backup', {
+      backup: JSON.stringify(envelope),
+      password: 'backup password',
+    })
+    expect(mockVault.save).toHaveBeenCalledWith(
+      JSON.stringify([{ uuid: 'entry-id', name: 'alice@example.com', secret: 'ABC234' }]),
+    )
   })
 })
 

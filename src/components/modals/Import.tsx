@@ -14,6 +14,7 @@ import ImportPasswordModal from '~/components/modals/ImportPassword'
 const knownImportErrors = [
   'import2FasEncrypted',
   'importEncryptedCorrupt',
+  'importEncryptedAuthenticationFailed',
   'importEncryptedNoPasswordKey',
   'importEncryptedUnsupported',
   'importEncryptedWrongPassword',
@@ -75,8 +76,13 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
       await importFile(pendingEncryptedImport.file, pendingEncryptedImport.format, password)
       finishImport()
     } catch (err) {
-      if (err instanceof Error && err.message === 'importEncryptedWrongPassword') {
-        setPasswordError(t('toasts.importEncryptedWrongPassword'))
+      if (
+        err instanceof Error &&
+        ['importEncryptedWrongPassword', 'importEncryptedAuthenticationFailed'].includes(
+          err.message,
+        )
+      ) {
+        setPasswordError(t(`toasts.${err.message}`))
       } else {
         closePasswordPrompt()
         showImportError(err)
@@ -93,7 +99,7 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
           <input
             ref={inputRef}
             type="file"
-            accept=".json,.2fas"
+            accept=".json,.2fas,.tauthy"
             style={{ display: 'none' }}
             onChange={async (event) => {
               const input = event.currentTarget

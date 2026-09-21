@@ -29,6 +29,8 @@ tauri-plugin-process = "2.3.1"
 tauri-plugin-shell = "2"
 tauri-plugin-updater = "2.11.0"
 aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc", "zeroize"] }
+argon2 = { version = "0.5.3", default-features = false, features = ["alloc"] }
+chacha20poly1305 = { version = "0.10.1", default-features = false, features = ["alloc"] }
 scrypt = { version = "0.11.0", default-features = false }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]

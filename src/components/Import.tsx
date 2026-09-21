@@ -11,12 +11,15 @@ import { exportCodes } from '~/utils'
 import ListSection from '~/components/ListSection'
 import ListItem from '~/components/ListItem'
 import ImportModal from '~/components/modals/Import'
+import ExportPasswordModal from '~/components/modals/ExportPassword'
 import ResetModal from '~/components/modals/Reset'
 
 const Import = () => {
   const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isExportPasswordModalOpen, setIsExportPasswordModalOpen] = useState(false)
+  const [isExportingEncrypted, setIsExportingEncrypted] = useState(false)
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
 
   const handleOpenImportModal = () => setIsImportModalOpen(true)
@@ -24,7 +27,28 @@ const Import = () => {
   const handleOpenResetModal = () => setIsResetModalOpen(true)
   const handleCloseResetModal = () => setIsResetModalOpen(false)
 
-  const handleExportVault = async () => {
+  const showExportResult = async (password?: string) => {
+    try {
+      await exportCodes(password)
+      toast.success(t('toasts.exportSuccess'))
+      setIsExportPasswordModalOpen(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'exportFailed'
+      toast.error(t(`toasts.${message}`))
+    }
+  }
+
+  const handleExportEncrypted = async (password: string) => {
+    setIsExportingEncrypted(true)
+    try {
+      await showExportResult(password)
+    } finally {
+      setIsExportingEncrypted(false)
+      setIsExportPasswordModalOpen(false)
+    }
+  }
+
+  const handleExportPlaintext = async () => {
     const confirmed = await confirm(t('modals.exportWarning'), {
       title: t('import.export'),
       kind: 'warning',
@@ -34,13 +58,7 @@ const Import = () => {
 
     if (!confirmed) return
 
-    try {
-      await exportCodes()
-      toast.success(t('toasts.exportSuccess'))
-    } catch (err) {
-      const error = err as Error
-      toast.error(t(`toasts.${error.message}`))
-    }
+    await showExportResult()
   }
 
   useEffect(() => {
@@ -60,11 +78,20 @@ const Import = () => {
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding onClick={handleExportVault}>
+          <ListItem disablePadding onClick={() => setIsExportPasswordModalOpen(true)}>
             <ListItemButton>
               <ListItemText
-                primary={t('import.export')}
-                secondary={t('import.exportDescription')}
+                primary={t('import.exportEncrypted')}
+                secondary={t('import.exportEncryptedDescription')}
+              />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding onClick={handleExportPlaintext}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('import.exportPlaintext')}
+                secondary={t('import.exportPlaintextDescription')}
               />
             </ListItemButton>
           </ListItem>
@@ -78,6 +105,12 @@ const Import = () => {
       </List>
 
       <ImportModal open={isImportModalOpen} onClose={handleCloseImportModal} />
+      <ExportPasswordModal
+        open={isExportPasswordModalOpen}
+        busy={isExportingEncrypted}
+        onClose={() => setIsExportPasswordModalOpen(false)}
+        onSubmit={handleExportEncrypted}
+      />
       <ResetModal open={isResetModalOpen} onClose={handleCloseResetModal} />
     </>
   )
