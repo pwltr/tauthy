@@ -19,8 +19,10 @@ const PARALLELISM: u32 = 1;
 const KEY_SIZE: usize = 32;
 const SALT_SIZE: usize = 16;
 const NONCE_SIZE: usize = 24;
+const AUTHENTICATION_TAG_SIZE: usize = 16;
 const MIN_PASSWORD_LENGTH: usize = 8;
-const MAX_ENCRYPTED_SIZE: usize = 64 * 1024 * 1024;
+const MAX_PLAINTEXT_SIZE: usize = 64 * 1024 * 1024;
+const MAX_CIPHERTEXT_SIZE: usize = MAX_PLAINTEXT_SIZE + AUTHENTICATION_TAG_SIZE;
 const MAX_MEMORY_KIB: u32 = 256 * 1024;
 const MAX_ITERATIONS: u32 = 10;
 const MAX_PARALLELISM: u32 = 4;
@@ -29,6 +31,14 @@ const AAD: &[u8] = b"tauthy-backup-encrypted:v1";
 const ERR_AUTHENTICATION: &str = "importEncryptedAuthenticationFailed";
 const ERR_CORRUPT: &str = "importEncryptedCorrupt";
 const ERR_UNSUPPORTED: &str = "importEncryptedUnsupported";
+
+fn plaintext_size_is_supported(size: usize) -> bool {
+  size > 0 && size <= MAX_PLAINTEXT_SIZE
+}
+
+fn ciphertext_size_is_supported(size: usize) -> bool {
+  size > 0 && size <= MAX_CIPHERTEXT_SIZE
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -90,7 +100,7 @@ fn encrypt_backup(backup: &Value, password: &[u8]) -> Result<Value, String> {
   }
 
   let plaintext = Zeroizing::new(serde_json::to_vec(backup).map_err(|_| ERR_CORRUPT.to_string())?);
-  if plaintext.is_empty() || plaintext.len() > MAX_ENCRYPTED_SIZE {
+  if !plaintext_size_is_supported(plaintext.len()) {
     return Err(ERR_CORRUPT.into());
   }
 
@@ -147,7 +157,7 @@ fn decode_exact(value: &str, length: usize) -> Result<Vec<u8>, String> {
 }
 
 fn decrypt_backup(envelope: &str, password: &[u8]) -> Result<Value, String> {
-  if envelope.len() > MAX_ENCRYPTED_SIZE * 2 {
+  if envelope.len() > MAX_PLAINTEXT_SIZE * 2 {
     return Err(ERR_UNSUPPORTED.into());
   }
   let envelope: EncryptedBackup =
@@ -165,7 +175,7 @@ fn decrypt_backup(envelope: &str, password: &[u8]) -> Result<Value, String> {
   let ciphertext = BASE64
     .decode(envelope.ciphertext.as_bytes())
     .map_err(|_| ERR_UNSUPPORTED.to_string())?;
-  if ciphertext.is_empty() || ciphertext.len() > MAX_ENCRYPTED_SIZE {
+  if !ciphertext_size_is_supported(ciphertext.len()) {
     return Err(ERR_UNSUPPORTED.into());
   }
 
@@ -280,5 +290,17 @@ mod tests {
       decrypt_backup(&envelope.to_string(), PASSWORD.as_bytes()),
       Err(ERR_UNSUPPORTED.into())
     );
+  }
+
+  #[test]
+  fn ciphertext_limit_accounts_for_authentication_tag() {
+    assert!(plaintext_size_is_supported(MAX_PLAINTEXT_SIZE));
+    assert!(!plaintext_size_is_supported(MAX_PLAINTEXT_SIZE + 1));
+    assert!(ciphertext_size_is_supported(
+      MAX_PLAINTEXT_SIZE + AUTHENTICATION_TAG_SIZE
+    ));
+    assert!(!ciphertext_size_is_supported(
+      MAX_PLAINTEXT_SIZE + AUTHENTICATION_TAG_SIZE + 1
+    ));
   }
 }

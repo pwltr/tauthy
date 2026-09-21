@@ -41,8 +41,8 @@ the backup has been damaged or modified; these cases cannot be distinguished saf
 ## Import limits
 
 Tauthy bounds untrusted KDF parameters before deriving a key. Version 1 accepts at most 256 MiB of
-Argon2 memory, 10 iterations, and parallelism 4. Ciphertext and decrypted backups are limited to
-64 MiB.
+Argon2 memory, 10 iterations, and parallelism 4. Decrypted backups are limited to 64 MiB;
+ciphertext may be up to 64 MiB plus the 16-byte Poly1305 authentication tag.
 
 Unknown envelope versions or algorithms are rejected rather than interpreted with different
 cryptographic settings.
