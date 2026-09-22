@@ -15,7 +15,7 @@ import EditIcon from '@mui/icons-material/Edit'
 
 import { ListEntry } from './Codes'
 import { AppSettingsContext, ListOptionsContext } from '~/context'
-import { copyToClipboard } from '~/utils'
+import { copyToClipboard, recordEntryUsage } from '~/utils'
 const appWindow = getCurrentWebviewWindow()
 
 const lockToVerticalAxis = (style?: DraggableStyle): DraggableStyle | undefined => {
@@ -80,16 +80,18 @@ const Token = styled('span')(
 export type EntryListItemProps = {
   item: ListEntry
   index: number
+  isDragDisabled: boolean
   setQrEntry: (entry: ListEntry) => void
 }
 
-const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
+const EntryListItem = ({ item, index, isDragDisabled, setQrEntry }: EntryListItemProps) => {
   const navigate = useNavigate()
   const { minimizeOnCopy } = useContext(AppSettingsContext)
   const { groupByTwos } = useContext(ListOptionsContext)
 
   const onCopy = async (token: string) => {
-    copyToClipboard(token)
+    await copyToClipboard(token)
+    recordEntryUsage(item.uuid)
 
     if (minimizeOnCopy) {
       await appWindow.minimize()
@@ -97,7 +99,7 @@ const EntryListItem = ({ item, index, setQrEntry }: EntryListItemProps) => {
   }
 
   return (
-    <Draggable draggableId={item.uuid} index={index}>
+    <Draggable draggableId={item.uuid} index={index} isDragDisabled={isDragDisabled}>
       {(provided, snapshot) => (
         <ListItem
           ref={provided.innerRef}

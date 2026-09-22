@@ -1,5 +1,7 @@
 export * from './codes'
 export * from './helpers'
+export * from './sorting'
 export * from './storage'
 export * from './tauthyBackup'
 export * from './updater'
+export * from './usage'

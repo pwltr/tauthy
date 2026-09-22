@@ -7,7 +7,7 @@ use serde::Deserialize;
 use tauri::{
   menu::{Menu, MenuItem, PredefinedMenuItem},
   tray::TrayIconBuilder,
-  AppHandle, Manager, State,
+  AppHandle, Emitter, Manager, State,
 };
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
@@ -213,7 +213,10 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
   } else if let Some(uuid) = id.strip_prefix(ACCOUNT_ID_PREFIX) {
     let labels = labels(app);
     match copy_account_code(app, uuid) {
-      Ok(()) => show_feedback(app, labels.copied, SUCCESS_ICON.clone()),
+      Ok(()) => {
+        let _ = app.emit("tauthy://entry-used", uuid);
+        show_feedback(app, labels.copied, SUCCESS_ICON.clone());
+      }
       Err(_) => show_feedback(app, labels.copy_failed, ERROR_ICON.clone()),
     }
   }

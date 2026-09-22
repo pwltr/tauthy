@@ -17,7 +17,6 @@
   },
   "appBar": {
     "search": "Suchen",
-    "custom": "Benutzerdefiniert",
     "lock": "Sperren",
     "settings": "Einstellungen",
     "about": "Über"
@@ -47,7 +46,8 @@
     "security": "Sicherheit",
     "securityDescription": "Passwort und automatisches Sperren",
     "import": "Import & Export",
-    "importDescription": "Tresor importieren oder Export erstellen"
+    "importDescription": "Tresor importieren oder Export erstellen",
+    "aboutDescription": "Version, Projektlinks und Unterstützung"
   },
   "appearance": {
     "pageTitle": "Erscheinungsbild",
@@ -61,6 +61,14 @@
     },
     "language": "Sprache",
     "entries": "Liste",
+    "sortOrder": "Sortierreihenfolge",
+    "sortOptions": {
+      "custom": "Manuelle Reihenfolge",
+      "a-z": "Herausgeber, A–Z",
+      "z-a": "Herausgeber, Z–A",
+      "frequent": "Häufig verwendet",
+      "recent": "Kürzlich verwendet"
+    },
     "compact": "Kompakt",
     "grouping": "Zweier-Gruppierung",
     "editGroups": "Gruppen bearbeiten",
