@@ -57,6 +57,6 @@ describe('AppBar actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lock' }))
 
     await waitFor(() => expect(vault.lock).toHaveBeenCalledOnce())
-    expect(screen.getByText('Unlock page')).toBeInTheDocument()
+    expect(await screen.findByText('Unlock page')).toBeInTheDocument()
   })
 })

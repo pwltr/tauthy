@@ -47,6 +47,8 @@
     "securityDescription": "Configurar encriptado y autobloqueo",
     "import": "Importar y Exportar",
     "importDescription": "Importa o crea copias de tu baúl.",
+    "sync": "Sincronización",
+    "syncDescription": "Mantén un baúl cifrado en una carpeta en la nube",
     "aboutDescription": "Versión, enlaces del proyecto y soporte"
   },
   "appearance": {
@@ -99,6 +101,27 @@
     "exportPlaintextDescription": "Crear una copia JSON legible",
     "reset": "Eliminar el baúl",
     "resetDescription": "Elimina todo el baúl para siempre"
+  },
+  "sync": {
+    "pageTitle": "Sincronización",
+    "description": "Mantén tus cuentas en un archivo cifrado gestionado por Nextcloud, Dropbox, OneDrive o iCloud Drive. Los cambios locales siguen funcionando cuando la carpeta no está disponible.",
+    "create": "Crear archivo de sincronización",
+    "createDescription": "Crear un archivo cifrado en tu carpeta en la nube",
+    "join": "Unirse a una sincronización",
+    "joinDescription": "Conectar este dispositivo a un archivo de sincronización de Tauthy",
+    "createPasswordTitle": "Crear contraseña de recuperación",
+    "createPasswordDescription": "La necesitarás para conectar otro dispositivo o recuperar tus cuentas. Tauthy no puede recuperarla.",
+    "joinPasswordTitle": "Desbloquear archivo de sincronización",
+    "joinPasswordDescription": "Introduce la contraseña de recuperación usada al crear el archivo.",
+    "password": "Contraseña de recuperación",
+    "connected": "Archivo de sincronización",
+    "lastSynced": "Última sincronización",
+    "never": "Nunca",
+    "syncNow": "Sincronizar ahora",
+    "syncNowDescription": "Combinar cambios locales y remotos",
+    "disconnect": "Desconectar sincronización",
+    "disconnectDescription": "Dejar de sincronizar sin borrar las cuentas locales ni el archivo",
+    "disconnectWarning": "Este dispositivo dejará de sincronizarse. Las cuentas locales y el archivo cifrado no se eliminarán. ¿Continuar?"
   },
   "about": {
     "pageTitle": "Acerca de",
@@ -167,6 +190,18 @@
     "passwordSet": "Contraseña actualizada.",
     "passwordReset": "Protección por contraseña desactivada.",
     "reset": "Reiniciar Baúl.",
+    "syncConfigured": "Sincronización configurada.",
+    "syncSuccess": "Sincronización completada.",
+    "syncDisconnected": "Sincronización desconectada.",
+    "syncAuthenticationFailed": "La contraseña de recuperación es incorrecta o el archivo fue modificado.",
+    "syncConflict": "Los baúles local y sincronizado contienen un conflicto que no se puede combinar con seguridad.",
+    "syncCorrupt": "Los datos de sincronización están dañados o no son válidos.",
+    "syncFileExists": "Ese archivo ya existe. Únete a él o elige otro nombre.",
+    "syncNotConfigured": "La sincronización no está configurada.",
+    "syncPickerFailed": "No se pudo abrir el selector de archivos.",
+    "syncUnavailable": "El archivo no está disponible. Comprueba que la carpeta en la nube sea accesible.",
+    "syncUnsupported": "Esta versión o configuración de cifrado no es compatible.",
+    "syncFailed": "La sincronización falló. Tu baúl local no se ha perdido.",
     "error": "Ha ocurrido un error."
   }
 }

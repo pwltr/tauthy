@@ -7,7 +7,7 @@ import AddIcon from '@mui/icons-material/Add'
 import { Link, Typography } from '@mui/material'
 
 import { vault } from '~/utils/storage'
-import { generateTOTPs, getTOTPRefreshDelay } from '~/utils'
+import { generateTOTPs, getTOTPRefreshDelay, SYNC_COMPLETE_EVENT } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
 import EntryList from '~/components/EntryList'
 import type { VaultEntry } from '~/types'
@@ -74,18 +74,21 @@ const Codes = () => {
     [t],
   )
 
-  // get tokens on mount
-  useEffect(() => {
-    const getEntries = async () => {
-      setIsLoading(true)
-      const currentVault = await vault.getVault()
-      setItems(currentVault)
-      if (currentVault.length > 0) await generateTokens(currentVault)
-      setIsLoading(false)
-    }
-
-    getEntries()
+  const getEntries = useCallback(async () => {
+    setIsLoading(true)
+    const currentVault = await vault.getVault()
+    setItems(currentVault)
+    if (currentVault.length > 0) await generateTokens(currentVault)
+    setIsLoading(false)
   }, [generateTokens])
+
+  // Load on mount and refresh if a background sync changes the local vault.
+  useEffect(() => {
+    void getEntries()
+    const refresh = () => void getEntries()
+    window.addEventListener(SYNC_COMPLETE_EVENT, refresh)
+    return () => window.removeEventListener(SYNC_COMPLETE_EVENT, refresh)
+  }, [getEntries])
 
   // Refresh at the exact rollover returned by the backend. A timeout is
   // rescheduled after every response so suspended apps cannot accumulate drift.

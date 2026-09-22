@@ -47,6 +47,8 @@
     "securityDescription": "Configure encryption and auto-lock",
     "import": "Import & Export",
     "importDescription": "Import or create exports of your vault",
+    "sync": "Sync",
+    "syncDescription": "Keep an encrypted vault file in a cloud folder",
     "aboutDescription": "Version, project links, and support"
   },
   "appearance": {
@@ -99,6 +101,27 @@
     "exportPlaintextDescription": "Create a readable JSON backup",
     "reset": "Delete Vault",
     "resetDescription": "Delete the current vault forever"
+  },
+  "sync": {
+    "pageTitle": "Sync",
+    "description": "Keep your accounts in an encrypted file managed by a folder-sync service such as Nextcloud, Dropbox, OneDrive, or iCloud Drive. Local changes continue to work when the folder is unavailable.",
+    "create": "Create sync file",
+    "createDescription": "Create a new encrypted file in your cloud folder",
+    "join": "Join existing sync",
+    "joinDescription": "Connect this device to an existing Tauthy sync file",
+    "createPasswordTitle": "Create sync recovery password",
+    "createPasswordDescription": "You will need this password to connect another device or recover your accounts. Tauthy cannot recover it for you.",
+    "joinPasswordTitle": "Unlock sync file",
+    "joinPasswordDescription": "Enter the sync recovery password used when this file was created.",
+    "password": "Sync recovery password",
+    "connected": "Sync file",
+    "lastSynced": "Last synced",
+    "never": "Never",
+    "syncNow": "Sync now",
+    "syncNowDescription": "Merge local and remote changes",
+    "disconnect": "Disconnect sync",
+    "disconnectDescription": "Stop syncing without deleting local accounts or the sync file",
+    "disconnectWarning": "This device will stop syncing. Your local accounts and the encrypted sync file will not be deleted. Continue?"
   },
   "about": {
     "pageTitle": "About",
@@ -167,6 +190,18 @@
     "passwordSet": "Password changed.",
     "passwordReset": "Password protection removed.",
     "reset": "Vault reset.",
+    "syncConfigured": "Sync configured.",
+    "syncSuccess": "Sync complete.",
+    "syncDisconnected": "Sync disconnected.",
+    "syncAuthenticationFailed": "The sync recovery password is incorrect, or the file was modified.",
+    "syncConflict": "The local and synced vaults contain an account conflict that cannot be merged safely.",
+    "syncCorrupt": "The sync data is damaged or invalid.",
+    "syncFileExists": "That file already exists. Join it or choose a different filename.",
+    "syncNotConfigured": "Sync is not configured.",
+    "syncPickerFailed": "The file picker could not be opened.",
+    "syncUnavailable": "The sync file is currently unavailable. Check that your cloud folder is accessible.",
+    "syncUnsupported": "This sync file version or encryption configuration is not supported.",
+    "syncFailed": "Sync failed. Your local vault was not lost.",
     "error": "An error occured."
   }
 }

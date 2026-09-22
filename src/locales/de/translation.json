@@ -47,6 +47,8 @@
     "securityDescription": "Passwort und automatisches Sperren",
     "import": "Import & Export",
     "importDescription": "Tresor importieren oder Export erstellen",
+    "sync": "Synchronisierung",
+    "syncDescription": "Verschlüsselten Tresor in einem Cloud-Ordner abgleichen",
     "aboutDescription": "Version, Projektlinks und Unterstützung"
   },
   "appearance": {
@@ -99,6 +101,27 @@
     "exportPlaintextDescription": "Lesbare JSON-Sicherung erstellen",
     "reset": "Tresor löschen",
     "resetDescription": "Aktuellen Tresor endgültig löschen"
+  },
+  "sync": {
+    "pageTitle": "Synchronisierung",
+    "description": "Konten in einer verschlüsselten Datei abgleichen, die von Nextcloud, Dropbox, OneDrive oder iCloud Drive übertragen wird. Lokale Änderungen funktionieren auch ohne verfügbaren Cloud-Ordner.",
+    "create": "Sync-Datei erstellen",
+    "createDescription": "Neue verschlüsselte Datei im Cloud-Ordner erstellen",
+    "join": "Bestehende Synchronisierung verbinden",
+    "joinDescription": "Dieses Gerät mit einer bestehenden Tauthy-Sync-Datei verbinden",
+    "createPasswordTitle": "Sync-Wiederherstellungspasswort erstellen",
+    "createPasswordDescription": "Dieses Passwort wird für weitere Geräte oder zur Wiederherstellung benötigt. Tauthy kann es nicht wiederherstellen.",
+    "joinPasswordTitle": "Sync-Datei entsperren",
+    "joinPasswordDescription": "Gib das beim Erstellen gewählte Sync-Wiederherstellungspasswort ein.",
+    "password": "Sync-Wiederherstellungspasswort",
+    "connected": "Sync-Datei",
+    "lastSynced": "Zuletzt synchronisiert",
+    "never": "Nie",
+    "syncNow": "Jetzt synchronisieren",
+    "syncNowDescription": "Lokale und entfernte Änderungen zusammenführen",
+    "disconnect": "Synchronisierung trennen",
+    "disconnectDescription": "Abgleich beenden, ohne lokale Konten oder die Sync-Datei zu löschen",
+    "disconnectWarning": "Dieses Gerät wird nicht mehr synchronisiert. Lokale Konten und die verschlüsselte Sync-Datei werden nicht gelöscht. Fortfahren?"
   },
   "about": {
     "pageTitle": "Über",
@@ -167,6 +190,18 @@
     "passwordSet": "Passwort aktualisiert.",
     "passwordReset": "Passwortschutz entfernt.",
     "reset": "Tresor gelöscht.",
+    "syncConfigured": "Synchronisierung eingerichtet.",
+    "syncSuccess": "Synchronisierung abgeschlossen.",
+    "syncDisconnected": "Synchronisierung getrennt.",
+    "syncAuthenticationFailed": "Das Sync-Wiederherstellungspasswort ist falsch oder die Datei wurde verändert.",
+    "syncConflict": "Lokaler und synchronisierter Tresor enthalten einen Kontokonflikt, der nicht sicher zusammengeführt werden kann.",
+    "syncCorrupt": "Die Sync-Daten sind beschädigt oder ungültig.",
+    "syncFileExists": "Diese Datei existiert bereits. Verbinde sie oder wähle einen anderen Namen.",
+    "syncNotConfigured": "Synchronisierung ist nicht eingerichtet.",
+    "syncPickerFailed": "Die Dateiauswahl konnte nicht geöffnet werden.",
+    "syncUnavailable": "Die Sync-Datei ist derzeit nicht verfügbar. Prüfe den Cloud-Ordner.",
+    "syncUnsupported": "Diese Version oder Verschlüsselung der Sync-Datei wird nicht unterstützt.",
+    "syncFailed": "Synchronisierung fehlgeschlagen. Der lokale Tresor blieb erhalten.",
     "error": "Ein Fehler ist aufgetreten."
   }
 }

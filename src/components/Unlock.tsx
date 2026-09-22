@@ -7,6 +7,7 @@ import TextField from '@mui/material/TextField'
 import MuiButton from '@mui/material/Button'
 
 import { vault } from '~/utils/storage'
+import { syncNow } from '~/utils/sync'
 
 const Container = styled('div')`
   display: flex;
@@ -46,6 +47,7 @@ const Unlock = () => {
       await vault.unlock(password)
       // try to read to check if password is valid
       await vault.checkVault()
+      void syncNow().catch(() => {})
       setIsDisabled(false)
       setError(false)
       navigate('/')

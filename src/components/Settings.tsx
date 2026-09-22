@@ -9,6 +9,7 @@ import BrushIcon from '@mui/icons-material/Brush'
 import SecurityIcon from '@mui/icons-material/Security'
 import BackupIcon from '@mui/icons-material/Backup'
 import InfoIcon from '@mui/icons-material/Info'
+import SyncIcon from '@mui/icons-material/Sync'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
@@ -57,6 +58,15 @@ const Settings = () => {
             primary={t('settings.import')}
             secondary={t('settings.importDescription')}
           />
+        </ListItemButton>
+      </ListItem>
+
+      <ListItem disablePadding onClick={() => navigate('/sync')}>
+        <ListItemButton>
+          <ListItemIcon>
+            <SyncIcon color="primary" />
+          </ListItemIcon>
+          <ListItemText primary={t('settings.sync')} secondary={t('settings.syncDescription')} />
         </ListItemButton>
       </ListItem>
 

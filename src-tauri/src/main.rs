@@ -7,6 +7,7 @@ mod aegis;
 mod commands;
 mod legacy_vault;
 mod otp;
+mod sync;
 mod tauthy_backup;
 mod tray;
 
@@ -41,10 +42,16 @@ fn main() {
       commands::generate_totp,
       commands::generate_totps,
       legacy_vault::vault_load,
+      legacy_vault::vault_change_password,
       legacy_vault::vault_get,
       legacy_vault::vault_save,
       legacy_vault::vault_unload,
       legacy_vault::vault_status,
+      sync::sync_create,
+      sync::sync_disconnect,
+      sync::sync_join,
+      sync::sync_now,
+      sync::sync_status,
       tauthy_backup::decrypt_tauthy_backup,
       tauthy_backup::encrypt_tauthy_backup,
       tray::tray_configure,

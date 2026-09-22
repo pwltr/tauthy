@@ -46,7 +46,7 @@ impl Default for VaultState {
   }
 }
 
-struct UnlockedVault {
+pub(crate) struct UnlockedVault {
   stronghold: Stronghold,
   client: Client,
   key_provider: KeyProvider,
@@ -74,10 +74,69 @@ fn current_key_provider(password: &str) -> Result<KeyProvider, String> {
     .map_err(|error| error.to_string())
 }
 
-fn store_key() -> Vec<u8> {
+pub(crate) fn store_key_for(name: &[u8]) -> Vec<u8> {
   // The legacy plugin stored records under the derived vault id, rather than
   // the literal location name. Keeping that key makes migrated data readable.
-  derive_vault_id(STORE_NAME).as_ref().to_vec()
+  derive_vault_id(name).as_ref().to_vec()
+}
+
+fn store_key() -> Vec<u8> {
+  store_key_for(STORE_NAME)
+}
+
+impl VaultState {
+  pub(crate) fn with_unlocked<T>(
+    &self,
+    operation: impl FnOnce(&UnlockedVault) -> Result<T, String>,
+  ) -> Result<T, String> {
+    let guard = self
+      .0
+      .lock()
+      .map_err(|_| "The vault state lock is unavailable.".to_string())?;
+    let vault = guard
+      .as_ref()
+      .ok_or_else(|| "vault is locked".to_string())?;
+    operation(vault)
+  }
+}
+
+impl UnlockedVault {
+  pub(crate) fn get_record(&self, name: &[u8]) -> Result<Option<Vec<u8>>, String> {
+    self
+      .client
+      .store()
+      .get(&store_key_for(name))
+      .map_err(|error| error.to_string())
+  }
+
+  pub(crate) fn put_record(&self, name: &[u8], value: Vec<u8>) -> Result<(), String> {
+    self
+      .client
+      .store()
+      .insert(store_key_for(name), value, None)
+      .map(|_| ())
+      .map_err(|error| error.to_string())
+  }
+
+  pub(crate) fn delete_record(&self, name: &[u8]) -> Result<(), String> {
+    self
+      .client
+      .store()
+      .delete(&store_key_for(name))
+      .map(|_| ())
+      .map_err(|error| error.to_string())
+  }
+
+  pub(crate) fn commit(&self) -> Result<(), String> {
+    self
+      .stronghold
+      .commit_with_keyprovider(
+        &SnapshotPath::from_path(&self.snapshot_path),
+        &self.key_provider,
+      )
+      .map_err(|error| error.to_string())?;
+    restrict_snapshot_permissions(&self.snapshot_path)
+  }
 }
 
 fn snapshot_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -94,6 +153,14 @@ fn migration_path(snapshot_path: &Path) -> PathBuf {
 
 fn migration_backup_path(snapshot_path: &Path) -> PathBuf {
   snapshot_path.with_extension("stronghold.v2-backup")
+}
+
+fn password_migration_path(snapshot_path: &Path) -> PathBuf {
+  snapshot_path.with_extension("stronghold.password-migrating")
+}
+
+fn password_backup_path(snapshot_path: &Path) -> PathBuf {
+  snapshot_path.with_extension("stronghold.backup")
 }
 
 #[cfg(unix)]
@@ -133,6 +200,20 @@ fn restore_interrupted_migration(snapshot_path: &Path) -> Result<(), String> {
   if !snapshot_path.exists() && backup_path.exists() {
     std::fs::rename(&backup_path, snapshot_path)
       .map_err(|error| format!("Unable to restore the vault migration backup: {error}"))?;
+  }
+  Ok(())
+}
+
+fn restore_interrupted_password_change(snapshot_path: &Path) -> Result<(), String> {
+  let backup_path = password_backup_path(snapshot_path);
+  let temporary_path = password_migration_path(snapshot_path);
+  if !snapshot_path.exists() && backup_path.exists() {
+    std::fs::rename(&backup_path, snapshot_path)
+      .map_err(|error| format!("Unable to restore the password-change backup: {error}"))?;
+  }
+  if temporary_path.exists() {
+    std::fs::remove_file(&temporary_path)
+      .map_err(|error| format!("Unable to remove an incomplete password change: {error}"))?;
   }
   Ok(())
 }
@@ -226,7 +307,7 @@ fn migrate_legacy_snapshot(snapshot_path: &Path, password: &str) -> Result<Unloc
   Ok(opened)
 }
 
-fn vault_load_at(
+pub(crate) fn vault_load_at(
   state: &VaultState,
   snapshot_path: PathBuf,
   mut password: String,
@@ -245,6 +326,7 @@ fn vault_load_at(
 
   let opened = (|| {
     restore_interrupted_migration(&snapshot_path)?;
+    restore_interrupted_password_change(&snapshot_path)?;
 
     if snapshot_path.exists() {
       match snapshot_version(&snapshot_path)? {
@@ -279,6 +361,11 @@ fn vault_load_at(
     std::fs::remove_file(backup_path)
       .map_err(|error| format!("Unable to clean up the vault migration backup: {error}"))?;
   }
+  let password_backup = password_backup_path(&opened.snapshot_path);
+  if password_backup.exists() {
+    std::fs::remove_file(password_backup)
+      .map_err(|error| format!("Unable to clean up the password-change backup: {error}"))?;
+  }
 
   guard.replace(opened);
   Ok(())
@@ -307,27 +394,11 @@ fn vault_get_at(state: &VaultState) -> Result<String, String> {
   vault_record_at(state)?.ok_or_else(|| "vault is locked".to_string())
 }
 
-fn vault_save_at(state: &VaultState, record: String) -> Result<(), String> {
-  let guard = state
-    .0
-    .lock()
-    .map_err(|_| "The vault state lock is unavailable.".to_string())?;
-  let vault = guard
-    .as_ref()
-    .ok_or_else(|| "vault is locked".to_string())?;
-  vault
-    .client
-    .store()
-    .insert(store_key(), record.into_bytes(), None)
-    .map_err(|error| error.to_string())?;
-  vault
-    .stronghold
-    .commit_with_keyprovider(
-      &SnapshotPath::from_path(&vault.snapshot_path),
-      &vault.key_provider,
-    )
-    .map_err(|error| error.to_string())?;
-  restrict_snapshot_permissions(&vault.snapshot_path)
+pub(crate) fn vault_save_at(state: &VaultState, record: String) -> Result<(), String> {
+  state.with_unlocked(|vault| {
+    vault.put_record(STORE_NAME, record.into_bytes())?;
+    vault.commit()
+  })
 }
 
 fn vault_unload_at(state: &VaultState) -> Result<(), String> {
@@ -342,6 +413,77 @@ fn vault_unload_at(state: &VaultState) -> Result<(), String> {
       .map_err(|error| error.to_string())?;
   }
   Ok(())
+}
+
+pub(crate) fn vault_change_password_at(
+  state: &VaultState,
+  mut password: String,
+) -> Result<(), String> {
+  let mut guard = state
+    .0
+    .lock()
+    .map_err(|_| "The vault state lock is unavailable.".to_string())?;
+  let vault = guard
+    .as_mut()
+    .ok_or_else(|| "vault is locked".to_string())?;
+  let temporary_path = password_migration_path(&vault.snapshot_path);
+  let backup_path = password_backup_path(&vault.snapshot_path);
+
+  if temporary_path.exists() {
+    std::fs::remove_file(&temporary_path)
+      .map_err(|error| format!("Unable to remove an incomplete password change: {error}"))?;
+  }
+  if backup_path.exists() {
+    std::fs::remove_file(&backup_path)
+      .map_err(|error| format!("Unable to remove an old password backup: {error}"))?;
+  }
+
+  let result = (|| {
+    let replacement_key = current_key_provider(&password)?;
+    vault
+      .stronghold
+      .commit_with_keyprovider(&SnapshotPath::from_path(&temporary_path), &replacement_key)
+      .map_err(|error| error.to_string())?;
+    restrict_snapshot_permissions(&temporary_path)?;
+
+    // Verify the replacement password and every record Tauthy currently owns
+    // before moving the user's existing snapshot out of the way.
+    let verified = open_current_snapshot(&temporary_path, &password)?;
+    for name in [STORE_NAME, crate::sync::SYNC_STORE_NAME] {
+      if vault.get_record(name)? != verified.get_record(name)? {
+        let _ = std::fs::remove_file(&temporary_path);
+        return Err("The password replacement failed record verification.".into());
+      }
+    }
+    verified
+      .stronghold
+      .clear()
+      .map_err(|error| error.to_string())?;
+
+    std::fs::rename(&vault.snapshot_path, &backup_path).map_err(|error| {
+      format!("Unable to back up the vault before changing its password: {error}")
+    })?;
+    if let Err(error) = std::fs::rename(&temporary_path, &vault.snapshot_path) {
+      let _ = std::fs::rename(&backup_path, &vault.snapshot_path);
+      return Err(format!(
+        "Unable to install the password replacement: {error}"
+      ));
+    }
+    if let Err(error) = std::fs::remove_file(&backup_path) {
+      let _ = std::fs::remove_file(&vault.snapshot_path);
+      let _ = std::fs::rename(&backup_path, &vault.snapshot_path);
+      return Err(format!(
+        "Unable to complete the password replacement: {error}"
+      ));
+    }
+    vault.key_provider = replacement_key;
+    Ok(())
+  })();
+  password.zeroize();
+  if result.is_err() {
+    let _ = std::fs::remove_file(&temporary_path);
+  }
+  result
 }
 
 fn vault_status_at(state: &VaultState) -> Result<serde_json::Value, String> {
@@ -396,6 +538,17 @@ pub async fn vault_unload(app: AppHandle, state: State<'_, VaultState>) -> Resul
 #[tauri::command]
 pub async fn vault_status(state: State<'_, VaultState>) -> Result<serde_json::Value, String> {
   vault_status_at(&state)
+}
+
+#[tauri::command]
+pub async fn vault_change_password(
+  state: State<'_, VaultState>,
+  password: String,
+) -> Result<(), String> {
+  let state = state.inner().clone();
+  tauri::async_runtime::spawn_blocking(move || vault_change_password_at(&state, password))
+    .await
+    .map_err(|error| format!("Vault task failed: {error}"))?
 }
 
 #[cfg(test)]
