@@ -1,11 +1,14 @@
-## What's new in 0.3.3
+## What's new in 0.4.0
 
-- Added password-protected Tauthy backups for secure portable recovery.
-- Improved Tauthy backups to preserve icons and OTP settings in a versioned format.
-- Added imports from password-protected Aegis backups.
-- Added issuer, recent, frequent, and manual account sorting.
-- Simplified the main toolbar and settings navigation.
-- Improved dialogs, the icon picker, scrollbars, and other interface details.
+- Added optional encrypted folder sync for Nextcloud, Dropbox, OneDrive,
+  iCloud Drive, Syncthing, and similar services.
+- Create a new sync file or join an existing one with a recovery password.
+- Sync automatically after startup, unlock, and local changes, or manually
+  from Settings.
+- Merge changes and deletions safely between devices while keeping the local
+  vault available if the sync folder is offline.
+- Improved native scrollbar sizing on macOS while retaining native styling on
+  every platform.
 
 ### Windows upgrade notice
 
@@ -14,12 +17,12 @@ existing app was installed with the `.exe` installer. Tauthy now uses the
 Windows Installer (`.msi`) package for automatic updates, and Windows can keep
 the older `.exe` installation alongside it instead of replacing it.
 
-If the update prompt reappears after installing 0.3.3:
+If the update prompt reappears after installing 0.4.0:
 
 1. Export a Tauthy backup.
 2. Close Tauthy and uninstall the older Tauthy installation from Windows
-   Settings. If both 0.2.7 and 0.3.3 are listed, uninstall both.
-3. Download and install `Tauthy_0.3.3_x64_en-US.msi` from this release.
+   Settings. If both 0.2.7 and 0.4.0 are listed, uninstall both.
+3. Download and install `Tauthy_0.4.0_x64_en-US.msi` from this release.
 
-This is a one-time installer migration. Updates after 0.3.3 should install
+This is a one-time installer migration. Updates after 0.4.0 should install
 normally.
