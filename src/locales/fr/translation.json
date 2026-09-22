@@ -198,6 +198,7 @@
     "syncCorrupt": "Les données de synchronisation sont endommagées ou non valides.",
     "syncFileExists": "Ce fichier existe déjà. Rejoignez-le ou choisissez un autre nom.",
     "syncNotConfigured": "La synchronisation n’est pas configurée.",
+    "syncPickerFailed": "Le sélecteur de fichiers n’a pas pu être ouvert.",
     "syncUnavailable": "Le fichier est indisponible. Vérifiez que le dossier cloud est accessible.",
     "syncUnsupported": "Cette version ou configuration de chiffrement n’est pas prise en charge.",
     "syncFailed": "La synchronisation a échoué. Votre coffre local n’a pas été perdu.",

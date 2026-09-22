@@ -198,6 +198,7 @@
     "syncCorrupt": "Die Sync-Daten sind beschädigt oder ungültig.",
     "syncFileExists": "Diese Datei existiert bereits. Verbinde sie oder wähle einen anderen Namen.",
     "syncNotConfigured": "Synchronisierung ist nicht eingerichtet.",
+    "syncPickerFailed": "Die Dateiauswahl konnte nicht geöffnet werden.",
     "syncUnavailable": "Die Sync-Datei ist derzeit nicht verfügbar. Prüfe den Cloud-Ordner.",
     "syncUnsupported": "Diese Version oder Verschlüsselung der Sync-Datei wird nicht unterstützt.",
     "syncFailed": "Synchronisierung fehlgeschlagen. Der lokale Tresor blieb erhalten.",

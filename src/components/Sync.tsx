@@ -61,13 +61,21 @@ const Sync = () => {
   }, [])
 
   const chooseCreate = async () => {
-    const path = await save({ defaultPath: 'Tauthy Sync.tauthy-sync', filters: syncFilter })
-    if (path) setPending({ mode: 'create', path })
+    try {
+      const path = await save({ defaultPath: 'Tauthy Sync.tauthy-sync', filters: syncFilter })
+      if (path) setPending({ mode: 'create', path })
+    } catch {
+      toast.error(t('toasts.syncPickerFailed'))
+    }
   }
 
   const chooseJoin = async () => {
-    const path = await open({ multiple: false, directory: false, filters: syncFilter })
-    if (typeof path === 'string') setPending({ mode: 'join', path })
+    try {
+      const path = await open({ multiple: false, directory: false, filters: syncFilter })
+      if (typeof path === 'string') setPending({ mode: 'join', path })
+    } catch {
+      toast.error(t('toasts.syncPickerFailed'))
+    }
   }
 
   const configure = async (password: string) => {

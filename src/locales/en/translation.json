@@ -198,6 +198,7 @@
     "syncCorrupt": "The sync data is damaged or invalid.",
     "syncFileExists": "That file already exists. Join it or choose a different filename.",
     "syncNotConfigured": "Sync is not configured.",
+    "syncPickerFailed": "The file picker could not be opened.",
     "syncUnavailable": "The sync file is currently unavailable. Check that your cloud folder is accessible.",
     "syncUnsupported": "This sync file version or encryption configuration is not supported.",
     "syncFailed": "Sync failed. Your local vault was not lost.",

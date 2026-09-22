@@ -171,10 +171,30 @@ fn now_millis() -> Result<u64, String> {
 }
 
 fn decode_exact(value: &str, length: usize) -> Result<Vec<u8>, String> {
+  if value.len() != base64_encoded_length(length) {
+    return Err(ERR_UNSUPPORTED.into());
+  }
   let decoded = BASE64
     .decode(value.as_bytes())
     .map_err(|_| ERR_UNSUPPORTED.to_string())?;
   if decoded.len() != length {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  Ok(decoded)
+}
+
+const fn base64_encoded_length(decoded_length: usize) -> usize {
+  decoded_length.div_ceil(3) * 4
+}
+
+fn decode_bounded(value: &str, max_decoded_length: usize) -> Result<Vec<u8>, String> {
+  if value.is_empty() || value.len() > base64_encoded_length(max_decoded_length) {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  let decoded = BASE64
+    .decode(value.as_bytes())
+    .map_err(|_| ERR_UNSUPPORTED.to_string())?;
+  if decoded.is_empty() || decoded.len() > max_decoded_length {
     return Err(ERR_UNSUPPORTED.into());
   }
   Ok(decoded)
@@ -224,12 +244,7 @@ fn decrypt_bytes(
     return Err(ERR_UNSUPPORTED.into());
   }
   let nonce = decode_exact(&encrypted.nonce, NONCE_SIZE)?;
-  let ciphertext = BASE64
-    .decode(encrypted.ciphertext.as_bytes())
-    .map_err(|_| ERR_UNSUPPORTED.to_string())?;
-  if ciphertext.is_empty() || ciphertext.len() > MAX_PAYLOAD_SIZE + TAG_SIZE {
-    return Err(ERR_UNSUPPORTED.into());
-  }
+  let ciphertext = decode_bounded(&encrypted.ciphertext, MAX_PAYLOAD_SIZE + TAG_SIZE)?;
   let cipher = XChaCha20Poly1305::new_from_slice(key).map_err(|_| ERR_UNSUPPORTED.to_string())?;
   let plaintext = cipher
     .decrypt(
@@ -517,6 +532,12 @@ fn active_entries(payload: &SyncPayload) -> Vec<VaultEntry> {
 }
 
 fn read_envelope(path: &Path) -> Result<SyncEnvelope, String> {
+  let file_length = fs::metadata(path)
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?
+    .len();
+  if file_length == 0 || file_length > MAX_ENVELOPE_SIZE as u64 {
+    return Err(ERR_UNSUPPORTED.into());
+  }
   let bytes = fs::read(path).map_err(|_| ERR_UNAVAILABLE.to_string())?;
   if bytes.is_empty() || bytes.len() > MAX_ENVELOPE_SIZE {
     return Err(ERR_UNSUPPORTED.into());
@@ -816,6 +837,22 @@ mod tests {
       unwrap_key(&wrapped, b"incorrect password").unwrap_err(),
       ERR_AUTHENTICATION
     );
+  }
+
+  #[test]
+  fn encoded_values_are_bounded_before_decoding() {
+    let encoded = BASE64.encode(&[0_u8; 4]);
+    assert_eq!(decode_bounded(&encoded, 3), Err(ERR_UNSUPPORTED.into()));
+  }
+
+  #[test]
+  fn oversized_envelopes_are_rejected_before_reading() {
+    let temporary = tempfile::tempdir().unwrap();
+    let path = temporary.path().join("oversized.tauthy-sync");
+    let file = std::fs::File::create(&path).unwrap();
+    file.set_len(MAX_ENVELOPE_SIZE as u64 + 1).unwrap();
+
+    assert_eq!(read_envelope(&path), Err(ERR_UNSUPPORTED.into()));
   }
 
   #[test]

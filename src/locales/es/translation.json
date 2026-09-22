@@ -198,6 +198,7 @@
     "syncCorrupt": "Los datos de sincronización están dañados o no son válidos.",
     "syncFileExists": "Ese archivo ya existe. Únete a él o elige otro nombre.",
     "syncNotConfigured": "La sincronización no está configurada.",
+    "syncPickerFailed": "No se pudo abrir el selector de archivos.",
     "syncUnavailable": "El archivo no está disponible. Comprueba que la carpeta en la nube sea accesible.",
     "syncUnsupported": "Esta versión o configuración de cifrado no es compatible.",
     "syncFailed": "La sincronización falló. Tu baúl local no se ha perdido.",
