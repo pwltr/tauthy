@@ -15,6 +15,9 @@ const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =
   const handleResetVault = async () => {
     try {
       await vault.destroy()
+      // destroy unloads the Stronghold client; open a fresh passwordless vault
+      // before writing its empty record so this session stays usable.
+      await vault.unlock('')
       await vault.reset()
       setIsPasswordSet(false)
       toast.success(t('toasts.reset'))
