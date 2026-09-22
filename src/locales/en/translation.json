@@ -17,7 +17,6 @@
   },
   "appBar": {
     "search": "Search",
-    "custom": "Custom",
     "lock": "Lock",
     "settings": "Settings",
     "about": "About"
@@ -47,7 +46,8 @@
     "security": "Security",
     "securityDescription": "Configure encryption and auto-lock",
     "import": "Import & Export",
-    "importDescription": "Import or create exports of your vault"
+    "importDescription": "Import or create exports of your vault",
+    "aboutDescription": "Version, project links, and support"
   },
   "appearance": {
     "pageTitle": "Appearance",
@@ -61,6 +61,14 @@
     },
     "language": "Language",
     "entries": "Entries",
+    "sortOrder": "Sort order",
+    "sortOptions": {
+      "custom": "Manual order",
+      "a-z": "Issuer, A–Z",
+      "z-a": "Issuer, Z–A",
+      "frequent": "Frequently used",
+      "recent": "Recently used"
+    },
     "compact": "Compact",
     "grouping": "2-digit grouping",
     "editGroups": "Edit groups",

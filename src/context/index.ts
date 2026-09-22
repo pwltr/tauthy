@@ -1,5 +1,8 @@
 import { createContext } from 'react'
 import { ThemePreference } from '~/styles/theme'
+import type { EntryUsageMap, SortOption } from '~/utils/sorting'
+
+export type { SortOption } from '~/utils/sorting'
 
 export const AppBarTitleContext = createContext<{
   appBarTitle: string
@@ -45,16 +48,16 @@ export const SearchContext = createContext<{
   setSearch: () => {},
 })
 
-export type SortOption = 'a-z' | 'z-a' | 'custom'
-
 export const SortContext = createContext<{
   sortOption: SortOption
   customOrder: string[]
+  entryUsage: EntryUsageMap
   setSortOption: (option: SortOption) => void
   setCustomOrder: (option: string[]) => void
 }>({
   sortOption: 'a-z',
   customOrder: [],
+  entryUsage: {},
   setSortOption: () => {},
   setCustomOrder: () => {},
 })

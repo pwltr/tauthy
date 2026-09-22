@@ -14,7 +14,7 @@ const StyledBox = styled(Box)(
   overflow-y: auto;
   background: ${theme.palette.background.paper};
   box-shadow: ${theme.shadows[24]};
-  border-radius: 4px;
+  border-radius: ${theme.spacing(1)};
   color: ${theme.palette.primary.main};
   padding: ${theme.spacing(2)};
 `,

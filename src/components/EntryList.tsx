@@ -5,7 +5,7 @@ import Box from '@mui/material/Box'
 import MuiList from '@mui/material/List'
 import Grid from '@mui/material/Grid'
 
-import { copyToClipboard, reorderList } from '~/utils'
+import { copyToClipboard, recordEntryUsage, reorderList, sortEntries } from '~/utils'
 import { AppSettingsContext, ListOptionsContext, SearchContext, SortContext } from '~/context'
 import QRCodeModal from '~/components/modals/QRCode'
 import EntryListItem from './EntryListItem'
@@ -19,32 +19,13 @@ type ListProps = {
 
 const EntryList = ({ className, entries }: ListProps) => {
   const { searchTerm } = useContext(SearchContext)
-  const { sortOption, setSortOption, customOrder, setCustomOrder } = useContext(SortContext)
+  const { sortOption, setSortOption, customOrder, setCustomOrder, entryUsage } =
+    useContext(SortContext)
   const { minimizeOnCopy } = useContext(AppSettingsContext)
   const { dense } = useContext(ListOptionsContext)
   const [qrEntry, setQrEntry] = useState<ListEntry | null>(null)
 
-  const sortEntries = (entries: ListEntry[]) => {
-    if (sortOption === 'a-z') {
-      return entries.sort((a, b) => {
-        return a.name < b.name ? -1 : 1
-      })
-    }
-    if (sortOption === 'z-a') {
-      return entries.sort((a, b) => {
-        return a.name > b.name ? -1 : 1
-      })
-    }
-    if (sortOption === 'custom' && customOrder.length) {
-      const existing = customOrder.filter((uuid) => entries.find((i) => i.uuid === uuid))
-      const sorted = existing.map((uuid) => entries.find((i) => i.uuid === uuid)!)
-      const unsorted = entries.filter((entry) => !existing.includes(entry.uuid))
-      return [...sorted, ...unsorted]
-    }
-    return entries
-  }
-
-  const sortedEntries = sortEntries(entries)
+  const sortedEntries = sortEntries(entries, sortOption, customOrder, entryUsage)
 
   const filteredEntries = sortedEntries.filter((entry) => {
     return (
@@ -60,7 +41,7 @@ const EntryList = ({ className, entries }: ListProps) => {
         event.preventDefault()
 
         if (filteredEntries.length === 1 && filteredEntries[0].token) {
-          onCopy(filteredEntries[0].token)
+          onCopy(filteredEntries[0].uuid, filteredEntries[0].token)
         }
       }
     }
@@ -70,10 +51,11 @@ const EntryList = ({ className, entries }: ListProps) => {
     return () => {
       window.removeEventListener('keydown', handleKeyPress)
     }
-  }, [filteredEntries.length === 1, filteredEntries[0]?.token])
+  }, [filteredEntries.length, filteredEntries[0]?.uuid, filteredEntries[0]?.token])
 
-  const onCopy = async (token: string) => {
-    copyToClipboard(token)
+  const onCopy = async (uuid: string, token: string) => {
+    await copyToClipboard(token)
+    recordEntryUsage(uuid)
 
     if (minimizeOnCopy) {
       await appWindow.minimize()
@@ -103,6 +85,7 @@ const EntryList = ({ className, entries }: ListProps) => {
                         key={entry.uuid}
                         item={entry}
                         index={index}
+                        isDragDisabled={sortOption !== 'custom' || Boolean(searchTerm)}
                         setQrEntry={setQrEntry}
                       />
                     ))}

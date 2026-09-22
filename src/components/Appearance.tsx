@@ -5,9 +5,16 @@ import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 
-import { AppBarTitleContext, ThemeContext, AppSettingsContext, ListOptionsContext } from '~/context'
+import {
+  AppBarTitleContext,
+  ThemeContext,
+  AppSettingsContext,
+  ListOptionsContext,
+  SortContext,
+} from '~/context'
 import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
+import SortModal from '~/components/modals/Sort'
 import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
@@ -34,13 +41,17 @@ const Appearance = () => {
   const { theme } = useContext(ThemeContext)
   const { minimizeOnCopy, showTrayIcon, setAppSettings } = useContext(AppSettingsContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
+  const { sortOption } = useContext(SortContext)
   const [openThemeModal, setOpenThemeModal] = useState(false)
   const [openLanguageModal, setOpenLanguageModal] = useState(false)
+  const [openSortModal, setOpenSortModal] = useState(false)
 
   const handleOpenThemeModal = () => setOpenThemeModal(true)
   const handleCloseThemeModal = () => setOpenThemeModal(false)
   const handleOpenLanguageModal = () => setOpenLanguageModal(true)
   const handleCloseLanguageModal = () => setOpenLanguageModal(false)
+  const handleOpenSortModal = () => setOpenSortModal(true)
+  const handleCloseSortModal = () => setOpenSortModal(false)
 
   useEffect(() => {
     setAppBarTitle(t('appearance.pageTitle'))
@@ -72,6 +83,15 @@ const Appearance = () => {
 
         <ListSection>
           <ListSubheader>{t('appearance.entries')}</ListSubheader>
+          <ListItem disablePadding onClick={handleOpenSortModal}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('appearance.sortOrder')}
+                secondary={t(`appearance.sortOptions.${sortOption}`)}
+              />
+            </ListItemButton>
+          </ListItem>
+
           <ListItem
             disablePadding
             secondaryAction={<Switch checked={dense} />}
@@ -128,6 +148,7 @@ const Appearance = () => {
 
       <ThemeModal open={openThemeModal} onClose={handleCloseThemeModal} />
       <LanguageModal open={openLanguageModal} onClose={handleCloseLanguageModal} />
+      <SortModal open={openSortModal} onClose={handleCloseSortModal} />
     </>
   )
 }

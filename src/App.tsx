@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { Toaster } from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -7,7 +8,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, resolvePaletteMode, ThemePreference } from '~/styles/theme'
-import { checkUpdate } from '~/utils'
+import { checkUpdate, ENTRY_USAGE_STORAGE_KEY, recordEntryUsage } from '~/utils'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
@@ -32,6 +33,7 @@ const App = () => {
   const [searchTerm, setSearch] = useState('')
   const [sortOption, setSortOption] = useLocalStorage<SortOption>('sortOption', 'custom')
   const [customOrder, setCustomOrder] = useLocalStorage<string[]>('customOrder', [])
+  const [entryUsage] = useLocalStorage(ENTRY_USAGE_STORAGE_KEY, {})
   const [themePreference, setThemePreference] = useLocalStorage<ThemePreference>('theme', 'system')
   const [appSettings, setAppSettings] = useLocalStorage('appSettings', {
     minimizeOnCopy: false,
@@ -43,6 +45,17 @@ const App = () => {
     dense: false,
     groupByTwos: false,
   })
+
+  useEffect(() => {
+    let removeListener: (() => void) | undefined
+    void listen<string>('tauthy://entry-used', ({ payload }) => recordEntryUsage(payload)).then(
+      (unlisten) => {
+        removeListener = unlisten
+      },
+    )
+
+    return () => removeListener?.()
+  }, [])
 
   useEffect(() => {
     void invoke('tray_configure', {
@@ -95,7 +108,7 @@ const App = () => {
             <ListOptionsContext.Provider value={{ ...listOptions, setListOptions }}>
               <SearchContext.Provider value={{ searchTerm, setSearch }}>
                 <SortContext.Provider
-                  value={{ sortOption, setSortOption, customOrder, setCustomOrder }}
+                  value={{ sortOption, setSortOption, customOrder, setCustomOrder, entryUsage }}
                 >
                   <ThemeProvider theme={theme}>
                     <AppRouter />

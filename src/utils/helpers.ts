@@ -59,8 +59,8 @@ export const reorderList = <T>(list: T[], startIndex: number, endIndex: number):
   return list
 }
 
-export const copyToClipboard = (text: string) => {
-  writeText(String(text))
+export const copyToClipboard = async (text: string) => {
+  await writeText(String(text))
   toast.success(i18n.t('toasts.copied'), {
     id: 'clipboard',
     duration: 1200,

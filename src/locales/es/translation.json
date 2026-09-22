@@ -17,7 +17,6 @@
   },
   "appBar": {
     "search": "Buscar",
-    "custom": "Personalizado",
     "lock": "Bloquear",
     "settings": "Ajustes",
     "about": "Acerca de"
@@ -47,7 +46,8 @@
     "security": "Seguridad",
     "securityDescription": "Configurar encriptado y autobloqueo",
     "import": "Importar y Exportar",
-    "importDescription": "Importa o crea copias de tu baúl."
+    "importDescription": "Importa o crea copias de tu baúl.",
+    "aboutDescription": "Versión, enlaces del proyecto y soporte"
   },
   "appearance": {
     "pageTitle": "Apariencia",
@@ -61,6 +61,14 @@
     },
     "language": "Idioma",
     "entries": "Entradas",
+    "sortOrder": "Orden de clasificación",
+    "sortOptions": {
+      "custom": "Orden manual",
+      "a-z": "Emisor, A–Z",
+      "z-a": "Emisor, Z–A",
+      "frequent": "Uso frecuente",
+      "recent": "Uso reciente"
+    },
     "compact": "Compacto",
     "grouping": "Agrupar por 2 dígitos",
     "editGroups": "Editar grupos",

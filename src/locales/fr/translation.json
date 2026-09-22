@@ -17,7 +17,6 @@
   },
   "appBar": {
     "search": "Chercher",
-    "custom": "Personnaliser",
     "lock": "Verrouiller",
     "settings": "Paramètres",
     "about": "À propos"
@@ -47,7 +46,8 @@
     "security": "Sécurité",
     "securityDescription": "Configurer le chiffrement et le verrouillage automatique",
     "import": "Importer et exporter",
-    "importDescription": "Importer ou créer des exportations de votre coffre-fort"
+    "importDescription": "Importer ou créer des exportations de votre coffre-fort",
+    "aboutDescription": "Version, liens du projet et soutien"
   },
   "appearance": {
     "pageTitle": "Apparence",
@@ -61,6 +61,14 @@
     },
     "language": "Langue",
     "entries": "Entrées",
+    "sortOrder": "Ordre de tri",
+    "sortOptions": {
+      "custom": "Ordre manuel",
+      "a-z": "Émetteur, A–Z",
+      "z-a": "Émetteur, Z–A",
+      "frequent": "Fréquemment utilisés",
+      "recent": "Récemment utilisés"
+    },
     "compact": "Compact",
     "grouping": "Groupement de 2 chiffres",
     "editGroups": "Modifier les groupes",
