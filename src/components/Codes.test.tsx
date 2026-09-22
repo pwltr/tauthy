@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('~/utils/storage', () => ({ vault: { getVault: mocks.getVault } }))
 vi.mock('~/utils', () => ({
+  SYNC_COMPLETE_EVENT: 'tauthy:sync-complete',
   generateTOTPs: mocks.generateTOTPs,
   getTOTPRefreshDelay: (expiresAtMs: number) => Math.max(expiresAtMs - Date.now(), 1),
 }))

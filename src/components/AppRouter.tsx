@@ -13,6 +13,7 @@ const Settings = lazy(() => import('~/components/Settings'))
 const Appearance = lazy(() => import('~/components/Appearance'))
 const Security = lazy(() => import('~/components/Security'))
 const Import = lazy(() => import('~/components/Import'))
+const Sync = lazy(() => import('~/components/Sync'))
 const About = lazy(() => import('~/components/About'))
 
 const deferred = (component: ReactNode) => <Suspense fallback={null}>{component}</Suspense>
@@ -42,6 +43,7 @@ const AppRouter = () => (
           <Route path="appearance" element={deferred(<Appearance />)} />
           <Route path="security" element={deferred(<Security />)} />
           <Route path="import" element={deferred(<Import />)} />
+          <Route path="sync" element={deferred(<Sync />)} />
           <Route path="about" element={deferred(<About />)} />
         </Route>
       </Routes>

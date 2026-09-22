@@ -47,6 +47,8 @@
     "securityDescription": "Configurer le chiffrement et le verrouillage automatique",
     "import": "Importer et exporter",
     "importDescription": "Importer ou créer des exportations de votre coffre-fort",
+    "sync": "Synchronisation",
+    "syncDescription": "Conserver un coffre chiffré dans un dossier cloud",
     "aboutDescription": "Version, liens du projet et soutien"
   },
   "appearance": {
@@ -99,6 +101,27 @@
     "exportPlaintextDescription": "Créer une sauvegarde JSON lisible",
     "reset": "Supprimer le coffre-fort",
     "resetDescription": "Supprimer le coffre-fort actuel définitivement"
+  },
+  "sync": {
+    "pageTitle": "Synchronisation",
+    "description": "Conservez vos comptes dans un fichier chiffré géré par Nextcloud, Dropbox, OneDrive ou iCloud Drive. Les modifications locales restent possibles lorsque le dossier est indisponible.",
+    "create": "Créer un fichier de synchronisation",
+    "createDescription": "Créer un fichier chiffré dans votre dossier cloud",
+    "join": "Rejoindre une synchronisation",
+    "joinDescription": "Connecter cet appareil à un fichier de synchronisation Tauthy existant",
+    "createPasswordTitle": "Créer un mot de passe de récupération",
+    "createPasswordDescription": "Il sera nécessaire pour connecter un autre appareil ou récupérer vos comptes. Tauthy ne peut pas le récupérer.",
+    "joinPasswordTitle": "Déverrouiller le fichier de synchronisation",
+    "joinPasswordDescription": "Saisissez le mot de passe de récupération choisi lors de la création du fichier.",
+    "password": "Mot de passe de récupération",
+    "connected": "Fichier de synchronisation",
+    "lastSynced": "Dernière synchronisation",
+    "never": "Jamais",
+    "syncNow": "Synchroniser maintenant",
+    "syncNowDescription": "Fusionner les modifications locales et distantes",
+    "disconnect": "Déconnecter la synchronisation",
+    "disconnectDescription": "Arrêter la synchronisation sans supprimer les comptes locaux ni le fichier",
+    "disconnectWarning": "Cet appareil cessera de se synchroniser. Les comptes locaux et le fichier chiffré ne seront pas supprimés. Continuer ?"
   },
   "about": {
     "pageTitle": "À propos",
@@ -167,6 +190,17 @@
     "passwordSet": "Mot de passe modifié.",
     "passwordReset": "Protection par mot de passe supprimée.",
     "reset": "Coffre-fort réinitialisé.",
+    "syncConfigured": "Synchronisation configurée.",
+    "syncSuccess": "Synchronisation terminée.",
+    "syncDisconnected": "Synchronisation déconnectée.",
+    "syncAuthenticationFailed": "Le mot de passe de récupération est incorrect ou le fichier a été modifié.",
+    "syncConflict": "Les coffres local et synchronisé contiennent un conflit impossible à fusionner en toute sécurité.",
+    "syncCorrupt": "Les données de synchronisation sont endommagées ou non valides.",
+    "syncFileExists": "Ce fichier existe déjà. Rejoignez-le ou choisissez un autre nom.",
+    "syncNotConfigured": "La synchronisation n’est pas configurée.",
+    "syncUnavailable": "Le fichier est indisponible. Vérifiez que le dossier cloud est accessible.",
+    "syncUnsupported": "Cette version ou configuration de chiffrement n’est pas prise en charge.",
+    "syncFailed": "La synchronisation a échoué. Votre coffre local n’a pas été perdu.",
     "error": "Une erreur s'est produite."
   }
 }

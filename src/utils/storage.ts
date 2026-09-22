@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 import { dataDir, join } from '@tauri-apps/api/path'
-import { copyFile, exists, mkdir, remove } from '@tauri-apps/plugin-fs'
+import { exists, mkdir, remove } from '@tauri-apps/plugin-fs'
 
 import { VaultEntry } from '~/types'
+import { SYNC_COMPLETE_EVENT, syncNow } from '~/utils/sync'
 
 const appName = import.meta.env.DEV ? 'tauthy-dev' : 'tauthy'
 const vaultName = 'vault.stronghold'
@@ -11,6 +12,7 @@ const vaultPath = await join(dataDirectory, vaultName)
 const backupPath = await join(dataDirectory, `${vaultName}.backup`)
 const migrationPath = await join(dataDirectory, `${vaultName}.migrating`)
 const migrationBackupPath = await join(dataDirectory, `${vaultName}.v2-backup`)
+const passwordMigrationPath = await join(dataDirectory, `${vaultName}.password-migrating`)
 
 const removeIfExists = async (path: string) => {
   if (await exists(path)) await remove(path)
@@ -48,10 +50,17 @@ export class Vault {
     return vaultJSON
   }
 
+  invalidateCache() {
+    this.cachedRecord = undefined
+  }
+
   async save(record: string) {
     await this.ready
     await invoke('vault_save', { record })
     this.cachedRecord = record
+    // Sync is deliberately best-effort. A missing cloud folder or network
+    // failure must never turn a successful local vault edit into a failure.
+    void syncNow().catch(() => {})
   }
 
   async reset() {
@@ -61,7 +70,9 @@ export class Vault {
   async destroy() {
     await this.lock()
     await Promise.all(
-      [vaultPath, backupPath, migrationPath, migrationBackupPath].map(removeIfExists),
+      [vaultPath, backupPath, migrationPath, migrationBackupPath, passwordMigrationPath].map(
+        removeIfExists,
+      ),
     )
   }
 
@@ -91,34 +102,11 @@ export class Vault {
   }
 
   async changePassword(password: string) {
-    await copyFile(vaultPath, backupPath)
-    const currentVault = await this.checkVault()
-
-    try {
-      await this.lock()
-      await remove(vaultPath)
-
-      await this.unlock(password)
-      await this.save(currentVault)
-
-      await remove(backupPath)
-    } catch (error) {
-      try {
-        await this.lock()
-      } catch {
-        // The replacement may not have initialized far enough to unload.
-      }
-
-      try {
-        await remove(vaultPath)
-      } catch {
-        // There may be no partial replacement to remove.
-      }
-
-      await copyFile(backupPath, vaultPath)
-      throw error
-    }
+    await this.ready
+    await invoke('vault_change_password', { password })
   }
 }
 
 export const vault = await setupVault()
+
+window.addEventListener(SYNC_COMPLETE_EVENT, () => vault.invalidateCache())
