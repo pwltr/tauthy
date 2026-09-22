@@ -5,7 +5,7 @@
 </h1>
 
 <h3 align="center">
-A cross-platform TOTP authentication client built with <a href="https://tauri.app">Tauri</a>.
+A fast, private, local-first desktop authenticator that stays out of your way.
 </h3>
 
 <div align="center">
@@ -15,6 +15,10 @@ A cross-platform TOTP authentication client built with <a href="https://tauri.ap
 [![Download for Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/pwltr/tauthy/releases/latest)
 
 </div>
+
+<p align="center">
+  <sub>The name <strong>Tauthy</strong> combines <a href="https://tauri.app">Tauri</a>, the framework it is built with, and authenticator.</sub>
+</p>
 
 ## Screenshots
 
@@ -26,7 +30,7 @@ A cross-platform TOTP authentication client built with <a href="https://tauri.ap
 
 ## Features
 
-**Designed to stay out of your way—and get you to the right code the moment you need it.**
+**Thoughtful defaults keep everyday authentication quick and uncomplicated.**
 
 - **Private and offline:** Your authentication secrets stay on your device, and codes work without
   an internet connection.
