@@ -16,10 +16,6 @@ A fast, private, local-first desktop authenticator that stays out of your way.
 
 </div>
 
-<p align="center">
-  <sub>The name <strong>Tauthy</strong> combines <a href="https://tauri.app">Tauri</a>, the framework it is built with, and authenticator.</sub>
-</p>
-
 ## Screenshots
 
 <div align="center">
@@ -66,6 +62,9 @@ password derivation. The migration is one-way: Tauthy 0.2.8 and earlier cannot o
 vault, so restoring an older release also requires restoring the exported backup.
 
 ## Credits
+
+The name **Tauthy** combines [Tauri](https://tauri.app), the framework it is built with, and
+authenticator.
 
 - [Aegis](https://github.com/beemdevelopment/Aegis)
 - [aegis-icons](https://github.com/aegis-icons/aegis-icons)
