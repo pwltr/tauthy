@@ -5071,7 +5071,7 @@ dependencies = [
 
 [[package]]
 name = "tauthy"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "aes-gcm",
  "argon2",
