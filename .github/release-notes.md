@@ -9,6 +9,8 @@
   vault available if the sync folder is offline.
 - Improved native scrollbar sizing on macOS while retaining native styling on
   every platform.
+- Fixed vault deletion so the app returns to an empty, usable vault without a
+  restart.
 
 ### Windows upgrade notice
 
