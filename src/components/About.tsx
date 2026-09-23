@@ -37,13 +37,42 @@ const LogoButton = styled('button')`
   line-height: 0;
 `
 
+const LogoImage = styled('img')`
+  transform-origin: center;
+
+  &.wobble {
+    animation: logo-wobble 220ms ease-out;
+  }
+
+  @keyframes logo-wobble {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+    }
+    30% {
+      transform: rotate(-6deg) scale(1.03);
+    }
+    65% {
+      transform: rotate(4deg) scale(1.01);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &.wobble {
+      animation: none;
+    }
+  }
+`
+
 const About = () => {
   const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [version, setVersion] = useState('')
+  const [wobbleKey, setWobbleKey] = useState(0)
   const logoPresses = useRef(0)
 
   const pressLogo = () => {
+    setWobbleKey((current) => current + 1)
     if (syncRecoveryToolsEnabled()) return
     logoPresses.current += 1
     if (logoPresses.current === 5) {
@@ -61,7 +90,13 @@ const About = () => {
     <>
       <Header>
         <LogoButton type="button" aria-label="Tauthy" onClick={pressLogo}>
-          <img src={logo} width={67} alt="" />
+          <LogoImage
+            key={wobbleKey}
+            src={logo}
+            width={67}
+            alt=""
+            className={wobbleKey > 0 ? 'wobble' : undefined}
+          />
         </LogoButton>
         Tauthy
       </Header>

@@ -28,4 +28,18 @@ describe('About logo recovery gesture', () => {
     expect(window.sessionStorage.getItem('tauthy:sync-recovery-tools')).toBe('true')
     expect(mocks.toastSuccess).toHaveBeenCalledWith('about.developerSettingsEnabled')
   })
+
+  it('restarts the logo animation on each press', () => {
+    render(<About />)
+    const logo = screen.getByRole('button', { name: 'Tauthy' })
+    const initialImage = logo.querySelector('img')
+
+    fireEvent.click(logo)
+    const firstAnimatedImage = logo.querySelector('img')
+    expect(firstAnimatedImage).not.toBe(initialImage)
+    expect(firstAnimatedImage).toHaveClass('wobble')
+
+    fireEvent.click(logo)
+    expect(logo.querySelector('img')).not.toBe(firstAnimatedImage)
+  })
 })
