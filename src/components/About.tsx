@@ -1,6 +1,7 @@
-import { useEffect, useContext, useState } from 'react'
+import { useEffect, useContext, useRef, useState } from 'react'
 import { getVersion } from '@tauri-apps/api/app'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 import { open } from '@tauri-apps/plugin-shell'
 import { styled } from '@mui/material/styles'
 import List from '@mui/material/List'
@@ -16,6 +17,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
+import { enableSyncRecoveryTools, syncRecoveryToolsEnabled } from '~/utils/syncRecovery'
 import logo from '../../assets/app-icons/icon-round-bordered.png'
 
 const Header = styled('div')`
@@ -28,10 +30,27 @@ const Header = styled('div')`
   padding-bottom: 0.3rem;
 `
 
+const LogoButton = styled('button')`
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 0;
+`
+
 const About = () => {
   const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [version, setVersion] = useState('')
+  const logoPresses = useRef(0)
+
+  const pressLogo = () => {
+    if (syncRecoveryToolsEnabled()) return
+    logoPresses.current += 1
+    if (logoPresses.current === 5) {
+      enableSyncRecoveryTools()
+      toast.success(t('about.syncRecoveryEnabled'))
+    }
+  }
 
   useEffect(() => {
     setAppBarTitle(t('about.pageTitle'))
@@ -41,7 +60,9 @@ const About = () => {
   return (
     <>
       <Header>
-        <img src={logo} width={67} />
+        <LogoButton type="button" aria-label="Tauthy" onClick={pressLogo}>
+          <img src={logo} width={67} alt="" />
+        </LogoButton>
         Tauthy
       </Header>
 

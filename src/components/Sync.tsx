@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
 import SyncPasswordModal from '~/components/modals/SyncPassword'
+import { syncRecoveryToolsEnabled } from '~/utils/syncRecovery'
 import {
   createSync,
   disconnectSync,
@@ -47,6 +48,7 @@ const Sync = () => {
   const [status, setStatus] = useState<SyncStatus>()
   const [pending, setPending] = useState<PendingAction>()
   const [busy, setBusy] = useState(false)
+  const showRecovery = syncRecoveryToolsEnabled()
 
   const loadStatus = async () => {
     try {
@@ -187,14 +189,16 @@ const Sync = () => {
               <ListItemText primary={t('sync.syncNow')} secondary={t('sync.syncNowDescription')} />
             </ListItemButton>
           </ListItem>
-          <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
-            <ListItemButton disabled={busy}>
-              <ListItemText
-                primary={t('sync.mergeConflictedCopy')}
-                secondary={t('sync.mergeConflictedCopyDescription')}
-              />
-            </ListItemButton>
-          </ListItem>
+          {showRecovery && (
+            <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+              <ListItemButton disabled={busy}>
+                <ListItemText
+                  primary={t('sync.mergeConflictedCopy')}
+                  secondary={t('sync.mergeConflictedCopyDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+          )}
           <ListItem disablePadding onClick={() => !busy && void disconnect()}>
             <ListItemButton disabled={busy}>
               <ListItemText

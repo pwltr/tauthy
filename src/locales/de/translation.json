@@ -127,6 +127,7 @@
   },
   "about": {
     "pageTitle": "Über",
+    "syncRecoveryEnabled": "Sync-Wiederherstellung für diese Sitzung aktiviert.",
     "openSource": "Open Source",
     "reportBug": "Bug melden",
     "reportBugDescription": "Erstelle ein Issue auf GitHub",

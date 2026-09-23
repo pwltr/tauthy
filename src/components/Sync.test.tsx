@@ -31,6 +31,7 @@ import Sync from '~/components/Sync'
 
 describe('sync file pickers', () => {
   beforeEach(() => {
+    window.sessionStorage.clear()
     mocks.open.mockReset()
     mocks.save.mockReset()
     mocks.toastError.mockReset()
@@ -50,6 +51,7 @@ describe('sync file pickers', () => {
   })
 
   it('offers conflicted-copy recovery when sync is connected', async () => {
+    window.sessionStorage.setItem('tauthy:sync-recovery-tools', 'true')
     mocks.getSyncStatus.mockResolvedValue({
       enabled: true,
       path: '/cloud/sync',
@@ -65,5 +67,17 @@ describe('sync file pickers', () => {
       expect(mocks.mergeConflictedSyncCopy).toHaveBeenCalledWith('/cloud/conflicted copy'),
     )
     expect(mocks.open).toHaveBeenCalledWith({ multiple: false, directory: false })
+  })
+
+  it('hides conflicted-copy recovery by default', async () => {
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: null,
+    })
+    render(<Sync />)
+
+    await screen.findByText('sync.syncNow')
+    expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
   })
 })

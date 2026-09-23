@@ -127,6 +127,7 @@
   },
   "about": {
     "pageTitle": "About",
+    "syncRecoveryEnabled": "Sync recovery tools enabled for this session.",
     "openSource": "Open Source",
     "reportBug": "Report a Bug",
     "reportBugDescription": "Open an issue on GitHub",
