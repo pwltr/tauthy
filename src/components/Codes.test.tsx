@@ -15,8 +15,10 @@ vi.mock('~/utils', () => ({
   getTOTPRefreshDelay: (expiresAtMs: number) => Math.max(expiresAtMs - Date.now(), 1),
 }))
 vi.mock('~/components/EntryList', () => ({
-  default: ({ entries }: { entries: Array<{ token?: string }> }) => (
-    <div data-testid="account-list">{entries[0]?.token}</div>
+  default: ({ className, entries }: { className?: string; entries: Array<{ token?: string }> }) => (
+    <div className={className} data-testid="account-list">
+      {entries[0]?.token}
+    </div>
   ),
 }))
 vi.mock('~/components/ProgressBar', () => ({
@@ -72,5 +74,40 @@ describe('code expiration timing', () => {
     expect(mocks.generateTOTPs).toHaveBeenCalledTimes(2)
     expect(screen.getByTestId('account-list')).toHaveTextContent('222222')
     expect(screen.getByTestId('progress')).toHaveAttribute('data-duration', '30000')
+  })
+
+  it('keeps the scrolled list mounted while a background sync refreshes it', async () => {
+    render(
+      <MemoryRouter>
+        <Codes />
+      </MemoryRouter>,
+    )
+    await flushPromises()
+
+    const list = screen.getByTestId('account-list')
+    list.scrollTop = 120
+    let finishRead: (
+      entries: Array<{ uuid: string; name: string; issuer: string; secret: string }>,
+    ) => void = () => {}
+    mocks.getVault.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRead = resolve
+        }),
+    )
+
+    act(() => window.dispatchEvent(new Event('tauthy:sync-complete')))
+
+    expect(screen.getByTestId('account-list')).toBe(list)
+    expect(list.scrollTop).toBe(120)
+
+    await act(async () => {
+      finishRead([{ uuid: 'account', name: 'Account', issuer: 'Issuer', secret: 'secret' }])
+    })
+    await flushPromises()
+
+    expect(screen.getByTestId('account-list')).toBe(list)
+    expect(list.scrollTop).toBe(120)
+    expect(list).toHaveTextContent('222222')
   })
 })

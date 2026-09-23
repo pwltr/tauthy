@@ -75,7 +75,8 @@ const Codes = () => {
   )
 
   const getEntries = useCallback(async () => {
-    setIsLoading(true)
+    // Keep the list mounted during background syncs so its scroll position
+    // survives the vault refresh. The initial load already starts in this state.
     const currentVault = await vault.getVault()
     setItems(currentVault)
     if (currentVault.length > 0) await generateTokens(currentVault)
