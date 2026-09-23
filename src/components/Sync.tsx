@@ -160,7 +160,9 @@ const Sync = () => {
   return (
     <>
       <Box sx={{ px: 2, pt: 2 }}>
-        <Typography color="text.secondary">{t('sync.description')}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t('sync.description')}
+        </Typography>
       </Box>
       {status.enabled ? (
         <List>

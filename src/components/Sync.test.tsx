@@ -80,4 +80,10 @@ describe('sync file pickers', () => {
     await screen.findByText('sync.syncNow')
     expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
   })
+
+  it('uses secondary body typography for the introduction', async () => {
+    render(<Sync />)
+
+    expect(await screen.findByText('sync.description')).toHaveClass('MuiTypography-body2')
+  })
 })
