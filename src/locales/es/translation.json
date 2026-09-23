@@ -104,7 +104,7 @@
   },
   "sync": {
     "pageTitle": "Sincronización",
-    "description": "Mantén tus cuentas en un archivo cifrado gestionado por Nextcloud, Dropbox, OneDrive o iCloud Drive. Los cambios locales siguen funcionando cuando la carpeta no está disponible.",
+    "description": "Sincroniza cuentas mediante archivos cifrados en una carpeta en la nube. Tauthy usa un archivo por dispositivo para evitar conflictos por cambios simultáneos. Los cambios locales funcionan sin conexión.",
     "create": "Crear archivo de sincronización",
     "createDescription": "Crear un archivo cifrado en tu carpeta en la nube",
     "join": "Unirse a una sincronización",
@@ -119,6 +119,8 @@
     "never": "Nunca",
     "syncNow": "Sincronizar ahora",
     "syncNowDescription": "Combinar cambios locales y remotos",
+    "mergeConflictedCopy": "Combinar una copia en conflicto",
+    "mergeConflictedCopyDescription": "Recuperar cambios de un archivo marcado como conflicto por el servicio en la nube. Se conservará el archivo seleccionado.",
     "disconnect": "Desconectar sincronización",
     "disconnectDescription": "Dejar de sincronizar sin borrar las cuentas locales ni el archivo",
     "disconnectWarning": "Este dispositivo dejará de sincronizarse. Las cuentas locales y el archivo cifrado no se eliminarán. ¿Continuar?"
@@ -192,6 +194,7 @@
     "reset": "Reiniciar Baúl.",
     "syncConfigured": "Sincronización configurada.",
     "syncSuccess": "Sincronización completada.",
+    "syncConflictMerged": "Copia en conflicto combinada. Consérvala hasta que todos los dispositivos muestren las cuentas recuperadas.",
     "syncDisconnected": "Sincronización desconectada.",
     "syncAuthenticationFailed": "La contraseña de recuperación es incorrecta o el archivo fue modificado.",
     "syncConflict": "Los baúles local y sincronizado contienen un conflicto que no se puede combinar con seguridad.",

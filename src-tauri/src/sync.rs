@@ -3,7 +3,7 @@ use std::{
   collections::{BTreeMap, HashMap, HashSet},
   fs,
   io::Write,
-  path::Path,
+  path::{Path, PathBuf},
   time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -39,6 +39,7 @@ const MAX_PAYLOAD_SIZE: usize = 64 * 1024 * 1024;
 const MAX_ENVELOPE_SIZE: usize = MAX_PAYLOAD_SIZE * 2;
 const MAX_RECORDS: usize = 100_000;
 const MAX_ICON_LENGTH: usize = 512 * 1024;
+const MAX_DEVICE_FILES: usize = 32;
 const WRAP_AAD: &[u8] = b"tauthy-sync-key:v1";
 const PAYLOAD_AAD: &[u8] = b"tauthy-sync-payload:v1";
 
@@ -573,6 +574,87 @@ fn write_envelope(path: &Path, envelope: &SyncEnvelope) -> Result<(), String> {
   Ok(())
 }
 
+fn device_file_path(base: &Path, device_id: &str) -> Result<PathBuf, String> {
+  if device_id.len() != 32
+    || !device_id
+      .bytes()
+      .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+  {
+    return Err(ERR_CORRUPT.into());
+  }
+  let name = base
+    .file_name()
+    .and_then(|name| name.to_str())
+    .ok_or_else(|| ERR_UNAVAILABLE.to_string())?;
+  Ok(base.with_file_name(format!("{name}.device-{device_id}")))
+}
+
+fn read_remote_payload(
+  base: &Path,
+  key: &[u8],
+  wrapped_key: &WrappedKey,
+) -> Result<SyncPayload, String> {
+  let anchor = read_envelope(base)?;
+  if &anchor.key != wrapped_key {
+    return Err(ERR_CONFLICT.into());
+  }
+  let mut payload = decrypt_payload(&anchor, key)?;
+  let name = base
+    .file_name()
+    .and_then(|name| name.to_str())
+    .ok_or_else(|| ERR_UNAVAILABLE.to_string())?;
+  let prefix = format!("{name}.device-");
+  let parent = base.parent().ok_or_else(|| ERR_UNAVAILABLE.to_string())?;
+  let mut paths = Vec::new();
+  for entry in fs::read_dir(parent).map_err(|_| ERR_UNAVAILABLE.to_string())? {
+    let entry = entry.map_err(|_| ERR_UNAVAILABLE.to_string())?;
+    let file_name = entry.file_name();
+    let Some(id) = file_name
+      .to_str()
+      .and_then(|name| name.strip_prefix(&prefix))
+    else {
+      continue;
+    };
+    if id.len() != 32
+      || !id
+        .bytes()
+        .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    {
+      continue;
+    }
+    paths.push(entry.path());
+    if paths.len() > MAX_DEVICE_FILES {
+      return Err(ERR_UNSUPPORTED.into());
+    }
+  }
+  paths.sort();
+  for path in paths {
+    if !fs::symlink_metadata(&path)
+      .map_err(|_| ERR_UNAVAILABLE.to_string())?
+      .file_type()
+      .is_file()
+    {
+      return Err(ERR_UNSUPPORTED.into());
+    }
+    let envelope = read_envelope(&path)?;
+    if &envelope.key != wrapped_key {
+      return Err(ERR_CONFLICT.into());
+    }
+    payload = merge_payloads(payload, decrypt_payload(&envelope, key)?)?;
+  }
+  Ok(payload)
+}
+
+fn publish_device_payload(
+  base: &Path,
+  config: &SyncConfig,
+  key: &[u8],
+  payload: &SyncPayload,
+) -> Result<(), String> {
+  let path = device_file_path(base, &config.device_id)?;
+  write_envelope(&path, &envelope(payload, key, config.wrapped_key.clone())?)
+}
+
 fn load_config(vault: &UnlockedVault) -> Result<SyncConfig, String> {
   let bytes = vault
     .get_record(SYNC_STORE_NAME)?
@@ -650,11 +732,10 @@ fn join_at(state: &VaultState, path: String, mut password: String) -> Result<Syn
   let result = state.with_unlocked(|vault| {
     let remote = read_envelope(Path::new(&path))?;
     let sync_key = unwrap_key(&remote.key, password.as_bytes())?;
-    let mut payload = decrypt_payload(&remote, sync_key.as_ref())?;
+    let remote_payload = read_remote_payload(Path::new(&path), sync_key.as_ref(), &remote.key)?;
+    let mut payload = remote_payload.clone();
     let device_id = random_id()?;
     add_initial_local_entries(&mut payload, current_entries(vault)?, &device_id)?;
-    let merged_remote = envelope(&payload, sync_key.as_ref(), remote.key.clone())?;
-    write_envelope(Path::new(&path), &merged_remote)?;
     let config = SyncConfig {
       path,
       device_id,
@@ -663,6 +744,14 @@ fn join_at(state: &VaultState, path: String, mut password: String) -> Result<Syn
       payload,
       last_synced_at: Some(now_millis()?),
     };
+    if config.payload != remote_payload {
+      publish_device_payload(
+        Path::new(&config.path),
+        &config,
+        sync_key.as_ref(),
+        &config.payload,
+      )?;
+    }
     let entries = active_entries(&config.payload);
     save_local(vault, &entries, &config)?;
     Ok(status_for(Some(&config)))
@@ -672,6 +761,13 @@ fn join_at(state: &VaultState, path: String, mut password: String) -> Result<Syn
 }
 
 fn sync_at(state: &VaultState) -> Result<SyncStatus, String> {
+  sync_at_with_import(state, None)
+}
+
+fn sync_at_with_import(
+  state: &VaultState,
+  import_path: Option<&Path>,
+) -> Result<SyncStatus, String> {
   state.with_unlocked(|vault| {
     let mut config = load_config(vault)?;
     update_from_local(
@@ -679,18 +775,42 @@ fn sync_at(state: &VaultState) -> Result<SyncStatus, String> {
       current_entries(vault)?,
       &config.device_id,
     );
-    let remote_envelope = read_envelope(Path::new(&config.path))?;
     let key = Zeroizing::new(decode_exact(&config.key, KEY_SIZE)?);
-    let remote_payload = decrypt_payload(&remote_envelope, &key)?;
-    let merged = merge_payloads(config.payload.clone(), remote_payload)?;
-    let envelope = envelope(&merged, &key, config.wrapped_key.clone())?;
-    write_envelope(Path::new(&config.path), &envelope)?;
+    let base = Path::new(&config.path);
+    let remote_payload = read_remote_payload(base, &key, &config.wrapped_key)?;
+    let mut merged = merge_payloads(config.payload.clone(), remote_payload.clone())?;
+    if let Some(path) = import_path {
+      let imported = read_envelope(path)?;
+      if imported.key != config.wrapped_key {
+        return Err(ERR_CONFLICT.into());
+      }
+      merged = merge_payloads(merged, decrypt_payload(&imported, &key)?)?;
+    }
+    if merged != remote_payload {
+      publish_device_payload(base, &config, &key, &merged)?;
+    }
     config.payload = merged;
     config.last_synced_at = Some(now_millis()?);
     let entries = active_entries(&config.payload);
     save_local(vault, &entries, &config)?;
     Ok(status_for(Some(&config)))
   })
+}
+
+#[tauri::command]
+pub async fn sync_merge_conflicted_copy(
+  app: AppHandle,
+  state: State<'_, VaultState>,
+  path: String,
+) -> Result<SyncStatus, String> {
+  let state = state.inner().clone();
+  let status = tauri::async_runtime::spawn_blocking(move || {
+    sync_at_with_import(&state, Some(Path::new(&path)))
+  })
+  .await
+  .map_err(|_| ERR_CORRUPT.to_string())??;
+  let _ = crate::tray::refresh_menu(&app);
+  Ok(status)
 }
 
 #[tauri::command]
@@ -892,6 +1012,10 @@ mod tests {
     parse_entries(vault_record_at(state).unwrap().unwrap().as_bytes()).unwrap()
   }
 
+  fn config_for(state: &VaultState) -> SyncConfig {
+    state.with_unlocked(load_config).unwrap()
+  }
+
   #[test]
   fn two_vaults_create_join_and_propagate_a_deletion() {
     let temporary = tempfile::tempdir().unwrap();
@@ -917,6 +1041,144 @@ mod tests {
     sync_at(&second).unwrap();
     sync_at(&first).unwrap();
     assert!(stored_entries(&first).is_empty());
+  }
+
+  #[test]
+  fn independent_folder_replicas_preserve_concurrent_edits_without_rewriting_anchor() {
+    let temporary = tempfile::tempdir().unwrap();
+    let left_dir = temporary.path().join("left-cloud");
+    let right_dir = temporary.path().join("right-cloud");
+    fs::create_dir_all(&left_dir).unwrap();
+    fs::create_dir_all(&right_dir).unwrap();
+    let left_path = left_dir.join("Tauthy Sync.tauthy-sync");
+    let right_path = right_dir.join("Tauthy Sync.tauthy-sync");
+    let left = open_test_vault(temporary.path(), "left", vec![entry("base", "Base")]);
+    create_at(
+      &left,
+      left_path.to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    let anchor = fs::read(&left_path).unwrap();
+    sync_at(&left).unwrap();
+    assert!(!device_file_path(&left_path, &config_for(&left).device_id)
+      .unwrap()
+      .exists());
+    assert_eq!(fs::read(&left_path).unwrap(), anchor);
+    fs::copy(&left_path, &right_path).unwrap();
+    let right = open_test_vault(temporary.path(), "right", Vec::new());
+    join_at(
+      &right,
+      right_path.to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    assert_eq!(fs::read(&right_path).unwrap(), anchor);
+    assert!(
+      !device_file_path(&right_path, &config_for(&right).device_id)
+        .unwrap()
+        .exists()
+    );
+
+    vault_save_at(
+      &left,
+      serde_json::to_string(&vec![entry("base", "Base"), entry("left", "Left")]).unwrap(),
+    )
+    .unwrap();
+    vault_save_at(
+      &right,
+      serde_json::to_string(&vec![entry("base", "Base"), entry("right", "Right")]).unwrap(),
+    )
+    .unwrap();
+    sync_at(&left).unwrap();
+    sync_at(&right).unwrap();
+    let left_file = device_file_path(&left_path, &config_for(&left).device_id).unwrap();
+    let right_file = device_file_path(&right_path, &config_for(&right).device_id).unwrap();
+    assert!(left_file.exists());
+    assert!(right_file.exists());
+    fs::copy(&left_file, right_dir.join(left_file.file_name().unwrap())).unwrap();
+    fs::copy(&right_file, left_dir.join(right_file.file_name().unwrap())).unwrap();
+    sync_at(&left).unwrap();
+    sync_at(&right).unwrap();
+    let expected = vec![
+      entry("base", "Base"),
+      entry("left", "Left"),
+      entry("right", "Right"),
+    ];
+    assert_eq!(stored_entries(&left), expected);
+    assert_eq!(stored_entries(&right), expected);
+    assert_eq!(fs::read(&left_path).unwrap(), anchor);
+    assert_eq!(fs::read(&right_path).unwrap(), anchor);
+    let left_sidecar = fs::read(&left_file).unwrap();
+    sync_at(&left).unwrap();
+    assert_eq!(fs::read(&left_file).unwrap(), left_sidecar);
+  }
+
+  #[test]
+  fn conflicted_copy_can_be_merged_without_modifying_it() {
+    let temporary = tempfile::tempdir().unwrap();
+    let sync_path = temporary.path().join("Tauthy Sync.tauthy-sync");
+    let conflict_path = temporary
+      .path()
+      .join("Tauthy Sync (conflicted copy).tauthy-sync");
+    let state = open_test_vault(temporary.path(), "local", vec![entry("base", "Base")]);
+    create_at(
+      &state,
+      sync_path.to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    let config = config_for(&state);
+    let key = decode_exact(&config.key, KEY_SIZE).unwrap();
+    let mut conflict = config.payload.clone();
+    update_from_local(
+      &mut conflict,
+      vec![entry("base", "Base"), entry("rescued", "Rescued")],
+      "other-device",
+    );
+    write_envelope(
+      &conflict_path,
+      &envelope(&conflict, &key, config.wrapped_key.clone()).unwrap(),
+    )
+    .unwrap();
+    let original_conflict = fs::read(&conflict_path).unwrap();
+    sync_at_with_import(&state, Some(&conflict_path)).unwrap();
+    assert_eq!(
+      stored_entries(&state),
+      vec![entry("base", "Base"), entry("rescued", "Rescued")]
+    );
+    assert_eq!(fs::read(&conflict_path).unwrap(), original_conflict);
+  }
+
+  #[test]
+  fn new_device_joins_from_anchor_and_device_files() {
+    let temporary = tempfile::tempdir().unwrap();
+    let sync_path = temporary.path().join("Tauthy Sync.tauthy-sync");
+    let first = open_test_vault(temporary.path(), "first", vec![entry("base", "Base")]);
+    create_at(
+      &first,
+      sync_path.to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    vault_save_at(
+      &first,
+      serde_json::to_string(&vec![entry("base", "Base"), entry("new", "New")]).unwrap(),
+    )
+    .unwrap();
+    sync_at(&first).unwrap();
+
+    let second = open_test_vault(temporary.path(), "second", Vec::new());
+    join_at(
+      &second,
+      sync_path.to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    assert_eq!(
+      stored_entries(&second),
+      vec![entry("base", "Base"), entry("new", "New")]
+    );
   }
 
   #[test]

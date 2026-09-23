@@ -17,6 +17,7 @@ import {
   disconnectSync,
   getSyncStatus,
   joinSync,
+  mergeConflictedSyncCopy,
   syncNow,
   type SyncStatus,
 } from '~/utils/sync'
@@ -108,6 +109,25 @@ const Sync = () => {
     }
   }
 
+  const mergeConflictedCopy = async () => {
+    try {
+      // Nextcloud may append a conflict marker after the original extension.
+      const path = await open({ multiple: false, directory: false })
+      if (typeof path !== 'string') return
+      setBusy(true)
+      try {
+        setStatus(await mergeConflictedSyncCopy(path))
+        toast.success(t('toasts.syncConflictMerged'))
+      } catch (error) {
+        toast.error(t(`toasts.${errorKey(error)}`))
+      } finally {
+        setBusy(false)
+      }
+    } catch {
+      toast.error(t('toasts.syncPickerFailed'))
+    }
+  }
+
   const disconnect = async () => {
     const confirmed = await confirm(t('sync.disconnectWarning'), {
       title: t('sync.disconnect'),
@@ -165,6 +185,14 @@ const Sync = () => {
           <ListItem disablePadding onClick={() => !busy && void synchronize()}>
             <ListItemButton disabled={busy}>
               <ListItemText primary={t('sync.syncNow')} secondary={t('sync.syncNowDescription')} />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+            <ListItemButton disabled={busy}>
+              <ListItemText
+                primary={t('sync.mergeConflictedCopy')}
+                secondary={t('sync.mergeConflictedCopyDescription')}
+              />
             </ListItemButton>
           </ListItem>
           <ListItem disablePadding onClick={() => !busy && void disconnect()}>

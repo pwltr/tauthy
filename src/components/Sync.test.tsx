@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   save: vi.fn(),
   toastError: vi.fn(),
   getSyncStatus: vi.fn(),
+  mergeConflictedSyncCopy: vi.fn(),
 }))
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
@@ -22,6 +23,7 @@ vi.mock('~/utils/sync', () => ({
   disconnectSync: vi.fn(),
   getSyncStatus: mocks.getSyncStatus,
   joinSync: vi.fn(),
+  mergeConflictedSyncCopy: mocks.mergeConflictedSyncCopy,
   syncNow: vi.fn(),
 }))
 
@@ -45,5 +47,23 @@ describe('sync file pickers', () => {
     fireEvent.click(await screen.findByText(label))
 
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncPickerFailed'))
+  })
+
+  it('offers conflicted-copy recovery when sync is connected', async () => {
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: null,
+    })
+    mocks.open.mockResolvedValue('/cloud/conflicted copy')
+    mocks.mergeConflictedSyncCopy.mockResolvedValue({ enabled: true, path: '/cloud/sync' })
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.mergeConflictedCopy'))
+
+    await waitFor(() =>
+      expect(mocks.mergeConflictedSyncCopy).toHaveBeenCalledWith('/cloud/conflicted copy'),
+    )
+    expect(mocks.open).toHaveBeenCalledWith({ multiple: false, directory: false })
   })
 })

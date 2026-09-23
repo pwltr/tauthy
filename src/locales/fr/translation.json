@@ -104,7 +104,7 @@
   },
   "sync": {
     "pageTitle": "Synchronisation",
-    "description": "Conservez vos comptes dans un fichier chiffré géré par Nextcloud, Dropbox, OneDrive ou iCloud Drive. Les modifications locales restent possibles lorsque le dossier est indisponible.",
+    "description": "Synchronisez les comptes via des fichiers chiffrés dans un dossier cloud. Tauthy utilise un fichier par appareil pour éviter les conflits lors de modifications simultanées. Les modifications locales restent possibles hors ligne.",
     "create": "Créer un fichier de synchronisation",
     "createDescription": "Créer un fichier chiffré dans votre dossier cloud",
     "join": "Rejoindre une synchronisation",
@@ -119,6 +119,8 @@
     "never": "Jamais",
     "syncNow": "Synchroniser maintenant",
     "syncNowDescription": "Fusionner les modifications locales et distantes",
+    "mergeConflictedCopy": "Fusionner une copie en conflit",
+    "mergeConflictedCopyDescription": "Récupérer les modifications d’un fichier marqué comme conflit par le service cloud. Le fichier sélectionné sera conservé.",
     "disconnect": "Déconnecter la synchronisation",
     "disconnectDescription": "Arrêter la synchronisation sans supprimer les comptes locaux ni le fichier",
     "disconnectWarning": "Cet appareil cessera de se synchroniser. Les comptes locaux et le fichier chiffré ne seront pas supprimés. Continuer ?"
@@ -192,6 +194,7 @@
     "reset": "Coffre-fort réinitialisé.",
     "syncConfigured": "Synchronisation configurée.",
     "syncSuccess": "Synchronisation terminée.",
+    "syncConflictMerged": "Copie en conflit fusionnée. Conservez-la jusqu’à ce que tous les appareils affichent les comptes récupérés.",
     "syncDisconnected": "Synchronisation déconnectée.",
     "syncAuthenticationFailed": "Le mot de passe de récupération est incorrect ou le fichier a été modifié.",
     "syncConflict": "Les coffres local et synchronisé contiennent un conflit impossible à fusionner en toute sécurité.",

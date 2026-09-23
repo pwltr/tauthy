@@ -104,7 +104,7 @@
   },
   "sync": {
     "pageTitle": "Synchronisierung",
-    "description": "Konten in einer verschlüsselten Datei abgleichen, die von Nextcloud, Dropbox, OneDrive oder iCloud Drive übertragen wird. Lokale Änderungen funktionieren auch ohne verfügbaren Cloud-Ordner.",
+    "description": "Konten über verschlüsselte Dateien in einem Cloud-Ordner abgleichen. Tauthy verwendet für jedes Gerät eine eigene Datei, damit gleichzeitige Änderungen nicht kollidieren. Lokale Änderungen funktionieren auch offline.",
     "create": "Sync-Datei erstellen",
     "createDescription": "Neue verschlüsselte Datei im Cloud-Ordner erstellen",
     "join": "Bestehende Synchronisierung verbinden",
@@ -119,6 +119,8 @@
     "never": "Nie",
     "syncNow": "Jetzt synchronisieren",
     "syncNowDescription": "Lokale und entfernte Änderungen zusammenführen",
+    "mergeConflictedCopy": "Konfliktkopie zusammenführen",
+    "mergeConflictedCopyDescription": "Änderungen aus einer vom Cloud-Dienst als Konflikt markierten Datei wiederherstellen. Die ausgewählte Datei bleibt erhalten.",
     "disconnect": "Synchronisierung trennen",
     "disconnectDescription": "Abgleich beenden, ohne lokale Konten oder die Sync-Datei zu löschen",
     "disconnectWarning": "Dieses Gerät wird nicht mehr synchronisiert. Lokale Konten und die verschlüsselte Sync-Datei werden nicht gelöscht. Fortfahren?"
@@ -192,6 +194,7 @@
     "reset": "Tresor gelöscht.",
     "syncConfigured": "Synchronisierung eingerichtet.",
     "syncSuccess": "Synchronisierung abgeschlossen.",
+    "syncConflictMerged": "Konfliktkopie zusammengeführt. Behalte sie, bis alle Geräte die wiederhergestellten Konten anzeigen.",
     "syncDisconnected": "Synchronisierung getrennt.",
     "syncAuthenticationFailed": "Das Sync-Wiederherstellungspasswort ist falsch oder die Datei wurde verändert.",
     "syncConflict": "Lokaler und synchronisierter Tresor enthalten einen Kontokonflikt, der nicht sicher zusammengeführt werden kann.",

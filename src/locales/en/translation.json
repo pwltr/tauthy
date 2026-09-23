@@ -104,7 +104,7 @@
   },
   "sync": {
     "pageTitle": "Sync",
-    "description": "Keep your accounts in an encrypted file managed by a folder-sync service such as Nextcloud, Dropbox, OneDrive, or iCloud Drive. Local changes continue to work when the folder is unavailable.",
+    "description": "Sync accounts through encrypted files in your cloud folder. Tauthy keeps a separate file for each device so simultaneous changes do not collide. Local changes work offline.",
     "create": "Create sync file",
     "createDescription": "Create a new encrypted file in your cloud folder",
     "join": "Join existing sync",
@@ -119,6 +119,8 @@
     "never": "Never",
     "syncNow": "Sync now",
     "syncNowDescription": "Merge local and remote changes",
+    "mergeConflictedCopy": "Merge a conflicted copy",
+    "mergeConflictedCopyDescription": "Recover changes from a file your cloud service marked as conflicted. The selected file is kept.",
     "disconnect": "Disconnect sync",
     "disconnectDescription": "Stop syncing without deleting local accounts or the sync file",
     "disconnectWarning": "This device will stop syncing. Your local accounts and the encrypted sync file will not be deleted. Continue?"
@@ -192,6 +194,7 @@
     "reset": "Vault reset.",
     "syncConfigured": "Sync configured.",
     "syncSuccess": "Sync complete.",
+    "syncConflictMerged": "Conflicted copy merged. Keep it until all devices show the recovered accounts.",
     "syncDisconnected": "Sync disconnected.",
     "syncAuthenticationFailed": "The sync recovery password is incorrect, or the file was modified.",
     "syncConflict": "The local and synced vaults contain an account conflict that cannot be merged safely.",
