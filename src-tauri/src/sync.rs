@@ -570,6 +570,7 @@ fn write_envelope(path: &Path, envelope: &SyncEnvelope) -> Result<(), String> {
   temporary
     .persist(path)
     .map_err(|_| ERR_UNAVAILABLE.to_string())?;
+  eprintln!("[audit] vault sync envelope written to {}", path.display());
   Ok(())
 }
 
