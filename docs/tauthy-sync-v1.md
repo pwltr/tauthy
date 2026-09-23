@@ -44,7 +44,7 @@ the anchor and cannot see changes in device files. Keep the anchor and device fi
 do not rename or remove them while sync is connected.
 
 If a folder-sync provider previously created a conflicted copy, tap the logo on the About screen
-five times to enable recovery tools for this session, then select **Merge a conflicted copy** in
+five times to enable developer settings for this session, then select **Merge a conflicted copy** in
 Sync settings. Tauthy accepts it only if its encrypted key and vault ID match, then
 merges its records into the local vault and publishes any recovered changes. The selected file is
 not modified or deleted. Keep it until every device shows the recovered accounts.

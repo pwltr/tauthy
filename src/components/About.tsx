@@ -48,7 +48,7 @@ const About = () => {
     logoPresses.current += 1
     if (logoPresses.current === 5) {
       enableSyncRecoveryTools()
-      toast.success(t('about.syncRecoveryEnabled'))
+      toast.success(t('about.developerSettingsEnabled'))
     }
   }
 

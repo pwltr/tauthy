@@ -26,6 +26,6 @@ describe('About logo recovery gesture', () => {
 
     fireEvent.click(logo)
     expect(window.sessionStorage.getItem('tauthy:sync-recovery-tools')).toBe('true')
-    expect(mocks.toastSuccess).toHaveBeenCalledWith('about.syncRecoveryEnabled')
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('about.developerSettingsEnabled')
   })
 })
