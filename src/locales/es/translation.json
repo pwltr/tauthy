@@ -200,6 +200,8 @@
     "syncAuthenticationFailed": "La contraseña de recuperación es incorrecta o el archivo fue modificado.",
     "syncConflict": "Los baúles local y sincronizado contienen un conflicto que no se puede combinar con seguridad.",
     "syncCorrupt": "Los datos de sincronización están dañados o no son válidos.",
+    "syncDeviceFileInvalid": "No se puede leer {{file}}. Puede estar incompleto, dañado o pertenecer a otra sincronización. Guarda una copia antes de modificarlo; tu bóveda local está a salvo.",
+    "syncDeviceFileLimit": "Hay más de 32 archivos de dispositivos y la sincronización se ha pausado. Conserva los archivos y crea una copia de seguridad cifrada antes de pedir ayuda; no los borres sin comprobarlos.",
     "syncFileExists": "Ya existe una carpeta Tauthy Sync en esa ubicación. Únete a ella o elige otra ubicación.",
     "syncMultipleFiles": "Esta carpeta contiene varios archivos de sincronización. Elige una carpeta con un solo archivo antiguo.",
     "syncNotConfigured": "La sincronización no está configurada.",

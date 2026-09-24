@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   open: vi.fn(),
   toastError: vi.fn(),
   getSyncStatus: vi.fn(),
+  syncNow: vi.fn(),
   mergeConflictedSyncCopy: vi.fn(),
 }))
 
@@ -14,7 +15,11 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
 }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
+  useTranslation: () => ({
+    t: (key: string, options?: { file?: string }) =>
+      options?.file ? `${key}: ${options.file}` : key,
+    i18n: { language: 'en' },
+  }),
 }))
 vi.mock('~/utils/sync', () => ({
   createSync: vi.fn(),
@@ -22,7 +27,7 @@ vi.mock('~/utils/sync', () => ({
   getSyncStatus: mocks.getSyncStatus,
   joinSync: vi.fn(),
   mergeConflictedSyncCopy: mocks.mergeConflictedSyncCopy,
-  syncNow: vi.fn(),
+  syncNow: mocks.syncNow,
 }))
 
 import Sync from '~/components/Sync'
@@ -32,6 +37,7 @@ describe('sync location pickers', () => {
     window.sessionStorage.clear()
     mocks.open.mockReset()
     mocks.toastError.mockReset()
+    mocks.syncNow.mockReset()
     mocks.getSyncStatus.mockResolvedValue({ enabled: false, path: null, lastSyncedAt: null })
   })
 
@@ -91,6 +97,40 @@ describe('sync location pickers', () => {
 
     await screen.findByText('sync.syncNow')
     expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
+  })
+
+  it('names an unreadable device file in the sync error', async () => {
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: null,
+    })
+    mocks.syncNow.mockRejectedValue(
+      'syncDeviceFileInvalid:device-00000000000000000000000000000001.tauthy-sync',
+    )
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.syncNow'))
+
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith(
+        'toasts.syncDeviceFileInvalid: device-00000000000000000000000000000001.tauthy-sync',
+      ),
+    )
+  })
+
+  it('shows a distinct error when the device-file limit is reached', async () => {
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: null,
+    })
+    mocks.syncNow.mockRejectedValue('syncDeviceFileLimit')
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.syncNow'))
+
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncDeviceFileLimit'))
   })
 
   it('uses secondary body typography for the introduction', async () => {

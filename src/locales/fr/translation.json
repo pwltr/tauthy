@@ -200,6 +200,8 @@
     "syncAuthenticationFailed": "Le mot de passe de récupération est incorrect ou le fichier a été modifié.",
     "syncConflict": "Les coffres local et synchronisé contiennent un conflit impossible à fusionner en toute sécurité.",
     "syncCorrupt": "Les données de synchronisation sont endommagées ou non valides.",
+    "syncDeviceFileInvalid": "Impossible de lire {{file}}. Ce fichier peut être incomplet, endommagé ou appartenir à une autre synchronisation. Gardez-en une copie avant de le modifier ; votre coffre local est intact.",
+    "syncDeviceFileLimit": "La synchronisation contient plus de 32 fichiers d’appareil et est suspendue. Conservez-les et créez une sauvegarde chiffrée avant de demander de l’aide ; ne les supprimez pas sans vérification.",
     "syncFileExists": "Un dossier Tauthy Sync existe déjà à cet emplacement. Rejoignez-le ou choisissez un autre emplacement.",
     "syncMultipleFiles": "Ce dossier contient plusieurs fichiers de synchronisation. Choisissez un dossier avec un seul ancien fichier.",
     "syncNotConfigured": "La synchronisation n’est pas configurée.",

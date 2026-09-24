@@ -200,6 +200,8 @@
     "syncAuthenticationFailed": "The sync recovery password is incorrect, or the file was modified.",
     "syncConflict": "The local and synced vaults contain an account conflict that cannot be merged safely.",
     "syncCorrupt": "The sync data is damaged or invalid.",
+    "syncDeviceFileInvalid": "Can't read {{file}}. It may be incomplete, damaged, or from another sync. Keep a copy before changing it; your local vault is safe.",
+    "syncDeviceFileLimit": "Sync has more than 32 device files and is paused. Keep the files and make an encrypted backup before seeking help; don't delete device files blindly.",
     "syncFileExists": "A Tauthy Sync folder already exists there. Join it or choose another location.",
     "syncMultipleFiles": "This folder contains multiple sync files. Choose a folder with only one older sync file.",
     "syncNotConfigured": "Sync is not configured.",

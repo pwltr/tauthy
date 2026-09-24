@@ -25,12 +25,16 @@ import {
 
 type PendingAction = { mode: 'create' | 'join'; path: string }
 
+const errorText = (error: unknown) =>
+  typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+
 const errorKey = (error: unknown) => {
-  const key = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+  const key = errorText(error)
   return [
     'syncAuthenticationFailed',
     'syncConflict',
     'syncCorrupt',
+    'syncDeviceFileLimit',
     'syncFileExists',
     'syncMultipleFiles',
     'syncNotConfigured',
@@ -49,11 +53,19 @@ const Sync = () => {
   const [busy, setBusy] = useState(false)
   const showRecovery = developerSettingsEnabled()
 
+  const syncErrorMessage = (error: unknown) => {
+    const message = errorText(error)
+    const prefix = 'syncDeviceFileInvalid:'
+    return message.startsWith(prefix)
+      ? t('toasts.syncDeviceFileInvalid', { file: message.slice(prefix.length) })
+      : t(`toasts.${errorKey(error)}`)
+  }
+
   const loadStatus = async () => {
     try {
       setStatus(await getSyncStatus())
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     }
   }
 
@@ -92,7 +104,7 @@ const Sync = () => {
       setPending(undefined)
       toast.success(t('toasts.syncConfigured'))
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
     }
@@ -104,7 +116,7 @@ const Sync = () => {
       setStatus(await syncNow())
       toast.success(t('toasts.syncSuccess'))
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
     }
@@ -120,7 +132,7 @@ const Sync = () => {
         setStatus(await mergeConflictedSyncCopy(path))
         toast.success(t('toasts.syncConflictMerged'))
       } catch (error) {
-        toast.error(t(`toasts.${errorKey(error)}`))
+        toast.error(syncErrorMessage(error))
       } finally {
         setBusy(false)
       }
@@ -142,7 +154,7 @@ const Sync = () => {
       setStatus(await disconnectSync())
       toast.success(t('toasts.syncDisconnected'))
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
     }

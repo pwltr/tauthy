@@ -49,6 +49,8 @@ const ERR_AUTHENTICATION: &str = "syncAuthenticationFailed";
 const ERR_CONFLICT: &str = "syncConflict";
 const ERR_CORRUPT: &str = "syncCorrupt";
 const ERR_FILE_EXISTS: &str = "syncFileExists";
+const ERR_DEVICE_FILE: &str = "syncDeviceFileInvalid";
+const ERR_DEVICE_LIMIT: &str = "syncDeviceFileLimit";
 const ERR_MULTIPLE_FILES: &str = "syncMultipleFiles";
 const ERR_NOT_CONFIGURED: &str = "syncNotConfigured";
 const ERR_UNAVAILABLE: &str = "syncUnavailable";
@@ -628,6 +630,14 @@ fn device_file_path(base: &Path, device_id: &str) -> Result<PathBuf, String> {
   Ok(base.with_file_name(format!("{name}.device-{device_id}")))
 }
 
+fn device_file_error(path: &Path) -> String {
+  let name = path
+    .file_name()
+    .and_then(|name| name.to_str())
+    .unwrap_or("?");
+  format!("{ERR_DEVICE_FILE}:{name}")
+}
+
 fn read_remote_payload(
   base: &Path,
   key: &[u8],
@@ -679,23 +689,28 @@ fn read_remote_payload(
     }
     paths.push(entry.path());
     if paths.len() > MAX_DEVICE_FILES {
-      return Err(ERR_UNSUPPORTED.into());
+      return Err(ERR_DEVICE_LIMIT.into());
     }
   }
   paths.sort();
   for path in paths {
+    let file_error = || device_file_error(&path);
     if !fs::symlink_metadata(&path)
-      .map_err(|_| ERR_UNAVAILABLE.to_string())?
+      .map_err(|_| file_error())?
       .file_type()
       .is_file()
     {
-      return Err(ERR_UNSUPPORTED.into());
+      return Err(file_error());
     }
-    let envelope = read_envelope(&path)?;
+    let envelope = read_envelope(&path).map_err(|_| file_error())?;
     if &envelope.key != wrapped_key {
-      return Err(ERR_CONFLICT.into());
+      return Err(file_error());
     }
-    payload = merge_payloads(payload, decrypt_payload(&envelope, key)?)?;
+    payload = merge_payloads(
+      payload,
+      decrypt_payload(&envelope, key).map_err(|_| file_error())?,
+    )
+    .map_err(|_| file_error())?;
   }
   Ok(payload)
 }
@@ -1304,6 +1319,49 @@ mod tests {
     fs::write(temporary.path().join("one.tauthy-sync"), b"one").unwrap();
     fs::write(temporary.path().join("two.tauthy-sync"), b"two").unwrap();
     assert_eq!(join_path(temporary.path()), Err(ERR_MULTIPLE_FILES.into()));
+  }
+
+  #[test]
+  fn invalid_device_file_error_names_the_file_without_changing_the_local_vault() {
+    let temporary = tempfile::tempdir().unwrap();
+    let state = open_test_vault(temporary.path(), "local", vec![entry("base", "Base")]);
+    create_at(
+      &state,
+      temporary.path().to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    let folder = temporary.path().join(SYNC_FOLDER_NAME);
+    let filename = "device-00000000000000000000000000000001.tauthy-sync";
+    fs::write(folder.join(filename), b"incomplete cloud copy").unwrap();
+
+    assert_eq!(
+      sync_at(&state).err().unwrap(),
+      format!("{ERR_DEVICE_FILE}:{filename}")
+    );
+    assert_eq!(stored_entries(&state), vec![entry("base", "Base")]);
+  }
+
+  #[test]
+  fn device_file_limit_has_a_distinct_error() {
+    let temporary = tempfile::tempdir().unwrap();
+    let state = open_test_vault(temporary.path(), "local", Vec::new());
+    create_at(
+      &state,
+      temporary.path().to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    let folder = temporary.path().join(SYNC_FOLDER_NAME);
+    for number in 0..=MAX_DEVICE_FILES {
+      fs::write(
+        folder.join(format!("device-{number:032x}.tauthy-sync")),
+        b"unused",
+      )
+      .unwrap();
+    }
+
+    assert_eq!(sync_at(&state).err().unwrap(), ERR_DEVICE_LIMIT);
   }
 
   #[test]

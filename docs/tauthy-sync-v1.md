@@ -39,6 +39,12 @@ No device modifies another device's file. This avoids routine cloud-provider con
 devices edit simultaneously, which cannot be guaranteed with one mutable file and an asynchronous
 folder-sync client.
 
+Device files are not automatically removed. Tauthy accepts at most 32 of them in one sync
+location; beyond that, sync pauses while local accounts remain available. Do not delete an old
+device file merely because another device has synced: reading a file does not guarantee its
+records and deletion tombstones were written to another file. Make an encrypted export before
+any manual recovery.
+
 Existing v1 sync configurations keep their file-based layout. Their selected path, recovery
 password, encryption key, device ID, and local vault stay the same; on the next local change,
 each updated device publishes a sibling named
@@ -85,6 +91,8 @@ resolution interface.
 ## Security boundary and limitations
 
 The folder provider sees the filename, size, and modification timing, but not account contents.
+Device filenames and write times reveal the number of published devices and each device's
+activity pattern through a stable pseudonymous ID.
 Anyone who obtains the sync files and the recovery password can decrypt all synchronized OTP
 secrets. Tauthy cannot recover a forgotten recovery password.
 
