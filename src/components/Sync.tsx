@@ -1,18 +1,23 @@
 import { useContext, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { confirm, open } from '@tauri-apps/plugin-dialog'
 import Box from '@mui/material/Box'
 import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
+import Button from '@mui/material/Button'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
+import TextField from '@mui/material/TextField'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
 import SettingsPage from '~/components/SettingsPage'
+import Modal, { Buttons } from '~/components/Modal'
+import { copyToClipboard } from '~/utils/helpers'
 import SyncPasswordModal from '~/components/modals/SyncPassword'
 import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
@@ -20,6 +25,7 @@ import {
   disconnectSync,
   getBackgroundSyncError,
   getSyncStatus,
+  getPubkyRecoveryCode,
   joinSync,
   mergeConflictedSyncCopy,
   syncNow,
@@ -51,6 +57,7 @@ const errorKey = (error: unknown) => {
 }
 
 const Sync = () => {
+  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [status, setStatus] = useState<SyncStatus>()
@@ -64,8 +71,15 @@ const Sync = () => {
     const prefix = 'syncDeviceFileInvalid:'
     return message.startsWith(prefix)
       ? t('toasts.syncDeviceFileInvalid', { file: message.slice(prefix.length) })
-      : t(`toasts.${errorKey(error)}`)
+      : t(
+          `toasts.${
+            status?.provider === 'pubky' && errorKey(error) === 'syncUnavailable'
+              ? 'pubkyUnavailable'
+              : errorKey(error)
+          }`,
+        )
   }
+  const [pubkyRecoveryCode, setPubkyRecoveryCode] = useState('')
 
   const loadStatus = async () => {
     try {
@@ -160,12 +174,15 @@ const Sync = () => {
   }
 
   const disconnect = async () => {
-    const confirmed = await confirm(t('sync.disconnectWarning'), {
-      title: t('sync.disconnect'),
-      kind: 'warning',
-      okLabel: t('sync.disconnect'),
-      cancelLabel: t('modals.cancel'),
-    })
+    const confirmed = await confirm(
+      t(status?.provider === 'pubky' ? 'sync.pubkyDisconnectWarning' : 'sync.disconnectWarning'),
+      {
+        title: t('sync.disconnect'),
+        kind: 'warning',
+        okLabel: t('sync.disconnect'),
+        cancelLabel: t('modals.cancel'),
+      },
+    )
     if (!confirmed) return
     setBusy(true)
     try {
@@ -175,6 +192,14 @@ const Sync = () => {
       toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const showPubkyRecoveryCode = async () => {
+    try {
+      setPubkyRecoveryCode(await getPubkyRecoveryCode())
+    } catch {
+      toast.error(t('toasts.pubkyUnavailable'))
     }
   }
 
@@ -193,7 +218,7 @@ const Sync = () => {
       <SettingsPage>
         <Box sx={{ px: 2, pt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            {t('sync.description')}
+            {t(status.provider === 'pubky' ? 'sync.pubkyDescription' : 'sync.description')}
           </Typography>
         </Box>
         {status.enabled ? (
@@ -206,7 +231,9 @@ const Sync = () => {
             <List>
               <ListItem>
                 <ListItemText
-                  primary={t('sync.connected')}
+                  primary={t(
+                    status.provider === 'pubky' ? 'sync.pubkyConnected' : 'sync.connected',
+                  )}
                   secondary={status.path}
                   slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
                 />
@@ -232,7 +259,17 @@ const Sync = () => {
                   />
                 </ListItemButton>
               </ListItem>
-              {showRecovery && (
+              {status.provider === 'pubky' && (
+                <ListItem disablePadding onClick={() => !busy && void showPubkyRecoveryCode()}>
+                  <ListItemButton disabled={busy}>
+                    <ListItemText
+                      primary={t('sync.pubkyShowCode')}
+                      secondary={t('sync.pubkyShowCodeDescription')}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              )}
+              {showRecovery && status.provider !== 'pubky' && (
                 <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
                   <ListItemButton disabled={busy}>
                     <ListItemText
@@ -264,9 +301,40 @@ const Sync = () => {
                 <ListItemText primary={t('sync.join')} secondary={t('sync.joinDescription')} />
               </ListItemButton>
             </ListItem>
+            <ListItem disablePadding onClick={() => navigate('/sync/pubky')}>
+              <ListItemButton>
+                <ListItemText
+                  primary={t('sync.pubkyConnect')}
+                  secondary={t('sync.pubkyConnectDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
           </List>
         )}
       </SettingsPage>
+      <Modal open={!!pubkyRecoveryCode} onClose={() => setPubkyRecoveryCode('')}>
+        <Typography variant="h6" component="h2" gutterBottom>
+          {t('sync.pubkyRecoveryCode')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t('sync.pubkySaveCode')}
+        </Typography>
+        <TextField
+          value={pubkyRecoveryCode}
+          slotProps={{ input: { readOnly: true } }}
+          fullWidth
+          multiline
+          margin="normal"
+        />
+        <Buttons>
+          <Button onClick={() => void copyToClipboard(pubkyRecoveryCode)}>
+            {t('sync.pubkyCopyCode')}
+          </Button>
+          <Button variant="contained" onClick={() => setPubkyRecoveryCode('')}>
+            {t('modals.cancel')}
+          </Button>
+        </Buttons>
+      </Modal>
       <SyncPasswordModal
         mode={pending?.mode ?? 'create'}
         open={!!pending}

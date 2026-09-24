@@ -179,7 +179,7 @@
   },
   "sync": {
     "pageTitle": "Sync",
-    "description": "Sync accounts through a Tauthy Sync folder in your cloud storage. Each device writes its own encrypted file inside it, so simultaneous changes do not collide. Local changes work offline.",
+    "description": "Sync encrypted accounts through a cloud folder or your Pubky homeserver. Each device writes its own file, and local changes work offline.",
     "create": "Create sync folder",
     "createDescription": "Choose a cloud-synced location; Tauthy creates a Tauthy Sync folder there",
     "join": "Join existing sync",
@@ -198,7 +198,25 @@
     "mergeConflictedCopyDescription": "Recover changes from a file your cloud service marked as conflicted. The selected file is kept.",
     "disconnect": "Disconnect sync",
     "disconnectDescription": "Stop syncing without deleting local accounts or sync data",
-    "disconnectWarning": "This device will stop syncing. Your local accounts and encrypted sync data will not be deleted. Continue?"
+    "disconnectWarning": "This device will stop syncing. Your local accounts and encrypted sync data will not be deleted. Continue?",
+    "pubkyConnect": "Connect Pubky",
+    "pubkyConnectDescription": "Sync encrypted accounts through your Pubky homeserver",
+    "pubkyTitle": "Connect to Pubky",
+    "pubkyApproval": "Scan this code with Pubky Ring and approve Tauthy's access to its own sync folder. Tauthy never sees your identity key. The sync files are encrypted, but publicly downloadable.",
+    "pubkyWaiting": "Waiting for approval in Pubky Ring…",
+    "pubkyCopyLink": "Copy Pubky Ring link",
+    "pubkyCreate": "Create Pubky sync",
+    "pubkyCreateDescription": "No Tauthy sync data was found for this Pubky identity. Create an encrypted sync set on its homeserver?",
+    "pubkyJoinDescription": "Tauthy sync data was found. Enter the recovery code from a connected device to decrypt it.",
+    "pubkyRecoveryCode": "Pubky sync recovery code",
+    "pubkySaveCode": "Save this code securely. It is needed to connect another device if this vault is unavailable. Tauthy can show it again while this vault is unlocked.",
+    "pubkyCopyCode": "Copy code",
+    "pubkyCodeSaved": "I've saved it",
+    "pubkyConnected": "Pubky identity",
+    "pubkyDescription": "Sync encrypted accounts through your Pubky homeserver. Each device writes its own file; local changes work offline.",
+    "pubkyShowCode": "Show recovery code",
+    "pubkyShowCodeDescription": "Use this to connect another device",
+    "pubkyDisconnectWarning": "This device will stop syncing with Pubky. Local accounts and encrypted homeserver data remain. You can revoke Tauthy's access in Pubky Ring. Continue?"
   },
   "about": {
     "pageTitle": "About",
@@ -294,6 +312,7 @@
     "syncUnsupported": "This sync file version or encryption configuration is not supported.",
     "syncFailed": "Sync failed. Your local vault was not lost.",
     "syncBackgroundFailed": "Automatic sync could not finish. Open Settings → Sync for details.",
+    "pubkyUnavailable": "Pubky is unavailable or authorization failed. Your local vault was not changed.",
     "error": "An error occured."
   }
 }

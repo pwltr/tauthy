@@ -20,6 +20,17 @@ export type SyncStatus = {
   path?: string
   lastSyncedAt?: number
   vaultChanged?: boolean
+  provider?: 'folder' | 'pubky'
+}
+
+export type PubkyApproval = {
+  approved: boolean
+  publicKey?: string
+  hasRemote?: boolean
+}
+
+export type PubkySetupResult = {
+  status: SyncStatus
 }
 
 export const getBackgroundSyncError = () => backgroundError
@@ -137,3 +148,21 @@ export const disconnectSync = async () => {
   clearBackgroundSyncError()
   return status
 }
+
+export const startPubkySync = () => invoke<string>('pubky_sync_start')
+export const pollPubkySync = () => invoke<PubkyApproval>('pubky_sync_poll')
+export const cancelPubkySync = () => invoke<void>('pubky_sync_cancel')
+
+export const createPubkySync = async (recoveryCode: string) => {
+  const result = await invoke<PubkySetupResult>('pubky_sync_create', { recoveryCode })
+  announceSync()
+  return result
+}
+
+export const joinPubkySync = async (recoveryCode: string) => {
+  const result = await invoke<PubkySetupResult>('pubky_sync_join', { recoveryCode })
+  announceSync()
+  return result
+}
+
+export const getPubkyRecoveryCode = () => invoke<string>('pubky_sync_recovery_code')

@@ -179,7 +179,7 @@
   },
   "sync": {
     "pageTitle": "Synchronisierung",
-    "description": "Konten über einen Tauthy-Sync-Ordner im Cloud-Speicher abgleichen. Jedes Gerät schreibt darin eine eigene verschlüsselte Datei, damit gleichzeitige Änderungen nicht kollidieren. Lokale Änderungen funktionieren auch offline.",
+    "description": "Verschlüsselte Konten über einen Cloud-Ordner oder deinen Pubky-Homeserver synchronisieren. Jedes Gerät schreibt eine eigene Datei; lokale Änderungen funktionieren offline.",
     "create": "Sync-Ordner erstellen",
     "createDescription": "Wähle einen Cloud-Ordner; Tauthy erstellt darin den Ordner „Tauthy Sync“",
     "join": "Bestehende Synchronisierung verbinden",
@@ -198,7 +198,25 @@
     "mergeConflictedCopyDescription": "Änderungen aus einer vom Cloud-Dienst als Konflikt markierten Datei wiederherstellen. Die ausgewählte Datei bleibt erhalten.",
     "disconnect": "Synchronisierung trennen",
     "disconnectDescription": "Abgleich beenden, ohne lokale Konten oder Sync-Daten zu löschen",
-    "disconnectWarning": "Dieses Gerät wird nicht mehr synchronisiert. Lokale Konten und verschlüsselte Sync-Daten werden nicht gelöscht. Fortfahren?"
+    "disconnectWarning": "Dieses Gerät wird nicht mehr synchronisiert. Lokale Konten und verschlüsselte Sync-Daten werden nicht gelöscht. Fortfahren?",
+    "pubkyConnect": "Mit Pubky verbinden",
+    "pubkyConnectDescription": "Verschlüsselte Konten über deinen Pubky-Homeserver synchronisieren",
+    "pubkyTitle": "Mit Pubky verbinden",
+    "pubkyApproval": "Scanne diesen Code mit Pubky Ring und erlaube Tauthy den Zugriff auf seinen eigenen Sync-Ordner. Tauthy erhält deinen Identitätsschlüssel nicht. Die Sync-Dateien sind verschlüsselt, aber öffentlich abrufbar.",
+    "pubkyWaiting": "Warte auf Bestätigung in Pubky Ring…",
+    "pubkyCopyLink": "Pubky-Ring-Link kopieren",
+    "pubkyCreate": "Pubky-Synchronisierung erstellen",
+    "pubkyCreateDescription": "Für diese Pubky-Identität wurden keine Tauthy-Sync-Daten gefunden. Einen verschlüsselten Sync-Satz auf ihrem Homeserver erstellen?",
+    "pubkyJoinDescription": "Tauthy-Sync-Daten wurden gefunden. Gib den Wiederherstellungscode eines verbundenen Geräts ein, um sie zu entschlüsseln.",
+    "pubkyRecoveryCode": "Pubky-Sync-Wiederherstellungscode",
+    "pubkySaveCode": "Bewahre diesen Code sicher auf. Du brauchst ihn für ein weiteres Gerät, falls dieser Tresor nicht verfügbar ist. Tauthy kann ihn bei entsperrtem Tresor erneut anzeigen.",
+    "pubkyCopyCode": "Code kopieren",
+    "pubkyCodeSaved": "Ich habe ihn gesichert",
+    "pubkyConnected": "Pubky-Identität",
+    "pubkyDescription": "Synchronisiere verschlüsselte Konten über deinen Pubky-Homeserver. Jedes Gerät schreibt eine eigene Datei; lokale Änderungen funktionieren offline.",
+    "pubkyShowCode": "Wiederherstellungscode anzeigen",
+    "pubkyShowCodeDescription": "Damit kannst du ein weiteres Gerät verbinden",
+    "pubkyDisconnectWarning": "Dieses Gerät wird nicht mehr mit Pubky synchronisiert. Lokale Konten und verschlüsselte Homeserver-Daten bleiben erhalten. Du kannst Tauthys Zugriff in Pubky Ring widerrufen. Fortfahren?"
   },
   "about": {
     "pageTitle": "Über",
@@ -294,6 +312,7 @@
     "syncUnsupported": "Diese Version oder Verschlüsselung der Sync-Datei wird nicht unterstützt.",
     "syncFailed": "Synchronisierung fehlgeschlagen. Der lokale Tresor blieb erhalten.",
     "syncBackgroundFailed": "Die automatische Synchronisierung konnte nicht abgeschlossen werden. Details findest du unter Einstellungen → Synchronisierung.",
+    "pubkyUnavailable": "Pubky ist nicht verfügbar oder die Autorisierung ist fehlgeschlagen. Dein lokaler Tresor wurde nicht verändert.",
     "error": "Ein Fehler ist aufgetreten."
   }
 }

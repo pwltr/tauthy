@@ -179,7 +179,7 @@
   },
   "sync": {
     "pageTitle": "Synchronisation",
-    "description": "Synchronisez les comptes via un dossier Tauthy Sync dans votre stockage cloud. Chaque appareil y écrit son propre fichier chiffré pour éviter les conflits. Les modifications locales restent possibles hors ligne.",
+    "description": "Synchronisez les comptes chiffrés via un dossier cloud ou votre homeserver Pubky. Chaque appareil écrit son propre fichier et les modifications locales restent possibles hors ligne.",
     "create": "Créer un dossier de synchronisation",
     "createDescription": "Choisissez un emplacement synchronisé ; Tauthy y créera un dossier Tauthy Sync",
     "join": "Rejoindre une synchronisation existante",
@@ -198,7 +198,25 @@
     "mergeConflictedCopyDescription": "Récupérer les modifications d’un fichier marqué comme conflit par le service cloud. Le fichier sélectionné sera conservé.",
     "disconnect": "Déconnecter la synchronisation",
     "disconnectDescription": "Arrêter la synchronisation sans supprimer les comptes locaux ni les données synchronisées",
-    "disconnectWarning": "Cet appareil cessera de se synchroniser. Les comptes locaux et les données chiffrées ne seront pas supprimés. Continuer ?"
+    "disconnectWarning": "Cet appareil cessera de se synchroniser. Les comptes locaux et les données chiffrées ne seront pas supprimés. Continuer ?",
+    "pubkyConnect": "Connecter Pubky",
+    "pubkyConnectDescription": "Synchroniser les comptes chiffrés via votre homeserver Pubky",
+    "pubkyTitle": "Connexion à Pubky",
+    "pubkyApproval": "Scannez ce code avec Pubky Ring et autorisez Tauthy à accéder à son propre dossier de synchronisation. Tauthy ne voit jamais votre clé d’identité. Les fichiers sont chiffrés, mais téléchargeables publiquement.",
+    "pubkyWaiting": "En attente de l’autorisation dans Pubky Ring…",
+    "pubkyCopyLink": "Copier le lien Pubky Ring",
+    "pubkyCreate": "Créer la synchronisation Pubky",
+    "pubkyCreateDescription": "Aucune donnée de synchronisation Tauthy trouvée pour cette identité Pubky. Créer un ensemble chiffré sur son homeserver ?",
+    "pubkyJoinDescription": "Des données de synchronisation Tauthy ont été trouvées. Saisissez le code de récupération d’un appareil connecté pour les déchiffrer.",
+    "pubkyRecoveryCode": "Code de récupération Pubky",
+    "pubkySaveCode": "Conservez ce code en lieu sûr. Il est nécessaire pour connecter un autre appareil si ce coffre n’est plus disponible. Tauthy peut le réafficher tant que ce coffre est déverrouillé.",
+    "pubkyCopyCode": "Copier le code",
+    "pubkyCodeSaved": "Je l’ai enregistré",
+    "pubkyConnected": "Identité Pubky",
+    "pubkyDescription": "Synchronisez les comptes chiffrés via votre homeserver Pubky. Chaque appareil écrit son propre fichier ; les modifications locales fonctionnent hors ligne.",
+    "pubkyShowCode": "Afficher le code de récupération",
+    "pubkyShowCodeDescription": "Utilisez-le pour connecter un autre appareil",
+    "pubkyDisconnectWarning": "Cet appareil cessera de se synchroniser avec Pubky. Les comptes locaux et les données chiffrées du homeserver resteront. Vous pouvez révoquer l’accès de Tauthy dans Pubky Ring. Continuer ?"
   },
   "about": {
     "pageTitle": "À propos",
@@ -294,6 +312,7 @@
     "syncUnsupported": "Cette version ou configuration de chiffrement n’est pas prise en charge.",
     "syncFailed": "La synchronisation a échoué. Votre coffre local n’a pas été perdu.",
     "syncBackgroundFailed": "La synchronisation automatique n’a pas abouti. Consultez Paramètres → Synchronisation pour les détails.",
+    "pubkyUnavailable": "Pubky est indisponible ou l’autorisation a échoué. Votre coffre local n’a pas été modifié.",
     "error": "Une erreur s'est produite."
   }
 }

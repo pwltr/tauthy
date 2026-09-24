@@ -13,14 +13,17 @@ use chacha20poly1305::{
   KeyInit, XChaCha20Poly1305, XNonce,
 };
 use data_encoding::BASE64;
+use pubky::{AuthFlowKind, Capabilities, ClientId, Pubky, PubkyGrantAuthFlow, PubkySession};
 use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
+use tauri::async_runtime::Mutex as AsyncMutex;
 use tauri::{AppHandle, State};
 use zeroize::{Zeroize, Zeroizing};
 
 use crate::vault_access::{ApplicationVault, RecordAccess, VaultAccess};
 
 pub(crate) const SYNC_STORE_NAME: &[u8] = b"sync-config-v1";
+pub(crate) const PUBKY_SYNC_STORE_NAME: &[u8] = b"pubky-sync-config-v1";
 const VAULT_STORE_NAME: &[u8] = b"vault";
 const ENVELOPE_FORMAT: &str = "tauthy-sync-encrypted";
 const PAYLOAD_FORMAT: &str = "tauthy-sync";
@@ -44,6 +47,10 @@ const SYNC_FOLDER_NAME: &str = "Tauthy Sync";
 const FOLDER_ANCHOR_NAME: &str = "anchor.tauthy-sync";
 const WRAP_AAD: &[u8] = b"tauthy-sync-key:v1";
 const PAYLOAD_AAD: &[u8] = b"tauthy-sync-payload:v1";
+const PUBKY_ROOT: &str = "/pub/tauthy/sync/v1/";
+const PUBKY_ANCHOR: &str = "/pub/tauthy/sync/v1/anchor.json";
+const PUBKY_DEVICES: &str = "/pub/tauthy/sync/v1/devices/";
+const PUBKY_CLIENT_ID: &str = "com.pwltr.tauthy";
 
 const ERR_AUTHENTICATION: &str = "syncAuthenticationFailed";
 const ERR_CONFLICT: &str = "syncConflict";
@@ -142,6 +149,47 @@ struct SyncConfig {
   last_synced_at: Option<u64>,
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PubkySyncConfig {
+  public_key: String,
+  session_secret: String,
+  recovery_code: String,
+  device_id: String,
+  key: String,
+  wrapped_key: WrappedKey,
+  payload: SyncPayload,
+  last_synced_at: Option<u64>,
+}
+
+impl Drop for PubkySyncConfig {
+  fn drop(&mut self) {
+    self.session_secret.zeroize();
+    self.recovery_code.zeroize();
+    self.key.zeroize();
+  }
+}
+
+#[derive(Default)]
+pub struct PubkySyncState {
+  client: AsyncMutex<Option<Pubky>>,
+  pending: AsyncMutex<Option<PubkyGrantAuthFlow>>,
+  session: AsyncMutex<Option<PubkySession>>,
+  operation: AsyncMutex<()>,
+}
+
+impl PubkySyncState {
+  async fn client(&self) -> Result<Pubky, String> {
+    let mut cached = self.client.lock().await;
+    if let Some(client) = cached.as_ref() {
+      return Ok(client.clone());
+    }
+    let client = Pubky::new().map_err(|_| ERR_UNAVAILABLE.to_string())?;
+    *cached = Some(client.clone());
+    Ok(client)
+  }
+}
+
 impl Drop for SyncConfig {
   fn drop(&mut self) {
     self.key.zeroize();
@@ -155,6 +203,7 @@ pub struct SyncStatus {
   path: Option<String>,
   last_synced_at: Option<u64>,
   vault_changed: bool,
+  provider: Option<&'static str>,
 }
 
 fn random_bytes<const N: usize>() -> Result<[u8; N], String> {
@@ -768,8 +817,247 @@ fn status_for(config: Option<&SyncConfig>) -> SyncStatus {
     enabled: config.is_some(),
     path: config.map(|config| config.path.clone()),
     last_synced_at: config.and_then(|config| config.last_synced_at),
+    provider: config.map(|_| "folder"),
     vault_changed: false,
   }
+}
+
+fn pubky_status_for(config: &PubkySyncConfig) -> SyncStatus {
+  SyncStatus {
+    enabled: true,
+    path: Some(format!("pubky://{}", config.public_key)),
+    last_synced_at: config.last_synced_at,
+    provider: Some("pubky"),
+    vault_changed: false,
+  }
+}
+
+fn load_pubky_config(vault: &dyn RecordAccess) -> Result<PubkySyncConfig, String> {
+  let bytes = Zeroizing::new(
+    vault
+      .get_record(PUBKY_SYNC_STORE_NAME)?
+      .ok_or_else(|| ERR_NOT_CONFIGURED.to_string())?,
+  );
+  let config: PubkySyncConfig =
+    serde_json::from_slice(&bytes).map_err(|_| ERR_CORRUPT.to_string())?;
+  validate_payload(&config.payload)?;
+  decode_exact(&config.key, KEY_SIZE)?;
+  if config.public_key.is_empty()
+    || config.session_secret.is_empty()
+    || config.recovery_code.len() != KEY_SIZE * 2
+    || config.device_id.is_empty()
+  {
+    return Err(ERR_CORRUPT.into());
+  }
+  Ok(config)
+}
+
+fn save_pubky_local(
+  vault: &dyn RecordAccess,
+  entries: &[VaultEntry],
+  config: &PubkySyncConfig,
+) -> Result<(), String> {
+  vault.save_records(vec![
+    (
+      VAULT_STORE_NAME,
+      Some(serde_json::to_vec(entries).map_err(|_| ERR_CORRUPT.to_string())?),
+    ),
+    (
+      PUBKY_SYNC_STORE_NAME,
+      Some(serde_json::to_vec(config).map_err(|_| ERR_CORRUPT.to_string())?),
+    ),
+  ])
+}
+
+fn pubky_device_path(device_id: &str) -> Result<String, String> {
+  if device_id.len() != 32
+    || !device_id
+      .bytes()
+      .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+  {
+    return Err(ERR_CORRUPT.into());
+  }
+  Ok(format!("{PUBKY_DEVICES}{device_id}.json"))
+}
+
+async fn pubky_read_envelope(session: &PubkySession, path: &str) -> Result<SyncEnvelope, String> {
+  let mut response = session
+    .storage()
+    .get(path)
+    .await
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?;
+  if response
+    .content_length()
+    .is_some_and(|length| length == 0 || length > MAX_ENVELOPE_SIZE as u64)
+  {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  let mut bytes = Vec::new();
+  while let Some(chunk) = response
+    .chunk()
+    .await
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?
+  {
+    if bytes.len().saturating_add(chunk.len()) > MAX_ENVELOPE_SIZE {
+      return Err(ERR_UNSUPPORTED.into());
+    }
+    bytes.extend_from_slice(&chunk);
+  }
+  if bytes.is_empty() {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  let envelope: SyncEnvelope =
+    serde_json::from_slice(&bytes).map_err(|_| ERR_UNSUPPORTED.to_string())?;
+  if envelope.format != ENVELOPE_FORMAT || envelope.version != VERSION {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  Ok(envelope)
+}
+
+async fn pubky_write_envelope(
+  session: &PubkySession,
+  path: &str,
+  envelope: &SyncEnvelope,
+) -> Result<(), String> {
+  let bytes = serde_json::to_vec(envelope).map_err(|_| ERR_CORRUPT.to_string())?;
+  if bytes.len() > MAX_ENVELOPE_SIZE {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  session
+    .storage()
+    .put(path, bytes)
+    .await
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?;
+  Ok(())
+}
+
+async fn pubky_remote_payload(
+  session: &PubkySession,
+  key: &[u8],
+  wrapped_key: &WrappedKey,
+) -> Result<SyncPayload, String> {
+  let anchor = pubky_read_envelope(session, PUBKY_ANCHOR).await?;
+  if &anchor.key != wrapped_key {
+    return Err(ERR_CONFLICT.into());
+  }
+  let mut payload = decrypt_payload(&anchor, key)?;
+  let listed = session
+    .storage()
+    .list(PUBKY_DEVICES)
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?
+    .limit((MAX_DEVICE_FILES + 1) as u16)
+    .send()
+    .await;
+  let paths = match listed {
+    Ok(paths) => paths,
+    Err(pubky::Error::Request(pubky::errors::RequestError::Server { status, .. }))
+      if status.as_u16() == 404 =>
+    {
+      Vec::new()
+    }
+    Err(_) => return Err(ERR_UNAVAILABLE.into()),
+  };
+  if paths.len() > MAX_DEVICE_FILES {
+    return Err(ERR_UNSUPPORTED.into());
+  }
+  for resource in paths {
+    let path = resource.path.as_str();
+    let id = path
+      .strip_prefix(PUBKY_DEVICES)
+      .and_then(|suffix| suffix.strip_suffix(".json"))
+      .ok_or_else(|| ERR_UNSUPPORTED.to_string())?;
+    if pubky_device_path(id)? != path {
+      return Err(ERR_UNSUPPORTED.into());
+    }
+    let item = pubky_read_envelope(session, path).await?;
+    if &item.key != wrapped_key {
+      return Err(ERR_CONFLICT.into());
+    }
+    payload = merge_payloads(payload, decrypt_payload(&item, key)?)?;
+  }
+  Ok(payload)
+}
+
+async fn pubky_publish(
+  session: &PubkySession,
+  device_id: &str,
+  payload: &SyncPayload,
+  key: &[u8],
+  wrapped_key: &WrappedKey,
+) -> Result<(), String> {
+  let path = pubky_device_path(device_id)?;
+  let encrypted = envelope(payload, key, wrapped_key.clone())?;
+  pubky_write_envelope(session, &path, &encrypted).await
+}
+
+async fn pubky_restore(
+  config: &PubkySyncConfig,
+  pubky_state: &PubkySyncState,
+) -> Result<PubkySession, String> {
+  let client = pubky_state.client().await?;
+  let session = client
+    .restore_session(&config.session_secret)
+    .await
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?;
+  if session.info().public_key().z32() != config.public_key {
+    return Err(ERR_CORRUPT.into());
+  }
+  Ok(session)
+}
+
+async fn pubky_sync_at(
+  state: &impl VaultAccess,
+  pubky_state: &PubkySyncState,
+) -> Result<SyncStatus, String> {
+  let (mut config, local_entries) =
+    state.with_records(|vault| Ok((load_pubky_config(vault)?, current_entries(vault)?)))?;
+  let session = pubky_restore(&config, pubky_state).await?;
+  let key = Zeroizing::new(decode_exact(&config.key, KEY_SIZE)?);
+  let remote = pubky_remote_payload(&session, &key, &config.wrapped_key).await?;
+  update_from_local(&mut config.payload, local_entries, &config.device_id);
+  let merged = merge_payloads(config.payload.clone(), remote.clone())?;
+  if merged != remote {
+    pubky_publish(
+      &session,
+      &config.device_id,
+      &merged,
+      &key,
+      &config.wrapped_key,
+    )
+    .await?;
+  }
+  state.with_records(|vault| {
+    // Edits may have happened while the network request was in flight.
+    let current = load_pubky_config(vault)?;
+    if current.public_key != config.public_key || current.device_id != config.device_id {
+      return Err(ERR_CONFLICT.into());
+    }
+    let latest_entries = current_entries(vault)?;
+    config.payload = rebase_pubky_local(
+      &config.payload,
+      latest_entries.clone(),
+      merged,
+      &config.device_id,
+    )?;
+    config.last_synced_at = Some(now_millis()?);
+    let entries = active_entries(&config.payload);
+    save_pubky_local(vault, &entries, &config)?;
+    let mut status = pubky_status_for(&config);
+    status.vault_changed = entries != latest_entries;
+    Ok(status)
+  })
+}
+
+fn rebase_pubky_local(
+  local_before_network: &SyncPayload,
+  current_entries: Vec<VaultEntry>,
+  merged_before_commit: SyncPayload,
+  device_id: &str,
+) -> Result<SyncPayload, String> {
+  let mut latest_local = local_before_network.clone();
+  latest_local.clock = latest_local.clock.max(merged_before_commit.clock);
+  update_from_local(&mut latest_local, current_entries, device_id);
+  merge_payloads(latest_local, merged_before_commit)
 }
 
 fn create_at(
@@ -779,6 +1067,9 @@ fn create_at(
 ) -> Result<SyncStatus, String> {
   let result = state.with_records(|vault| {
     let parent = Path::new(&path);
+    if vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some() {
+      return Err(ERR_CONFLICT.into());
+    }
     if !parent.is_dir() {
       return Err(ERR_UNAVAILABLE.into());
     }
@@ -819,6 +1110,267 @@ fn create_at(
   result
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PubkyApproval {
+  approved: bool,
+  public_key: Option<String>,
+  has_remote: Option<bool>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PubkySetupResult {
+  status: SyncStatus,
+}
+
+#[tauri::command]
+pub async fn pubky_sync_start(
+  state: State<'_, ApplicationVault>,
+  pubky_state: State<'_, PubkySyncState>,
+) -> Result<String, String> {
+  state.with_records(|vault| {
+    if vault.get_record(SYNC_STORE_NAME)?.is_some()
+      || vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()
+    {
+      return Err(ERR_CONFLICT.into());
+    }
+    Ok(())
+  })?;
+  let client = pubky_state.client().await?;
+  let caps = Capabilities::builder()
+    .read_write(PUBKY_ROOT)
+    .map_err(|_| ERR_CORRUPT.to_string())?
+    .finish();
+  let client_id = ClientId::new(PUBKY_CLIENT_ID).map_err(|_| ERR_CORRUPT.to_string())?;
+  let flow = client
+    .start_grant_auth_flow(&caps, AuthFlowKind::signin(), client_id)
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?;
+  let url = flow.authorization_url().to_string();
+  let mut pending = pubky_state.pending.lock().await;
+  *pubky_state.session.lock().await = None;
+  *pending = Some(flow);
+  Ok(url)
+}
+
+#[tauri::command]
+pub async fn pubky_sync_poll(
+  pubky_state: State<'_, PubkySyncState>,
+) -> Result<PubkyApproval, String> {
+  let mut pending = pubky_state.pending.lock().await;
+  if let Some(flow) = pending.as_ref() {
+    if let Some(session) = flow
+      .try_poll_once()
+      .await
+      .map_err(|_| ERR_UNAVAILABLE.to_string())?
+    {
+      *pubky_state.session.lock().await = Some(session);
+      *pending = None;
+    }
+  }
+  drop(pending);
+  let session = pubky_state.session.lock().await.clone();
+  match session {
+    Some(session) => {
+      let has_remote = session
+        .storage()
+        .exists(PUBKY_ANCHOR)
+        .await
+        .map_err(|_| ERR_UNAVAILABLE.to_string())?;
+      Ok(PubkyApproval {
+        approved: true,
+        public_key: Some(session.info().public_key().z32()),
+        has_remote: Some(has_remote),
+      })
+    }
+    None => Ok(PubkyApproval {
+      approved: false,
+      public_key: None,
+      has_remote: None,
+    }),
+  }
+}
+
+#[tauri::command]
+pub async fn pubky_sync_cancel(pubky_state: State<'_, PubkySyncState>) -> Result<(), String> {
+  *pubky_state.pending.lock().await = None;
+  let session = pubky_state.session.lock().await.take();
+  if let Some(session) = session {
+    // A canceled setup must not leave an unused grant behind when online.
+    let _ = session.signout().await;
+  }
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn pubky_sync_create(
+  app: AppHandle,
+  state: State<'_, ApplicationVault>,
+  pubky_state: State<'_, PubkySyncState>,
+  recovery_code: String,
+) -> Result<PubkySetupResult, String> {
+  let recovery_code = Zeroizing::new(recovery_code);
+  if recovery_code.len() != KEY_SIZE * 2
+    || !recovery_code.bytes().all(|byte| byte.is_ascii_hexdigit())
+  {
+    return Err(ERR_AUTHENTICATION.into());
+  }
+  let _operation = pubky_state.operation.lock().await;
+  let session = pubky_state
+    .session
+    .lock()
+    .await
+    .clone()
+    .ok_or_else(|| ERR_NOT_CONFIGURED.to_string())?;
+  if session
+    .storage()
+    .exists(PUBKY_ANCHOR)
+    .await
+    .map_err(|_| ERR_UNAVAILABLE.to_string())?
+  {
+    return Err(ERR_FILE_EXISTS.into());
+  }
+  let entries = state.with_records(|vault| {
+    if vault.get_record(SYNC_STORE_NAME)?.is_some()
+      || vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()
+    {
+      return Err(ERR_CONFLICT.into());
+    }
+    current_entries(vault)
+  })?;
+  let device_id = random_id()?;
+  let payload = new_payload(entries, random_id()?, &device_id);
+  let sync_key = Zeroizing::new(random_bytes::<KEY_SIZE>()?);
+  let wrapped_key = wrap_key(&sync_key, recovery_code.as_bytes())?;
+  let remote = envelope(&payload, sync_key.as_ref(), wrapped_key.clone())?;
+  // The anchor contains the initial payload. If the next write fails, the
+  // already-displayed recovery code can still join that anchor on retry.
+  pubky_write_envelope(&session, PUBKY_ANCHOR, &remote).await?;
+  pubky_publish(
+    &session,
+    &device_id,
+    &payload,
+    sync_key.as_ref(),
+    &wrapped_key,
+  )
+  .await?;
+  let session_secret = session
+    .as_grant()
+    .ok_or_else(|| ERR_UNSUPPORTED.to_string())?
+    .export_local_secret()
+    .await
+    .ok_or_else(|| ERR_UNSUPPORTED.to_string())?;
+  let config = PubkySyncConfig {
+    public_key: session.info().public_key().z32(),
+    session_secret,
+    recovery_code: recovery_code.to_string(),
+    device_id,
+    key: BASE64.encode(sync_key.as_ref()),
+    wrapped_key,
+    payload,
+    last_synced_at: Some(now_millis()?),
+  };
+  state.with_records(|vault| {
+    if vault.get_record(SYNC_STORE_NAME)?.is_some()
+      || vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()
+    {
+      return Err(ERR_CONFLICT.into());
+    }
+    save_pubky_local(vault, &active_entries(&config.payload), &config)
+  })?;
+  *pubky_state.session.lock().await = None;
+  let _ = crate::tray::refresh_menu(&app);
+  Ok(PubkySetupResult {
+    status: pubky_status_for(&config),
+  })
+}
+
+#[tauri::command]
+pub async fn pubky_sync_join(
+  app: AppHandle,
+  state: State<'_, ApplicationVault>,
+  pubky_state: State<'_, PubkySyncState>,
+  mut recovery_code: String,
+) -> Result<PubkySetupResult, String> {
+  let _operation = pubky_state.operation.lock().await;
+  let result = async {
+    if recovery_code.len() != KEY_SIZE * 2
+      || !recovery_code.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+      return Err(ERR_AUTHENTICATION.into());
+    }
+    let session = pubky_state
+      .session
+      .lock()
+      .await
+      .clone()
+      .ok_or_else(|| ERR_NOT_CONFIGURED.to_string())?;
+    let anchor = pubky_read_envelope(&session, PUBKY_ANCHOR).await?;
+    let sync_key = unwrap_key(&anchor.key, recovery_code.as_bytes())?;
+    let remote = pubky_remote_payload(&session, sync_key.as_ref(), &anchor.key).await?;
+    let local_entries = state.with_records(|vault| {
+      if vault.get_record(SYNC_STORE_NAME)?.is_some()
+        || vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()
+      {
+        return Err(ERR_CONFLICT.into());
+      }
+      current_entries(vault)
+    })?;
+    let device_id = random_id()?;
+    let mut payload = remote.clone();
+    add_initial_local_entries(&mut payload, local_entries, &device_id)?;
+    if payload != remote {
+      pubky_publish(
+        &session,
+        &device_id,
+        &payload,
+        sync_key.as_ref(),
+        &anchor.key,
+      )
+      .await?;
+    }
+    let session_secret = session
+      .as_grant()
+      .ok_or_else(|| ERR_UNSUPPORTED.to_string())?
+      .export_local_secret()
+      .await
+      .ok_or_else(|| ERR_UNSUPPORTED.to_string())?;
+    let config = PubkySyncConfig {
+      public_key: session.info().public_key().z32(),
+      session_secret,
+      recovery_code: recovery_code.clone(),
+      device_id,
+      key: BASE64.encode(sync_key.as_ref()),
+      wrapped_key: anchor.key,
+      payload,
+      last_synced_at: Some(now_millis()?),
+    };
+    state.with_records(|vault| {
+      if vault.get_record(SYNC_STORE_NAME)?.is_some()
+        || vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()
+      {
+        return Err(ERR_CONFLICT.into());
+      }
+      save_pubky_local(vault, &active_entries(&config.payload), &config)
+    })?;
+    *pubky_state.session.lock().await = None;
+    let _ = crate::tray::refresh_menu(&app);
+    Ok(PubkySetupResult {
+      status: pubky_status_for(&config),
+    })
+  }
+  .await;
+  recovery_code.zeroize();
+  result
+}
+
+#[tauri::command]
+pub async fn pubky_sync_recovery_code(
+  state: State<'_, ApplicationVault>,
+) -> Result<String, String> {
+  state.with_records(|vault| Ok(load_pubky_config(vault)?.recovery_code.clone()))
+}
+
 fn join_at(
   state: &impl VaultAccess,
   path: String,
@@ -826,6 +1378,9 @@ fn join_at(
 ) -> Result<SyncStatus, String> {
   let result = state.with_records(|vault| {
     let selected = join_path(Path::new(&path))?;
+    if vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some() {
+      return Err(ERR_CONFLICT.into());
+    }
     let remote = read_envelope(&anchor_path(&selected))?;
     let sync_key = unwrap_key(&remote.key, password.as_bytes())?;
     let remote_payload = read_remote_payload(&selected, sync_key.as_ref(), &remote.key)?;
@@ -956,30 +1511,43 @@ pub async fn sync_join(
 pub async fn sync_now(
   app: AppHandle,
   state: State<'_, ApplicationVault>,
+  pubky_state: State<'_, PubkySyncState>,
 ) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
-  let status = tauri::async_runtime::spawn_blocking(move || sync_at(&state))
-    .await
-    .map_err(|_| ERR_CORRUPT.to_string())
-    .and_then(|result| result);
+  let is_pubky =
+    state.with_records(|vault| Ok(vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()))?;
+  let status = if is_pubky {
+    let _operation = pubky_state.operation.lock().await;
+    pubky_sync_at(&state, &pubky_state).await
+  } else {
+    tauri::async_runtime::spawn_blocking(move || sync_at(&state))
+      .await
+      .map_err(|_| ERR_CORRUPT.to_string())
+      .and_then(|result| result)
+  };
   let _ = crate::tray::refresh_menu(&app);
   status
 }
 
 fn status_at(state: &impl VaultAccess) -> Result<SyncStatus, String> {
-  state.with_records(|vault| match vault.get_record(SYNC_STORE_NAME)? {
-    None => Ok(status_for(None)),
-    Some(bytes) => {
-      let config: SyncConfig =
-        serde_json::from_slice(&bytes).map_err(|_| ERR_CORRUPT.to_string())?;
-      Ok(status_for(Some(&config)))
+  state.with_records(|vault| {
+    if vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some() {
+      return Ok(pubky_status_for(&load_pubky_config(vault)?));
+    }
+    match vault.get_record(SYNC_STORE_NAME)? {
+      None => Ok(status_for(None)),
+      Some(bytes) => {
+        let config: SyncConfig =
+          serde_json::from_slice(&bytes).map_err(|_| ERR_CORRUPT.to_string())?;
+        Ok(status_for(Some(&config)))
+      }
     }
   })
 }
 
 fn disconnect_at(state: &impl VaultAccess) -> Result<SyncStatus, String> {
   state.with_records(|vault| {
-    vault.save_records(vec![(SYNC_STORE_NAME, None)])?;
+    vault.save_records(vec![(SYNC_STORE_NAME, None), (PUBKY_SYNC_STORE_NAME, None)])?;
     Ok(status_for(None))
   })
 }
@@ -996,22 +1564,25 @@ pub async fn sync_status(state: State<'_, ApplicationVault>) -> Result<SyncStatu
 pub async fn sync_disconnect(
   app: AppHandle,
   state: State<'_, ApplicationVault>,
+  pubky_state: State<'_, PubkySyncState>,
 ) -> Result<SyncStatus, String> {
+  let _operation = pubky_state.operation.lock().await;
   let state = state.inner().clone();
   let status = tauri::async_runtime::spawn_blocking(move || disconnect_at(&state))
     .await
     .map_err(|_| ERR_CORRUPT.to_string())
     .and_then(|result| result);
   let _ = crate::tray::refresh_menu(&app);
+  if status.is_ok() {
+    *pubky_state.session.lock().await = None;
+  }
   status
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::legacy_vault::{
-    vault_change_password_at, vault_load_at, vault_record_at, vault_save_at, VaultState,
-  };
+  use crate::legacy_vault::{vault_change_password_at, vault_load_at, vault_save_at, VaultState};
   use std::path::PathBuf;
 
   fn entry(id: &str, name: &str) -> VaultEntry {
@@ -1140,11 +1711,11 @@ mod tests {
     state
   }
 
-  fn stored_entries(state: &VaultState) -> Vec<VaultEntry> {
-    parse_entries(vault_record_at(state).unwrap().unwrap().as_bytes()).unwrap()
+  fn stored_entries(state: &impl VaultAccess) -> Vec<VaultEntry> {
+    state.with_records(current_entries).unwrap()
   }
 
-  fn config_for(state: &VaultState) -> SyncConfig {
+  fn config_for(state: &impl VaultAccess) -> SyncConfig {
     state.with_records(load_config).unwrap()
   }
 
@@ -1623,6 +2194,53 @@ mod tests {
   }
 
   #[test]
+  fn pubky_device_paths_accept_only_generated_ids() {
+    assert_eq!(
+      pubky_device_path("0123456789abcdef0123456789abcdef").unwrap(),
+      "/pub/tauthy/sync/v1/devices/0123456789abcdef0123456789abcdef.json"
+    );
+    for invalid in ["../anchor", "ABCDEF0123456789abcdef0123456789", "short"] {
+      assert!(pubky_device_path(invalid).is_err());
+    }
+  }
+
+  #[test]
+  fn pubky_rebase_keeps_remote_additions_and_late_local_edits() {
+    let local = new_payload(vec![entry("one", "Original")], "vault".into(), "local");
+    let mut remote = local.clone();
+    update_from_local(
+      &mut remote,
+      vec![entry("one", "Original"), entry("two", "Remote")],
+      "remote",
+    );
+    let merged = merge_payloads(local.clone(), remote).unwrap();
+
+    let unchanged = rebase_pubky_local(
+      &local,
+      vec![entry("one", "Original")],
+      merged.clone(),
+      "local",
+    )
+    .unwrap();
+    assert_eq!(
+      active_entries(&unchanged),
+      vec![entry("one", "Original"), entry("two", "Remote")]
+    );
+
+    let changed = rebase_pubky_local(
+      &local,
+      vec![entry("one", "Changed locally")],
+      merged,
+      "local",
+    )
+    .unwrap();
+    assert_eq!(
+      active_entries(&changed),
+      vec![entry("one", "Changed locally"), entry("two", "Remote")]
+    );
+  }
+
+  #[test]
   fn changing_the_local_vault_password_preserves_sync_configuration() {
     let temporary = tempfile::tempdir().unwrap();
     let vault_path = temporary.path().join("password-change.stronghold");
@@ -1648,5 +2266,35 @@ mod tests {
       .with_unlocked(|vault| Ok(load_config(vault).is_ok()))
       .unwrap());
     sync_at(&state).unwrap();
+  }
+
+  #[test]
+  fn changing_the_local_vault_password_preserves_pubky_credentials() {
+    let temporary = tempfile::tempdir().unwrap();
+    let vault_path = temporary.path().join("pubky-password-change.stronghold");
+    let _ = iota_stronghold::engine::snapshot::try_set_encrypt_work_factor(0);
+    let state = VaultState::default();
+    vault_load_at(&state, vault_path.clone(), String::new()).unwrap();
+    vault_save_at(
+      &state,
+      serde_json::to_string(&vec![entry("one", "One")]).unwrap(),
+    )
+    .unwrap();
+    let credentials = b"encrypted-pubky-configuration".to_vec();
+    state
+      .with_unlocked(|vault| {
+        vault.put_record(PUBKY_SYNC_STORE_NAME, credentials.clone())?;
+        vault.commit()
+      })
+      .unwrap();
+
+    vault_change_password_at(&state, "new local password".into()).unwrap();
+    vault_load_at(&state, vault_path, "new local password".into()).unwrap();
+    assert_eq!(
+      state
+        .with_unlocked(|vault| vault.get_record(PUBKY_SYNC_STORE_NAME))
+        .unwrap(),
+      Some(credentials)
+    );
   }
 }

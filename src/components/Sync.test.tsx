@@ -8,13 +8,16 @@ const mocks = vi.hoisted(() => ({
   getBackgroundSyncError: vi.fn(),
   syncNow: vi.fn(),
   mergeConflictedSyncCopy: vi.fn(),
+  navigate: vi.fn(),
 }))
 
+vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('@tauri-apps/plugin-dialog', () => ({
   confirm: vi.fn(),
   open: mocks.open,
 }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
+vi.mock('~/utils/helpers', () => ({ copyToClipboard: vi.fn() }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { file?: string }) =>
@@ -180,5 +183,22 @@ describe('sync location pickers', () => {
     render(<Sync />)
 
     expect(await screen.findByText('sync.description')).toHaveClass('MuiTypography-body2')
+    fireEvent.click(screen.getByText('sync.pubkyConnect'))
+    expect(mocks.navigate).toHaveBeenCalledWith('/sync/pubky')
+  })
+
+  it('shows Pubky settings without folder-only recovery tools', async () => {
+    window.sessionStorage.setItem('tauthy:sync-recovery-tools', 'true')
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      provider: 'pubky',
+      path: 'pubky://user',
+      lastSyncedAt: null,
+    })
+    render(<Sync />)
+
+    expect(await screen.findByText('sync.pubkyConnected')).toBeInTheDocument()
+    expect(screen.getByText('sync.pubkyShowCode')).toBeInTheDocument()
+    expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
   })
 })

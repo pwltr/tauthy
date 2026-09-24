@@ -12,9 +12,11 @@ vi.mock('~/utils/i18n', () => ({ default: { t: (key: string) => key } }))
 vi.mock('~/utils/diagnostics', () => ({ recordDiagnostic: mocks.recordDiagnostic }))
 
 import {
+  createPubkySync,
   createSync,
   getBackgroundSyncError,
   getSyncStatus,
+  joinPubkySync,
   joinSync,
   mergeConflictedSyncCopy,
   SYNC_BACKGROUND_ERROR_EVENT,
@@ -148,4 +150,23 @@ describe('sync commands', () => {
       expect(mocks.recordDiagnostic).not.toHaveBeenCalled()
     },
   )
+})
+
+describe('Pubky sync commands', () => {
+  beforeEach(() => invoke.mockReset())
+
+  it.each([
+    ['pubky_sync_create', () => createPubkySync('a'.repeat(64))],
+    ['pubky_sync_join', () => joinPubkySync('a'.repeat(64))],
+  ])('announces a completed %s operation', async (command, run) => {
+    invoke.mockResolvedValue({ status: { enabled: true, provider: 'pubky' } })
+    const listener = vi.fn()
+    window.addEventListener(SYNC_COMPLETE_EVENT, listener)
+
+    await run()
+
+    expect(invoke).toHaveBeenCalledWith(command, { recoveryCode: 'a'.repeat(64) })
+    expect(listener).toHaveBeenCalledOnce()
+    window.removeEventListener(SYNC_COMPLETE_EVENT, listener)
+  })
 })
