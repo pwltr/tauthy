@@ -27,7 +27,7 @@ Each write uses a fresh XChaCha20 nonce and a temporary sibling file that atomic
 the device's previous file. Plaintext and ciphertext sizes are bounded before allocation or
 decryption.
 
-## Folder layout and migration
+## Folder layout and compatibility
 
 When creating sync, the user selects a cloud-synced parent directory. Tauthy creates a
 `Tauthy Sync` folder there, containing an encrypted recovery anchor named `anchor.tauthy-sync`.
@@ -42,13 +42,16 @@ folder-sync client.
 Existing v1 sync configurations keep their file-based layout. Their selected path, recovery
 password, encryption key, device ID, and local vault stay the same; on the next local change,
 each updated device publishes a sibling named
-`<anchor filename>.device-<32-character device ID>`. The Join screen has a separate option for
-these older sync files. An existing connection is **not** silently moved into a folder, because
-an older app version would keep reading and writing the old file and the devices would diverge.
+`<anchor filename>.device-<32-character device ID>`. Existing connections continue to work.
+To join one from a new device, select the directory containing its single older sync file;
+Tauthy then stores that file path as the connection. If the directory has multiple older sync
+files, Tauthy rejects it rather than guessing; do not move files belonging to an active sync
+without reconfiguring its other devices.
+An existing connection is **not** silently moved into a folder, because an older app version
+would keep reading and writing the old file and the devices would diverge.
 All devices on an existing sync should update: older versions read only the anchor and cannot see
 changes in device files. Keep the anchor and device files together; do not rename or remove them
-while sync is connected. Moving an existing connection into a folder requires a deliberate
-migration after all devices have updated.
+while sync is connected. Existing connections are not migrated to the new layout.
 
 If a folder-sync provider previously created a conflicted copy, tap the logo on the About screen
 five times to enable developer settings for this session, then select **Merge a conflicted copy** in

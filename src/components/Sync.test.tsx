@@ -35,17 +35,14 @@ describe('sync location pickers', () => {
     mocks.getSyncStatus.mockResolvedValue({ enabled: false, path: null, lastSyncedAt: null })
   })
 
-  it.each(['sync.create', 'sync.join', 'sync.joinLegacy'])(
-    'reports a rejected %s picker',
-    async (label) => {
-      mocks.open.mockRejectedValue(new Error('picker unavailable'))
-      render(<Sync />)
+  it.each(['sync.create', 'sync.join'])('reports a rejected %s picker', async (label) => {
+    mocks.open.mockRejectedValue(new Error('picker unavailable'))
+    render(<Sync />)
 
-      fireEvent.click(await screen.findByText(label))
+    fireEvent.click(await screen.findByText(label))
 
-      await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncPickerFailed'))
-    },
-  )
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncPickerFailed'))
+  })
 
   it.each(['sync.create', 'sync.join'])('selects a folder for %s', async (label) => {
     mocks.open.mockResolvedValue(null)
@@ -58,19 +55,11 @@ describe('sync location pickers', () => {
     )
   })
 
-  it('allows joining an older sync file', async () => {
-    mocks.open.mockResolvedValue(null)
+  it('shows only one way to join', async () => {
     render(<Sync />)
 
-    fireEvent.click(await screen.findByText('sync.joinLegacy'))
-
-    await waitFor(() =>
-      expect(mocks.open).toHaveBeenCalledWith({
-        multiple: false,
-        directory: false,
-        filters: [{ name: 'Tauthy sync file', extensions: ['tauthy-sync'] }],
-      }),
-    )
+    expect(await screen.findByText('sync.join')).toBeInTheDocument()
+    expect(screen.queryByText('sync.joinLegacy')).not.toBeInTheDocument()
   })
 
   it('offers conflicted-copy recovery when sync is connected', async () => {

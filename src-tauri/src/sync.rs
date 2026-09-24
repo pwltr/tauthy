@@ -49,6 +49,7 @@ const ERR_AUTHENTICATION: &str = "syncAuthenticationFailed";
 const ERR_CONFLICT: &str = "syncConflict";
 const ERR_CORRUPT: &str = "syncCorrupt";
 const ERR_FILE_EXISTS: &str = "syncFileExists";
+const ERR_MULTIPLE_FILES: &str = "syncMultipleFiles";
 const ERR_NOT_CONFIGURED: &str = "syncNotConfigured";
 const ERR_UNAVAILABLE: &str = "syncUnavailable";
 const ERR_UNSUPPORTED: &str = "syncUnsupported";
@@ -584,6 +585,31 @@ fn anchor_path(base: &Path) -> PathBuf {
   }
 }
 
+fn join_path(selected: &Path) -> Result<PathBuf, String> {
+  if !selected.is_dir() || selected.join(FOLDER_ANCHOR_NAME).is_file() {
+    return Ok(selected.to_path_buf());
+  }
+  let mut legacy = None;
+  for entry in fs::read_dir(selected).map_err(|_| ERR_UNAVAILABLE.to_string())? {
+    let entry = entry.map_err(|_| ERR_UNAVAILABLE.to_string())?;
+    let name = entry.file_name();
+    if !name
+      .to_str()
+      .is_some_and(|name| name.ends_with(".tauthy-sync"))
+      || !entry
+        .file_type()
+        .map_err(|_| ERR_UNAVAILABLE.to_string())?
+        .is_file()
+    {
+      continue;
+    }
+    if legacy.replace(entry.path()).is_some() {
+      return Err(ERR_MULTIPLE_FILES.into());
+    }
+  }
+  legacy.ok_or_else(|| ERR_UNAVAILABLE.to_string())
+}
+
 fn device_file_path(base: &Path, device_id: &str) -> Result<PathBuf, String> {
   if device_id.len() != 32
     || !device_id
@@ -773,14 +799,15 @@ fn create_at(state: &VaultState, path: String, mut password: String) -> Result<S
 
 fn join_at(state: &VaultState, path: String, mut password: String) -> Result<SyncStatus, String> {
   let result = state.with_unlocked(|vault| {
-    let remote = read_envelope(&anchor_path(Path::new(&path)))?;
+    let selected = join_path(Path::new(&path))?;
+    let remote = read_envelope(&anchor_path(&selected))?;
     let sync_key = unwrap_key(&remote.key, password.as_bytes())?;
-    let remote_payload = read_remote_payload(Path::new(&path), sync_key.as_ref(), &remote.key)?;
+    let remote_payload = read_remote_payload(&selected, sync_key.as_ref(), &remote.key)?;
     let mut payload = remote_payload.clone();
     let device_id = random_id()?;
     add_initial_local_entries(&mut payload, current_entries(vault)?, &device_id)?;
     let config = SyncConfig {
-      path,
+      path: selected.to_string_lossy().into_owned(),
       device_id,
       key: BASE64.encode(sync_key.as_ref()),
       wrapped_key: remote.key,
@@ -1257,14 +1284,26 @@ mod tests {
     let second = open_test_vault(temporary.path(), "second", Vec::new());
     join_at(
       &second,
-      legacy_file.to_string_lossy().into_owned(),
+      temporary.path().to_string_lossy().into_owned(),
       "recovery password".into(),
     )
     .unwrap();
     assert_eq!(
+      config_for(&second).path,
+      legacy_file.to_string_lossy().into_owned()
+    );
+    assert_eq!(
       stored_entries(&second),
       vec![entry("base", "Base"), entry("new", "New")]
     );
+  }
+
+  #[test]
+  fn joining_a_folder_with_multiple_legacy_sync_files_is_ambiguous() {
+    let temporary = tempfile::tempdir().unwrap();
+    fs::write(temporary.path().join("one.tauthy-sync"), b"one").unwrap();
+    fs::write(temporary.path().join("two.tauthy-sync"), b"two").unwrap();
+    assert_eq!(join_path(temporary.path()), Err(ERR_MULTIPLE_FILES.into()));
   }
 
   #[test]

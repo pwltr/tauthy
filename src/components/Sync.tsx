@@ -25,8 +25,6 @@ import {
 
 type PendingAction = { mode: 'create' | 'join'; path: string }
 
-const syncFilter = [{ name: 'Tauthy sync file', extensions: ['tauthy-sync'] }]
-
 const errorKey = (error: unknown) => {
   const key = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
   return [
@@ -34,6 +32,7 @@ const errorKey = (error: unknown) => {
     'syncConflict',
     'syncCorrupt',
     'syncFileExists',
+    'syncMultipleFiles',
     'syncNotConfigured',
     'syncUnavailable',
     'syncUnsupported',
@@ -75,15 +74,6 @@ const Sync = () => {
   const chooseJoin = async () => {
     try {
       const path = await open({ multiple: false, directory: true })
-      if (typeof path === 'string') setPending({ mode: 'join', path })
-    } catch {
-      toast.error(t('toasts.syncPickerFailed'))
-    }
-  }
-
-  const chooseLegacyJoin = async () => {
-    try {
-      const path = await open({ multiple: false, directory: false, filters: syncFilter })
       if (typeof path === 'string') setPending({ mode: 'join', path })
     } catch {
       toast.error(t('toasts.syncPickerFailed'))
@@ -229,14 +219,6 @@ const Sync = () => {
           <ListItem disablePadding onClick={() => void chooseJoin()}>
             <ListItemButton>
               <ListItemText primary={t('sync.join')} secondary={t('sync.joinDescription')} />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding onClick={() => void chooseLegacyJoin()}>
-            <ListItemButton>
-              <ListItemText
-                primary={t('sync.joinLegacy')}
-                secondary={t('sync.joinLegacyDescription')}
-              />
             </ListItemButton>
           </ListItem>
         </List>
