@@ -17,7 +17,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
-import { enableSyncRecoveryTools, syncRecoveryToolsEnabled } from '~/utils/syncRecovery'
+import { developerSettingsEnabled, enableDeveloperSettings } from '~/utils/developerSettings'
 import logo from '../../assets/app-icons/icon-round-bordered.png'
 
 const Header = styled('div')`
@@ -73,10 +73,10 @@ const About = () => {
 
   const pressLogo = () => {
     setWobbleKey((current) => current + 1)
-    if (syncRecoveryToolsEnabled()) return
+    if (developerSettingsEnabled()) return
     logoPresses.current += 1
     if (logoPresses.current === 5) {
-      enableSyncRecoveryTools()
+      enableDeveloperSettings()
       toast.success(t('about.developerSettingsEnabled'))
     }
   }

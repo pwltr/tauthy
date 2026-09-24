@@ -63,7 +63,7 @@ describe('sync location pickers', () => {
   })
 
   it('offers conflicted-copy recovery when sync is connected', async () => {
-    window.sessionStorage.setItem('tauthy:sync-recovery-tools', 'true')
+    window.sessionStorage.setItem('tauthy:developer-settings', 'true')
     mocks.getSyncStatus.mockResolvedValue({
       enabled: true,
       path: '/cloud/sync',

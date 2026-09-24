@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography'
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
 import SyncPasswordModal from '~/components/modals/SyncPassword'
-import { syncRecoveryToolsEnabled } from '~/utils/syncRecovery'
+import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
   createSync,
   disconnectSync,
@@ -47,7 +47,7 @@ const Sync = () => {
   const [status, setStatus] = useState<SyncStatus>()
   const [pending, setPending] = useState<PendingAction>()
   const [busy, setBusy] = useState(false)
-  const showRecovery = syncRecoveryToolsEnabled()
+  const showRecovery = developerSettingsEnabled()
 
   const loadStatus = async () => {
     try {

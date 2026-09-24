@@ -10,22 +10,22 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => k
 
 import About from '~/components/About'
 
-describe('About logo recovery gesture', () => {
+describe('About logo developer settings gesture', () => {
   beforeEach(() => {
     window.sessionStorage.clear()
     mocks.toastSuccess.mockReset()
   })
 
-  it('enables sync recovery tools only after five presses', () => {
+  it('enables developer settings only after five presses', () => {
     render(<About />)
     const logo = screen.getByRole('button', { name: 'Tauthy' })
 
     for (let press = 0; press < 4; press += 1) fireEvent.click(logo)
-    expect(window.sessionStorage.getItem('tauthy:sync-recovery-tools')).toBeNull()
+    expect(window.sessionStorage.getItem('tauthy:developer-settings')).toBeNull()
     expect(mocks.toastSuccess).not.toHaveBeenCalled()
 
     fireEvent.click(logo)
-    expect(window.sessionStorage.getItem('tauthy:sync-recovery-tools')).toBe('true')
+    expect(window.sessionStorage.getItem('tauthy:developer-settings')).toBe('true')
     expect(mocks.toastSuccess).toHaveBeenCalledWith('about.developerSettingsEnabled')
   })
 
