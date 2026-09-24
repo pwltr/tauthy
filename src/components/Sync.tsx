@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import { confirm, open, save } from '@tauri-apps/plugin-dialog'
+import { confirm, open } from '@tauri-apps/plugin-dialog'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import List from '@mui/material/List'
@@ -65,14 +65,23 @@ const Sync = () => {
 
   const chooseCreate = async () => {
     try {
-      const path = await save({ defaultPath: 'Tauthy Sync.tauthy-sync', filters: syncFilter })
-      if (path) setPending({ mode: 'create', path })
+      const path = await open({ multiple: false, directory: true })
+      if (typeof path === 'string') setPending({ mode: 'create', path })
     } catch {
       toast.error(t('toasts.syncPickerFailed'))
     }
   }
 
   const chooseJoin = async () => {
+    try {
+      const path = await open({ multiple: false, directory: true })
+      if (typeof path === 'string') setPending({ mode: 'join', path })
+    } catch {
+      toast.error(t('toasts.syncPickerFailed'))
+    }
+  }
+
+  const chooseLegacyJoin = async () => {
     try {
       const path = await open({ multiple: false, directory: false, filters: syncFilter })
       if (typeof path === 'string') setPending({ mode: 'join', path })
@@ -220,6 +229,14 @@ const Sync = () => {
           <ListItem disablePadding onClick={() => void chooseJoin()}>
             <ListItemButton>
               <ListItemText primary={t('sync.join')} secondary={t('sync.joinDescription')} />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding onClick={() => void chooseLegacyJoin()}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('sync.joinLegacy')}
+                secondary={t('sync.joinLegacyDescription')}
+              />
             </ListItemButton>
           </ListItem>
         </List>

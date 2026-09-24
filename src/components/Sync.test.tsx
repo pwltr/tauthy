@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   open: vi.fn(),
-  save: vi.fn(),
   toastError: vi.fn(),
   getSyncStatus: vi.fn(),
   mergeConflictedSyncCopy: vi.fn(),
@@ -12,7 +11,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tauri-apps/plugin-dialog', () => ({
   confirm: vi.fn(),
   open: mocks.open,
-  save: mocks.save,
 }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
 vi.mock('react-i18next', () => ({
@@ -29,25 +27,50 @@ vi.mock('~/utils/sync', () => ({
 
 import Sync from '~/components/Sync'
 
-describe('sync file pickers', () => {
+describe('sync location pickers', () => {
   beforeEach(() => {
     window.sessionStorage.clear()
     mocks.open.mockReset()
-    mocks.save.mockReset()
     mocks.toastError.mockReset()
     mocks.getSyncStatus.mockResolvedValue({ enabled: false, path: null, lastSyncedAt: null })
   })
 
-  it.each([
-    ['sync.create', mocks.save],
-    ['sync.join', mocks.open],
-  ])('reports a rejected %s picker', async (label, picker) => {
-    picker.mockRejectedValue(new Error('picker unavailable'))
+  it.each(['sync.create', 'sync.join', 'sync.joinLegacy'])(
+    'reports a rejected %s picker',
+    async (label) => {
+      mocks.open.mockRejectedValue(new Error('picker unavailable'))
+      render(<Sync />)
+
+      fireEvent.click(await screen.findByText(label))
+
+      await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncPickerFailed'))
+    },
+  )
+
+  it.each(['sync.create', 'sync.join'])('selects a folder for %s', async (label) => {
+    mocks.open.mockResolvedValue(null)
     render(<Sync />)
 
     fireEvent.click(await screen.findByText(label))
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncPickerFailed'))
+    await waitFor(() =>
+      expect(mocks.open).toHaveBeenCalledWith({ multiple: false, directory: true }),
+    )
+  })
+
+  it('allows joining an older sync file', async () => {
+    mocks.open.mockResolvedValue(null)
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.joinLegacy'))
+
+    await waitFor(() =>
+      expect(mocks.open).toHaveBeenCalledWith({
+        multiple: false,
+        directory: false,
+        filters: [{ name: 'Tauthy sync file', extensions: ['tauthy-sync'] }],
+      }),
+    )
   })
 
   it('offers conflicted-copy recovery when sync is connected', async () => {

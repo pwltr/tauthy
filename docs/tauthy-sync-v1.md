@@ -5,7 +5,7 @@ Nextcloud Desktop, Dropbox, OneDrive, iCloud Drive, or Syncthing is responsible 
 between devices. Tauthy does not receive provider credentials or send data to a provider API.
 
 The local Stronghold snapshot remains authoritative while a device is offline. A missing or
-temporarily unavailable sync file never prevents a local vault edit.
+temporarily unavailable sync location never prevents a local vault edit.
 
 ## Encrypted envelope
 
@@ -29,19 +29,26 @@ decryption.
 
 ## Folder layout and migration
 
-The file selected at Create or Join is the encrypted recovery anchor. New versions leave this
-file unchanged after creation. Each device that makes a change writes a sibling named
-`<anchor filename>.device-<32-character device ID>`. All files use the same encrypted v1 envelope
-and wrapped sync key. Tauthy reads and merges the anchor and every valid device file on each sync.
+When creating sync, the user selects a cloud-synced parent directory. Tauthy creates a
+`Tauthy Sync` folder there, containing an encrypted recovery anchor named `anchor.tauthy-sync`.
+To join, select that `Tauthy Sync` folder. The anchor remains unchanged after creation. Each
+device that makes a change writes its own `device-<32-character device ID>.tauthy-sync` file
+inside the folder. All files use the same encrypted v1 envelope and wrapped sync key. Tauthy
+reads and merges the anchor and every valid device file on each sync.
 No device modifies another device's file. This avoids routine cloud-provider conflicts when two
 devices edit simultaneously, which cannot be guaranteed with one mutable file and an asynchronous
 folder-sync client.
 
-Existing v1 sync configurations migrate automatically: the selected path, recovery password,
-encryption key, device ID, and local vault stay the same. On the next local change, that device
-publishes its own file. All devices should update to the new version: older versions read only
-the anchor and cannot see changes in device files. Keep the anchor and device files together;
-do not rename or remove them while sync is connected.
+Existing v1 sync configurations keep their file-based layout. Their selected path, recovery
+password, encryption key, device ID, and local vault stay the same; on the next local change,
+each updated device publishes a sibling named
+`<anchor filename>.device-<32-character device ID>`. The Join screen has a separate option for
+these older sync files. An existing connection is **not** silently moved into a folder, because
+an older app version would keep reading and writing the old file and the devices would diverge.
+All devices on an existing sync should update: older versions read only the anchor and cannot see
+changes in device files. Keep the anchor and device files together; do not rename or remove them
+while sync is connected. Moving an existing connection into a folder requires a deliberate
+migration after all devices have updated.
 
 If a folder-sync provider previously created a conflicted copy, tap the logo on the About screen
 five times to enable developer settings for this session, then select **Merge a conflicted copy** in
