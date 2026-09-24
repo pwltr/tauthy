@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   open: vi.fn(),
   toastError: vi.fn(),
   getSyncStatus: vi.fn(),
+  getBackgroundSyncError: vi.fn(),
   syncNow: vi.fn(),
   mergeConflictedSyncCopy: vi.fn(),
 }))
@@ -25,9 +26,11 @@ vi.mock('~/utils/sync', () => ({
   createSync: vi.fn(),
   disconnectSync: vi.fn(),
   getSyncStatus: mocks.getSyncStatus,
+  getBackgroundSyncError: mocks.getBackgroundSyncError,
   joinSync: vi.fn(),
   mergeConflictedSyncCopy: mocks.mergeConflictedSyncCopy,
   syncNow: mocks.syncNow,
+  SYNC_BACKGROUND_ERROR_EVENT: 'tauthy:sync-background-error',
 }))
 
 import Sync from '~/components/Sync'
@@ -38,6 +41,8 @@ describe('sync location pickers', () => {
     mocks.open.mockReset()
     mocks.toastError.mockReset()
     mocks.syncNow.mockReset()
+    mocks.getBackgroundSyncError.mockReset()
+    mocks.getBackgroundSyncError.mockReturnValue(undefined)
     mocks.getSyncStatus.mockResolvedValue({ enabled: false, path: null, lastSyncedAt: null })
   })
 
@@ -131,6 +136,23 @@ describe('sync location pickers', () => {
     fireEvent.click(await screen.findByText('sync.syncNow'))
 
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncDeviceFileLimit'))
+  })
+
+  it('shows the last automatic-sync error until a successful sync clears it', async () => {
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: null,
+    })
+    mocks.getBackgroundSyncError.mockReturnValue('syncDeviceFileLimit')
+    render(<Sync />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('toasts.syncDeviceFileLimit')
+
+    mocks.getBackgroundSyncError.mockReturnValue(undefined)
+    window.dispatchEvent(new Event('tauthy:sync-background-error'))
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
   })
 
   it('uses secondary body typography for the introduction', async () => {

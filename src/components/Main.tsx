@@ -7,7 +7,7 @@ import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { vault } from '~/utils/storage'
-import { syncNow } from '~/utils/sync'
+import { syncInBackground } from '~/utils/sync'
 import { useLocalStorage } from '~/hooks'
 import AppBar from '~/components/AppBar'
 
@@ -60,7 +60,7 @@ const Main = () => {
         console.info('looking for unlocked vault...')
         await vault.checkVault()
         console.info('successfully read vault')
-        void syncNow().catch(() => {})
+        void syncInBackground()
       } catch (err) {
         const message = formatError(err)
 

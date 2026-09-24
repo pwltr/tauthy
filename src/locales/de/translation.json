@@ -209,6 +209,7 @@
     "syncUnavailable": "Der Sync-Speicherort ist derzeit nicht verfügbar. Prüfe den Cloud-Ordner.",
     "syncUnsupported": "Diese Version oder Verschlüsselung der Sync-Datei wird nicht unterstützt.",
     "syncFailed": "Synchronisierung fehlgeschlagen. Der lokale Tresor blieb erhalten.",
+    "syncBackgroundFailed": "Die automatische Synchronisierung konnte nicht abgeschlossen werden. Lokale Änderungen sind sicher. Details findest du unter Einstellungen → Synchronisierung.",
     "error": "Ein Fehler ist aufgetreten."
   }
 }

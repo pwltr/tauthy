@@ -209,6 +209,7 @@
     "syncUnavailable": "La ubicación de sincronización no está disponible. Comprueba que la carpeta en la nube sea accesible.",
     "syncUnsupported": "Esta versión o configuración de cifrado no es compatible.",
     "syncFailed": "La sincronización falló. Tu baúl local no se ha perdido.",
+    "syncBackgroundFailed": "La sincronización automática no pudo completarse. Los cambios locales están a salvo. Consulta Ajustes → Sincronización para ver los detalles.",
     "error": "Ha ocurrido un error."
   }
 }
