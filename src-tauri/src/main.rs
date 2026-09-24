@@ -50,6 +50,7 @@ fn main() {
       sync::sync_create,
       sync::sync_disconnect,
       sync::sync_join,
+      sync::sync_merge_conflicted_copy,
       sync::sync_now,
       sync::sync_status,
       tauthy_backup::decrypt_tauthy_backup,

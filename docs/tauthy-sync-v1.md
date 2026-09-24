@@ -1,11 +1,11 @@
 # Tauthy sync format v1
 
-Tauthy sync keeps an encrypted file in a directory chosen by the user. A separate program such as
-Nextcloud Desktop, Dropbox, OneDrive, iCloud Drive, or Syncthing is responsible for copying that
-file between devices. Tauthy does not receive provider credentials or send data to a provider API.
+Tauthy sync keeps encrypted files in a directory chosen by the user. A separate program such as
+Nextcloud Desktop, Dropbox, OneDrive, iCloud Drive, or Syncthing is responsible for copying them
+between devices. Tauthy does not receive provider credentials or send data to a provider API.
 
 The local Stronghold snapshot remains authoritative while a device is offline. A missing or
-temporarily unavailable sync file never prevents a local vault edit.
+temporarily unavailable sync location never prevents a local vault edit.
 
 ## Encrypted envelope
 
@@ -23,8 +23,47 @@ The recovery password is needed only to unwrap the sync key when creating or joi
 Afterward, the sync key and selected path are stored inside the device's local Stronghold vault.
 Routine synchronization therefore neither retains the password nor repeats Argon2.
 
-Every rewrite uses a fresh XChaCha20 nonce and a temporary sibling file that atomically replaces
-the previous file. Plaintext and ciphertext sizes are bounded before allocation or decryption.
+Each write uses a fresh XChaCha20 nonce and a temporary sibling file that atomically replaces
+the device's previous file. Plaintext and ciphertext sizes are bounded before allocation or
+decryption.
+
+## Folder layout and compatibility
+
+When creating sync, the user selects a cloud-synced parent directory. Tauthy creates a
+`Tauthy Sync` folder there, containing an encrypted recovery anchor named `anchor.tauthy-sync`.
+To join, select that `Tauthy Sync` folder. The anchor remains unchanged after creation. Each
+device that makes a change writes its own `device-<32-character device ID>.tauthy-sync` file
+inside the folder. All files use the same encrypted v1 envelope and wrapped sync key. Tauthy
+reads and merges the anchor and every valid device file on each sync.
+No device modifies another device's file. This avoids routine cloud-provider conflicts when two
+devices edit simultaneously, which cannot be guaranteed with one mutable file and an asynchronous
+folder-sync client.
+
+Device files are not automatically removed. Tauthy accepts at most 32 of them in one sync
+location; beyond that, sync pauses while local accounts remain available. Do not delete an old
+device file merely because another device has synced: reading a file does not guarantee its
+records and deletion tombstones were written to another file. Make an encrypted export before
+any manual recovery.
+
+Existing v1 sync configurations keep their file-based layout. Their selected path, recovery
+password, encryption key, device ID, and local vault stay the same; on the next local change,
+each updated device publishes a sibling named
+`<anchor filename>.device-<32-character device ID>`. Existing connections continue to work.
+To join one from a new device, select the directory containing its single older sync file;
+Tauthy then stores that file path as the connection. If the directory has multiple older sync
+files, Tauthy rejects it rather than guessing; do not move files belonging to an active sync
+without reconfiguring its other devices.
+An existing connection is **not** silently moved into a folder, because an older app version
+would keep reading and writing the old file and the devices would diverge.
+All devices on an existing sync should update: older versions read only the anchor and cannot see
+changes in device files. Keep the anchor and device files together; do not rename or remove them
+while sync is connected. Existing connections are not migrated to the new layout.
+
+If a folder-sync provider previously created a conflicted copy, tap the logo on the About screen
+five times to enable developer settings for this session, then select **Merge a conflicted copy** in
+Sync settings. Tauthy accepts it only if its encrypted key and vault ID match, then
+merges its records into the local vault and publishes any recovered changes. The selected file is
+not modified or deleted. Keep it until every device shows the recovered accounts.
 
 ## Decrypted document
 
@@ -52,10 +91,12 @@ resolution interface.
 ## Security boundary and limitations
 
 The folder provider sees the filename, size, and modification timing, but not account contents.
-Anyone who obtains both the sync file and its recovery password can decrypt all synchronized OTP
+Device filenames and write times reveal the number of published devices and each device's
+activity pattern through a stable pseudonymous ID.
+Anyone who obtains the sync files and the recovery password can decrypt all synchronized OTP
 secrets. Tauthy cannot recover a forgotten recovery password.
 
-Authenticated encryption detects modification, but a folder provider can still delete the file or
-replace it with an older valid copy. Existing devices retain their local revisions and will merge
-them on a later sync. A brand-new device has no independent way to detect a rollback of the only
-copy it can access, so encrypted exports remain the recommended recovery backup.
+Authenticated encryption detects modification, but a folder provider can still delete files or
+replace them with older valid copies. Existing devices retain their local revisions and will merge
+them on a later sync. A brand-new device has no independent way to detect a rollback of all copies
+it can access, so encrypted exports remain the recommended recovery backup.

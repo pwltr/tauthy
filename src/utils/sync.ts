@@ -30,4 +30,10 @@ export const syncNow = async () => {
   return status
 }
 
+export const mergeConflictedSyncCopy = async (path: string) => {
+  const status = await invoke<SyncStatus>('sync_merge_conflicted_copy', { path })
+  announceSync()
+  return status
+}
+
 export const disconnectSync = () => invoke<SyncStatus>('sync_disconnect')

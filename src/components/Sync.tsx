@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import { confirm, open, save } from '@tauri-apps/plugin-dialog'
+import { confirm, open } from '@tauri-apps/plugin-dialog'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import List from '@mui/material/List'
@@ -12,26 +12,31 @@ import Typography from '@mui/material/Typography'
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
 import SyncPasswordModal from '~/components/modals/SyncPassword'
+import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
   createSync,
   disconnectSync,
   getSyncStatus,
   joinSync,
+  mergeConflictedSyncCopy,
   syncNow,
   type SyncStatus,
 } from '~/utils/sync'
 
 type PendingAction = { mode: 'create' | 'join'; path: string }
 
-const syncFilter = [{ name: 'Tauthy sync file', extensions: ['tauthy-sync'] }]
+const errorText = (error: unknown) =>
+  typeof error === 'string' ? error : error instanceof Error ? error.message : ''
 
 const errorKey = (error: unknown) => {
-  const key = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+  const key = errorText(error)
   return [
     'syncAuthenticationFailed',
     'syncConflict',
     'syncCorrupt',
+    'syncDeviceFileLimit',
     'syncFileExists',
+    'syncMultipleFiles',
     'syncNotConfigured',
     'syncUnavailable',
     'syncUnsupported',
@@ -46,12 +51,21 @@ const Sync = () => {
   const [status, setStatus] = useState<SyncStatus>()
   const [pending, setPending] = useState<PendingAction>()
   const [busy, setBusy] = useState(false)
+  const showRecovery = developerSettingsEnabled()
+
+  const syncErrorMessage = (error: unknown) => {
+    const message = errorText(error)
+    const prefix = 'syncDeviceFileInvalid:'
+    return message.startsWith(prefix)
+      ? t('toasts.syncDeviceFileInvalid', { file: message.slice(prefix.length) })
+      : t(`toasts.${errorKey(error)}`)
+  }
 
   const loadStatus = async () => {
     try {
       setStatus(await getSyncStatus())
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     }
   }
 
@@ -62,8 +76,8 @@ const Sync = () => {
 
   const chooseCreate = async () => {
     try {
-      const path = await save({ defaultPath: 'Tauthy Sync.tauthy-sync', filters: syncFilter })
-      if (path) setPending({ mode: 'create', path })
+      const path = await open({ multiple: false, directory: true })
+      if (typeof path === 'string') setPending({ mode: 'create', path })
     } catch {
       toast.error(t('toasts.syncPickerFailed'))
     }
@@ -71,7 +85,7 @@ const Sync = () => {
 
   const chooseJoin = async () => {
     try {
-      const path = await open({ multiple: false, directory: false, filters: syncFilter })
+      const path = await open({ multiple: false, directory: true })
       if (typeof path === 'string') setPending({ mode: 'join', path })
     } catch {
       toast.error(t('toasts.syncPickerFailed'))
@@ -90,7 +104,7 @@ const Sync = () => {
       setPending(undefined)
       toast.success(t('toasts.syncConfigured'))
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
     }
@@ -102,9 +116,28 @@ const Sync = () => {
       setStatus(await syncNow())
       toast.success(t('toasts.syncSuccess'))
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const mergeConflictedCopy = async () => {
+    try {
+      // Nextcloud may append a conflict marker after the original extension.
+      const path = await open({ multiple: false, directory: false })
+      if (typeof path !== 'string') return
+      setBusy(true)
+      try {
+        setStatus(await mergeConflictedSyncCopy(path))
+        toast.success(t('toasts.syncConflictMerged'))
+      } catch (error) {
+        toast.error(syncErrorMessage(error))
+      } finally {
+        setBusy(false)
+      }
+    } catch {
+      toast.error(t('toasts.syncPickerFailed'))
     }
   }
 
@@ -121,7 +154,7 @@ const Sync = () => {
       setStatus(await disconnectSync())
       toast.success(t('toasts.syncDisconnected'))
     } catch (error) {
-      toast.error(t(`toasts.${errorKey(error)}`))
+      toast.error(syncErrorMessage(error))
     } finally {
       setBusy(false)
     }
@@ -138,7 +171,9 @@ const Sync = () => {
   return (
     <>
       <Box sx={{ px: 2, pt: 2 }}>
-        <Typography color="text.secondary">{t('sync.description')}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t('sync.description')}
+        </Typography>
       </Box>
       {status.enabled ? (
         <List>
@@ -167,6 +202,16 @@ const Sync = () => {
               <ListItemText primary={t('sync.syncNow')} secondary={t('sync.syncNowDescription')} />
             </ListItemButton>
           </ListItem>
+          {showRecovery && (
+            <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+              <ListItemButton disabled={busy}>
+                <ListItemText
+                  primary={t('sync.mergeConflictedCopy')}
+                  secondary={t('sync.mergeConflictedCopyDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+          )}
           <ListItem disablePadding onClick={() => !busy && void disconnect()}>
             <ListItemButton disabled={busy}>
               <ListItemText
