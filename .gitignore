@@ -3,6 +3,7 @@ node_modules
 dist
 dist-ssr
 *.local
+*.local.md
 .vscode
 
 # Yarn
