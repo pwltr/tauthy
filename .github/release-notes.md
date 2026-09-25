@@ -1,16 +1,16 @@
-## What's new in 0.4.0
+## What's new in 0.4.1
 
-- Added optional encrypted folder sync for Nextcloud, Dropbox, OneDrive,
-  iCloud Drive, Syncthing, and similar services.
-- Create a new sync file or join an existing one with a recovery password.
-- Sync automatically after startup, unlock, and local changes, or manually
-  from Settings.
-- Merge changes and deletions safely between devices while keeping the local
-  vault available if the sync folder is offline.
-- Improved native scrollbar sizing on macOS while retaining native styling on
-  every platform.
-- Fixed vault deletion so the app returns to an empty, usable vault without a
-  restart.
+- Reduced cloud-provider sync conflicts when multiple devices are active:
+  each device now updates its own encrypted file in the sync location.
+- Automatic sync failures now appear in the app and can be inspected in
+  Settings → Sync. Local edits remain available when sync fails.
+- Fixed the home-screen list jumping back to the top during sync refresh.
+
+### Sync upgrade note
+
+Update every device using the same sync location to 0.4.1. Older versions
+cannot read changes published in the new per-device files. Existing sync
+connections keep their current location; they are not moved automatically.
 
 ### Windows upgrade notice
 
@@ -19,12 +19,12 @@ existing app was installed with the `.exe` installer. Tauthy now uses the
 Windows Installer (`.msi`) package for automatic updates, and Windows can keep
 the older `.exe` installation alongside it instead of replacing it.
 
-If the update prompt reappears after installing 0.4.0:
+If the update prompt reappears after installing 0.4.1:
 
 1. Export a Tauthy backup.
 2. Close Tauthy and uninstall the older Tauthy installation from Windows
-   Settings. If both 0.2.7 and 0.4.0 are listed, uninstall both.
-3. Download and install `Tauthy_0.4.0_x64_en-US.msi` from this release.
+   Settings. If both 0.2.7 and 0.4.1 are listed, uninstall both.
+3. Download and install `Tauthy_0.4.1_x64_en-US.msi` from this release.
 
-This is a one-time installer migration. Updates after 0.4.0 should install
+This is a one-time installer migration. Updates after 0.4.1 should install
 normally.
