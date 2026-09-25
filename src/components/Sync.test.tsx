@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -31,6 +31,7 @@ vi.mock('~/utils/sync', () => ({
   mergeConflictedSyncCopy: mocks.mergeConflictedSyncCopy,
   syncNow: mocks.syncNow,
   SYNC_BACKGROUND_ERROR_EVENT: 'tauthy:sync-background-error',
+  SYNC_STATUS_EVENT: 'tauthy:sync-status',
 }))
 
 import Sync from '~/components/Sync'
@@ -153,6 +154,26 @@ describe('sync location pickers', () => {
     window.dispatchEvent(new Event('tauthy:sync-background-error'))
 
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
+  it('updates the last synced display after a successful background check', async () => {
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: null,
+    })
+    render(<Sync />)
+    await screen.findByText('sync.never')
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tauthy:sync-status', {
+          detail: { enabled: true, path: '/cloud/sync', lastSyncedAt: Date.now() },
+        }),
+      )
+    })
+
+    expect(screen.queryByText('sync.never')).not.toBeInTheDocument()
   })
 
   it('uses secondary body typography for the introduction', async () => {

@@ -5,16 +5,20 @@ import i18n from '~/utils/i18n'
 
 export const SYNC_COMPLETE_EVENT = 'tauthy:sync-complete'
 export const SYNC_BACKGROUND_ERROR_EVENT = 'tauthy:sync-background-error'
+export const SYNC_STATUS_EVENT = 'tauthy:sync-status'
 
 let backgroundError: unknown
 let notifiedError: string | undefined
 let backgroundSyncInFlight = false
 let backgroundSyncPending = false
+// A successful no-op check should update the UI, not the Stronghold snapshot.
+let lastSuccessfulCheckAt: number | undefined
 
 export type SyncStatus = {
   enabled: boolean
   path?: string
   lastSyncedAt?: number
+  vaultChanged?: boolean
 }
 
 export const getBackgroundSyncError = () => backgroundError
@@ -32,24 +36,35 @@ const announceSync = () => {
   window.dispatchEvent(new Event(SYNC_COMPLETE_EVENT))
 }
 
-export const getSyncStatus = () => invoke<SyncStatus>('sync_status')
+const withLatestCheck = (status: SyncStatus): SyncStatus =>
+  status.enabled && lastSuccessfulCheckAt !== undefined
+    ? { ...status, lastSyncedAt: Math.max(status.lastSyncedAt ?? 0, lastSuccessfulCheckAt) }
+    : status
+
+export const getSyncStatus = async () => withLatestCheck(await invoke<SyncStatus>('sync_status'))
 
 export const createSync = async (path: string, password: string) => {
   const status = await invoke<SyncStatus>('sync_create', { path, password })
+  lastSuccessfulCheckAt = undefined
   announceSync()
   return status
 }
 
 export const joinSync = async (path: string, password: string) => {
   const status = await invoke<SyncStatus>('sync_join', { path, password })
+  lastSuccessfulCheckAt = undefined
   announceSync()
   return status
 }
 
 export const syncNow = async () => {
   const status = await invoke<SyncStatus>('sync_now')
-  announceSync()
-  return status
+  lastSuccessfulCheckAt = Date.now()
+  const currentStatus = withLatestCheck(status)
+  clearBackgroundSyncError()
+  if (status.vaultChanged) window.dispatchEvent(new Event(SYNC_COMPLETE_EVENT))
+  window.dispatchEvent(new CustomEvent(SYNC_STATUS_EVENT, { detail: currentStatus }))
+  return currentStatus
 }
 
 export const syncInBackground = async () => {
@@ -91,6 +106,7 @@ export const mergeConflictedSyncCopy = async (path: string) => {
 
 export const disconnectSync = async () => {
   const status = await invoke<SyncStatus>('sync_disconnect')
+  lastSuccessfulCheckAt = undefined
   clearBackgroundSyncError()
   return status
 }
