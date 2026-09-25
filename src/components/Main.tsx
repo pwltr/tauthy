@@ -9,6 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { vault } from '~/utils/storage'
 import { syncInBackground } from '~/utils/sync'
 import { useLocalStorage } from '~/hooks'
+import { AppBarBackContext } from '~/context'
 import AppBar from '~/components/AppBar'
 
 const Wrapper = styled('div')`
@@ -39,6 +40,7 @@ const Main = () => {
   const [shouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const [isLoading, setIsLoading] = useState(true)
   const [initializationError, setInitializationError] = useState('')
+  const [backDisabled, setBackDisabled] = useState(false)
 
   const initializeVault = useCallback(
     async (reload = false) => {
@@ -110,29 +112,31 @@ const Main = () => {
   }
 
   return (
-    <Wrapper>
-      <AppBar />
-      {isLoading ? (
-        <InitializationState>
-          <CircularProgress size={28} />
-        </InitializationState>
-      ) : initializationError ? (
-        <InitializationState>
-          <ErrorAlert
-            severity="error"
-            action={
-              <Button color="inherit" size="small" onClick={() => void initializeVault(true)}>
-                Retry
-              </Button>
-            }
-          >
-            Unable to open the vault: {initializationError}
-          </ErrorAlert>
-        </InitializationState>
-      ) : (
-        <Outlet />
-      )}
-    </Wrapper>
+    <AppBarBackContext.Provider value={{ backDisabled, setBackDisabled }}>
+      <Wrapper>
+        <AppBar />
+        {isLoading ? (
+          <InitializationState>
+            <CircularProgress size={28} />
+          </InitializationState>
+        ) : initializationError ? (
+          <InitializationState>
+            <ErrorAlert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={() => void initializeVault(true)}>
+                  Retry
+                </Button>
+              }
+            >
+              Unable to open the vault: {initializationError}
+            </ErrorAlert>
+          </InitializationState>
+        ) : (
+          <Outlet />
+        )}
+      </Wrapper>
+    </AppBarBackContext.Provider>
   )
 }
 

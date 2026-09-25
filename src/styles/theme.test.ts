@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createTheme } from '@mui/material/styles'
 
 vi.mock('@tauri-apps/plugin-os', () => ({ type: () => Promise.resolve('linux') }))
 
@@ -14,6 +15,17 @@ describe('theme preferences', () => {
     expect(resolvePaletteMode('light', true)).toBe('light')
     expect(resolvePaletteMode('dark', false)).toBe('dark')
     expect(resolvePaletteMode('black', false)).toBe('black')
+  })
+
+  it('uses dark MUI component defaults for dark and black themes', () => {
+    const light = createTheme(getDesignTokens('light'))
+    const dark = createTheme(getDesignTokens('dark'))
+    const black = createTheme(getDesignTokens('black'))
+
+    expect(light.palette.mode).toBe('light')
+    expect(dark.palette.mode).toBe('dark')
+    expect(black.palette.mode).toBe('dark')
+    expect(dark.palette.divider).not.toBe(light.palette.divider)
   })
 
   it('disables button ripples when reduced motion is preferred', () => {

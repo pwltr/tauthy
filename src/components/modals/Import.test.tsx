@@ -1,12 +1,14 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { AppBarBackContext } from '~/context'
 
 const mocks = vi.hoisted(() => ({
   prepareImport: vi.fn(),
   commitPreparedImport: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
+  setBackDisabled: vi.fn(),
 }))
 
 vi.mock('~/utils', () => ({
@@ -27,25 +29,34 @@ vi.mock('~/components/Modal', () => ({
     open ? <div>{children}</div> : null,
   Buttons: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
+vi.mock('~/components/modals/ExportPassword', () => ({ default: () => null }))
 
-import ImportModal from '~/components/modals/Import'
+import Import from '~/components/Import'
+import ImportReview from '~/components/ImportReview'
 
 const entries = [
   { uuid: 'one', issuer: 'Example', name: 'alice', secret: 'JBSWY3DPEHPK3PXP' },
   { uuid: 'two', issuer: 'Other', name: 'bob', secret: 'MZXW6YTBOI' },
 ]
 
-const renderImport = () =>
+const renderImport = (initialPath = '/import') =>
   render(
-    <MemoryRouter initialEntries={['/import']}>
-      <Routes>
-        <Route path="/import" element={<ImportModal open onClose={vi.fn()} />} />
-        <Route path="/" element={<div>Home</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <AppBarBackContext.Provider
+      value={{ backDisabled: false, setBackDisabled: mocks.setBackDisabled }}
+    >
+      <MemoryRouter initialEntries={[initialPath]}>
+        <Routes>
+          <Route path="/import" element={<Import />}>
+            <Route path="review" element={<ImportReview />} />
+          </Route>
+          <Route path="/" element={<div>Home</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AppBarBackContext.Provider>,
   )
 
 const chooseFile = (label: string) => {
+  fireEvent.click(screen.getByText('import.import'))
   fireEvent.click(screen.getByText(label))
   const input = document.querySelector('input[type="file"]') as HTMLInputElement
   if (label === 'import.otpAuth') expect(input.accept).toBe('.txt,.uris')
@@ -72,7 +83,8 @@ describe('import review', () => {
       renderImport()
       chooseFile(label)
 
-      expect(await screen.findByText('modals.importPreviewTitle')).toBeInTheDocument()
+      expect(await screen.findByText('accounts.txt')).toBeInTheDocument()
+      expect(screen.queryByText('modals.importPreviewTitle')).not.toBeInTheDocument()
       expect(screen.getByText('alice')).toBeInTheDocument()
       expect(screen.getByText('bob')).toBeInTheDocument()
       expect(screen.queryByText('JBSWY3DPEHPK3PXP')).not.toBeInTheDocument()
@@ -80,13 +92,14 @@ describe('import review', () => {
 
       fireEvent.click(screen.getByText('modals.cancel'))
       expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+      expect(await screen.findByText('import.import')).toBeInTheDocument()
     },
   )
 
   it('commits the reviewed entries only after confirmation', async () => {
     renderImport()
     chooseFile('import.otpAuth')
-    await screen.findByText('modals.importPreviewTitle')
+    await screen.findByText('accounts.txt')
 
     fireEvent.click(screen.getByText('modals.import'))
 
@@ -99,7 +112,37 @@ describe('import review', () => {
     expect(await screen.findByText('Home')).toBeInTheDocument()
   })
 
-  it('shows a bounded page of a large import with navigation', async () => {
+  it('holds back navigation disabled until the import finishes', async () => {
+    let finishImport!: (count: number) => void
+    mocks.commitPreparedImport.mockImplementationOnce(
+      () => new Promise<number>((resolve) => (finishImport = resolve)),
+    )
+    renderImport()
+    chooseFile('Tauthy')
+    await screen.findByText('accounts.txt')
+
+    fireEvent.click(screen.getByText('modals.import'))
+    expect(mocks.setBackDisabled).toHaveBeenCalledWith(true)
+    expect(screen.getByRole('button', { name: 'modals.cancel' })).toBeDisabled()
+
+    await act(async () => finishImport(1))
+    expect(mocks.setBackDisabled).toHaveBeenCalledWith(false)
+    expect(await screen.findByText('Home')).toBeInTheDocument()
+  })
+
+  it('does not claim accounts were imported when they became duplicates before confirmation', async () => {
+    mocks.commitPreparedImport.mockResolvedValueOnce(0)
+    renderImport()
+    chooseFile('Tauthy')
+    await screen.findByText('accounts.txt')
+
+    fireEvent.click(screen.getByText('modals.import'))
+
+    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith('modals.importNoNew'))
+    expect(await screen.findByText('Home')).toBeInTheDocument()
+  })
+
+  it('shows all accounts in one scrollable review list', async () => {
     mocks.prepareImport.mockResolvedValue({
       format: 'otpauth',
       sourceName: 'many.txt',
@@ -112,15 +155,30 @@ describe('import review', () => {
       duplicateCount: 0,
       duplicateIndices: [],
     })
-    renderImport()
+    const { container } = renderImport()
     chooseFile('import.otpAuth')
-    await screen.findByText('modals.importPreviewTitle')
+    await screen.findByText('many.txt')
 
     expect(screen.getByText('account-0')).toBeInTheDocument()
-    expect(screen.queryByText('account-8')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByText('modals.importPreviewNext'))
     expect(screen.getByText('account-8')).toBeInTheDocument()
-    expect(screen.queryByText('account-0')).not.toBeInTheDocument()
+    expect(screen.getByText('account-24')).toBeInTheDocument()
+    expect(container.querySelector('.MuiListItem-divider')).toBeNull()
+    expect(screen.queryByText('modals.importPreviewNext')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'modals.cancel' })).toHaveClass('MuiButton-outlined')
+    expect(screen.getByRole('button', { name: 'modals.import' })).toHaveClass('MuiButton-contained')
+  })
+
+  it('returns to import options when review is opened without a prepared file', async () => {
+    renderImport('/import/review')
+    expect(await screen.findByText('import.import')).toBeInTheDocument()
+    expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+  })
+
+  it('shows the authenticator-link option without a subtitle', () => {
+    renderImport()
+    fireEvent.click(screen.getByText('import.import'))
+    expect(screen.getByText('import.otpAuth')).toBeInTheDocument()
+    expect(screen.queryByText('import.otpAuthDescription')).not.toBeInTheDocument()
   })
 
   it('decrypts a protected backup before review, never before confirmation', async () => {
@@ -134,7 +192,7 @@ describe('import review', () => {
     })
     fireEvent.click(screen.getByText('modals.import'))
 
-    expect(await screen.findByText('modals.importPreviewTitle')).toBeInTheDocument()
+    expect(await screen.findByText('accounts.txt')).toBeInTheDocument()
     expect(mocks.prepareImport).toHaveBeenLastCalledWith(
       expect.any(File),
       'tauthy',
@@ -164,7 +222,7 @@ describe('import review', () => {
       target: { value: 'correct password' },
     })
     fireEvent.click(screen.getByText('modals.import'))
-    expect(await screen.findByText('modals.importPreviewTitle')).toBeInTheDocument()
+    expect(await screen.findByText('accounts.txt')).toBeInTheDocument()
     expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
   })
 })

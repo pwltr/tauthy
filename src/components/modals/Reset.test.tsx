@@ -41,15 +41,15 @@ describe('vault deletion', () => {
 
   it('opens a fresh vault before writing an empty record and returns home', async () => {
     render(
-      <MemoryRouter initialEntries={['/import']}>
+      <MemoryRouter initialEntries={['/security']}>
         <Routes>
-          <Route path="/import" element={<ResetModal open onClose={vi.fn()} />} />
+          <Route path="/security" element={<ResetModal open onClose={vi.fn()} />} />
           <Route path="/" element={<div>Accounts</div>} />
         </Routes>
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'modals.delete' }))
+    fireEvent.click(screen.getByRole('button', { name: 'security.deleteVault' }))
 
     await waitFor(() => expect(screen.getByText('Accounts')).toBeInTheDocument())
     expect(mocks.destroy).toHaveBeenCalledOnce()

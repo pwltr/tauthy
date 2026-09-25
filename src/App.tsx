@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { Toaster } from 'react-hot-toast'
@@ -12,6 +12,7 @@ import { checkUpdate, ENTRY_USAGE_STORAGE_KEY, recordEntryUsage } from '~/utils'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
+import { developerSettingsEnabled, subscribeDeveloperSettings } from '~/utils/developerSettings'
 import {
   AppBarTitleContext,
   ThemeContext,
@@ -30,6 +31,10 @@ const App = () => {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const [appBarTitle, setAppBarTitle] = useState('Tauthy')
+  const showDeveloperToolbar = useSyncExternalStore(
+    subscribeDeveloperSettings,
+    developerSettingsEnabled,
+  )
   const [searchTerm, setSearch] = useState('')
   const [sortOption, setSortOption] = useLocalStorage<SortOption>('sortOption', 'custom')
   const [customOrder, setCustomOrder] = useLocalStorage<string[]>('customOrder', [])
@@ -114,7 +119,7 @@ const App = () => {
                     <AppRouter />
                     <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
 
-                    {import.meta.env.DEV && <AppDebugger />}
+                    {import.meta.env.DEV && showDeveloperToolbar && <AppDebugger />}
                   </ThemeProvider>
                 </SortContext.Provider>
               </SearchContext.Provider>

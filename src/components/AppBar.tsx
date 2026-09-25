@@ -16,7 +16,7 @@ import MoreIcon from '@mui/icons-material/MoreVert'
 
 import { vault } from '~/utils/storage'
 import { useLocalStorage } from '~/hooks'
-import { AppBarTitleContext, SearchContext } from '~/context'
+import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 
 const Toolbar = styled(MuiToolbar)`
   padding-right: 0;
@@ -36,6 +36,7 @@ const AppBar = () => {
   const navigate = useNavigate()
   const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
   const { appBarTitle } = useContext(AppBarTitleContext)
+  const { backDisabled } = useContext(AppBarBackContext)
   const { searchTerm, setSearch } = useContext(SearchContext)
 
   const [isSearching, setIsSearching] = useState(!!searchTerm)
@@ -85,6 +86,7 @@ const AppBar = () => {
             edge="start"
             color="inherit"
             aria-label="menu"
+            disabled={backDisabled}
             sx={{ mr: 2 }}
             onClick={() => navigate(-1)}
           >

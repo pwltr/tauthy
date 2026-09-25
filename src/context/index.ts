@@ -12,6 +12,14 @@ export const AppBarTitleContext = createContext<{
   setAppBarTitle: () => {},
 })
 
+export const AppBarBackContext = createContext<{
+  backDisabled: boolean
+  setBackDisabled: (disabled: boolean) => void
+}>({
+  backDisabled: false,
+  setBackDisabled: () => {},
+})
+
 export const ThemeContext = createContext<{
   theme: ThemePreference
   setTheme: (mode: ThemePreference) => void

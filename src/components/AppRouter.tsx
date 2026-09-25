@@ -13,6 +13,7 @@ const Settings = lazy(() => import('~/components/Settings'))
 const Appearance = lazy(() => import('~/components/Appearance'))
 const Security = lazy(() => import('~/components/Security'))
 const Import = lazy(() => import('~/components/Import'))
+const ImportReview = lazy(() => import('~/components/ImportReview'))
 const Sync = lazy(() => import('~/components/Sync'))
 const About = lazy(() => import('~/components/About'))
 
@@ -42,7 +43,9 @@ const AppRouter = () => (
           <Route path="settings" element={deferred(<Settings />)} />
           <Route path="appearance" element={deferred(<Appearance />)} />
           <Route path="security" element={deferred(<Security />)} />
-          <Route path="import" element={deferred(<Import />)} />
+          <Route path="import" element={deferred(<Import />)}>
+            <Route path="review" element={deferred(<ImportReview />)} />
+          </Route>
           <Route path="sync" element={deferred(<Sync />)} />
           <Route path="about" element={deferred(<About />)} />
         </Route>

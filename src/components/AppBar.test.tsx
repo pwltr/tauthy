@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AppBarTitleContext, SearchContext } from '~/context'
+import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 
 const vault = vi.hoisted(() => ({ lock: vi.fn() }))
 
@@ -20,18 +20,21 @@ vi.mock('react-i18next', () => ({
 
 import AppBar from '~/components/AppBar'
 
-const renderAppBar = () =>
+const renderAppBar = (path = '/', backDisabled = false) =>
   render(
     <AppBarTitleContext.Provider value={{ appBarTitle: 'Tauthy', setAppBarTitle: vi.fn() }}>
-      <SearchContext.Provider value={{ searchTerm: '', setSearch: vi.fn() }}>
-        <MemoryRouter initialEntries={['/']}>
-          <Routes>
-            <Route path="/" element={<AppBar />} />
-            <Route path="/settings" element={<div>Settings page</div>} />
-            <Route path="/unlock" element={<div>Unlock page</div>} />
-          </Routes>
-        </MemoryRouter>
-      </SearchContext.Provider>
+      <AppBarBackContext.Provider value={{ backDisabled, setBackDisabled: vi.fn() }}>
+        <SearchContext.Provider value={{ searchTerm: '', setSearch: vi.fn() }}>
+          <MemoryRouter initialEntries={['/', path]} initialIndex={1}>
+            <Routes>
+              <Route path="/" element={<AppBar />} />
+              <Route path="/import/review" element={<AppBar />} />
+              <Route path="/settings" element={<div>Settings page</div>} />
+              <Route path="/unlock" element={<div>Unlock page</div>} />
+            </Routes>
+          </MemoryRouter>
+        </SearchContext.Provider>
+      </AppBarBackContext.Provider>
     </AppBarTitleContext.Provider>,
   )
 
@@ -58,5 +61,10 @@ describe('AppBar actions', () => {
 
     await waitFor(() => expect(vault.lock).toHaveBeenCalledOnce())
     expect(await screen.findByText('Unlock page')).toBeInTheDocument()
+  })
+
+  it('disables the back button while a screen is saving', () => {
+    renderAppBar('/import/review', true)
+    expect(screen.getByRole('button', { name: 'menu' })).toBeDisabled()
   })
 })

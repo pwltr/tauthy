@@ -9,6 +9,7 @@ import { useLocalStorage } from '~/hooks'
 import { AppBarTitleContext } from '~/context'
 import PasswordModal from '~/components/modals/Password'
 import PasswordResetModal from '~/components/modals/PasswordReset'
+import ResetModal from '~/components/modals/Reset'
 import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
@@ -20,6 +21,7 @@ const Security = () => {
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [openPasswordModal, setOpenPasswordModal] = useState(false)
   const [openPasswordResetModal, setOpenPasswordResetModal] = useState(false)
+  const [openResetModal, setOpenResetModal] = useState(false)
 
   const handleOpenPasswordModal = () => setOpenPasswordModal(true)
   const handleClosePasswordModal = () => setOpenPasswordModal(false)
@@ -70,10 +72,24 @@ const Security = () => {
             </ListItemButton>
           </ListItem>
         </ListSection>
+
+        <ListSection>
+          <ListSubheader sx={{ color: 'error.main' }}>{t('security.dangerZone')}</ListSubheader>
+          <ListItem disablePadding onClick={() => setOpenResetModal(true)}>
+            <ListItemButton>
+              <ListItemText
+                primary={t('security.deleteVault')}
+                secondary={t('security.deleteVaultDescription')}
+                sx={{ '& .MuiListItemText-primary': { color: 'error.main' } }}
+              />
+            </ListItemButton>
+          </ListItem>
+        </ListSection>
       </List>
 
       <PasswordModal open={openPasswordModal} onClose={handleClosePasswordModal} />
       <PasswordResetModal open={openPasswordResetModal} onClose={handleClosePasswordResetModal} />
+      <ResetModal open={openResetModal} onClose={() => setOpenResetModal(false)} />
     </>
   )
 }
