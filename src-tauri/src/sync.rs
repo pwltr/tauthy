@@ -154,6 +154,7 @@ pub struct SyncStatus {
   enabled: bool,
   path: Option<String>,
   last_synced_at: Option<u64>,
+  vault_changed: bool,
 }
 
 fn random_bytes<const N: usize>() -> Result<[u8; N], String> {
@@ -766,6 +767,7 @@ fn status_for(config: Option<&SyncConfig>) -> SyncStatus {
     enabled: config.is_some(),
     path: config.map(|config| config.path.clone()),
     last_synced_at: config.and_then(|config| config.last_synced_at),
+    vault_changed: false,
   }
 }
 
@@ -855,9 +857,11 @@ fn sync_at_with_import(
 ) -> Result<SyncStatus, String> {
   state.with_unlocked(|vault| {
     let mut config = load_config(vault)?;
+    let previous_payload = config.payload.clone();
+    let local_entries = current_entries(vault)?;
     update_from_local(
       &mut config.payload,
-      current_entries(vault)?,
+      local_entries.clone(),
       &config.device_id,
     );
     let key = Zeroizing::new(decode_exact(&config.key, KEY_SIZE)?);
@@ -874,11 +878,19 @@ fn sync_at_with_import(
     if merged != remote_payload {
       publish_device_payload(base, &config, &key, &merged)?;
     }
+    let entries = active_entries(&merged);
+    let vault_changed = entries != local_entries;
+    if merged == previous_payload && !vault_changed {
+      // A successful poll with no new records should not re-encrypt the local
+      // Stronghold snapshot or make the frontend rebuild its account list.
+      return Ok(status_for(Some(&config)));
+    }
     config.payload = merged;
     config.last_synced_at = Some(now_millis()?);
-    let entries = active_entries(&config.payload);
     save_local(vault, &entries, &config)?;
-    Ok(status_for(Some(&config)))
+    let mut status = status_for(Some(&config));
+    status.vault_changed = vault_changed;
+    Ok(status)
   })
 }
 
@@ -1125,8 +1137,29 @@ mod tests {
 
     vault_save_at(&second, "[]".into()).unwrap();
     sync_at(&second).unwrap();
-    sync_at(&first).unwrap();
+    assert!(sync_at(&first).unwrap().vault_changed);
     assert!(stored_entries(&first).is_empty());
+  }
+
+  #[test]
+  fn unchanged_sync_does_not_rewrite_the_local_snapshot() {
+    let temporary = tempfile::tempdir().unwrap();
+    let vault_path = temporary.path().join("local.stronghold");
+    let state = open_test_vault(temporary.path(), "local", vec![entry("one", "One")]);
+    create_at(
+      &state,
+      temporary.path().to_string_lossy().into_owned(),
+      "recovery password".into(),
+    )
+    .unwrap();
+    let before = fs::read(&vault_path).unwrap();
+    let last_synced_at = config_for(&state).last_synced_at;
+
+    let status = sync_at(&state).unwrap();
+
+    assert!(!status.vault_changed);
+    assert_eq!(status.last_synced_at, last_synced_at);
+    assert_eq!(fs::read(&vault_path).unwrap(), before);
   }
 
   #[test]

@@ -32,6 +32,7 @@ const ErrorAlert = styled(Alert)`
 `
 
 const formatError = (error: unknown) => (error instanceof Error ? error.message : String(error))
+const BACKGROUND_SYNC_INTERVAL_MS = 60_000
 
 const Main = () => {
   const navigate = useNavigate()
@@ -91,6 +92,15 @@ const Main = () => {
   useEffect(() => {
     void initializeVault(false)
   }, [initializeVault])
+
+  // Folder clients copy remote edits independently of Tauthy. Keep checking
+  // while the unlocked app is open, even if this device makes no local edits.
+  useEffect(() => {
+    if (showWelcome || isLoading || initializationError) return
+
+    const interval = window.setInterval(() => void syncInBackground(), BACKGROUND_SYNC_INTERVAL_MS)
+    return () => window.clearInterval(interval)
+  }, [showWelcome, isLoading, initializationError])
 
   // Lock vault after idle
   useIdleTimer({

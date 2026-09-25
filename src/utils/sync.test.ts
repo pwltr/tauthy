@@ -9,12 +9,15 @@ vi.mock('~/utils/i18n', () => ({ default: { t: (key: string) => key } }))
 import {
   createSync,
   getBackgroundSyncError,
+  getSyncStatus,
   joinSync,
   mergeConflictedSyncCopy,
   SYNC_BACKGROUND_ERROR_EVENT,
   SYNC_COMPLETE_EVENT,
+  SYNC_STATUS_EVENT,
   syncInBackground,
   syncNow,
+  type SyncStatus,
 } from '~/utils/sync'
 
 describe('sync commands', () => {
@@ -34,7 +37,7 @@ describe('sync commands', () => {
   ])(
     'announces a completed %s operation so cached vault data is reloaded',
     async (command, run) => {
-      invoke.mockResolvedValue({ enabled: true })
+      invoke.mockResolvedValue({ enabled: true, vaultChanged: true })
       const listener = vi.fn()
       window.addEventListener(SYNC_COMPLETE_EVENT, listener)
 
@@ -54,6 +57,34 @@ describe('sync commands', () => {
       window.removeEventListener(SYNC_COMPLETE_EVENT, listener)
     },
   )
+
+  it('does not refresh the account list after an unchanged sync', async () => {
+    const listener = vi.fn()
+    const statusListener = vi.fn()
+    window.addEventListener(SYNC_COMPLETE_EVENT, listener)
+    window.addEventListener(SYNC_STATUS_EVENT, statusListener)
+    invoke.mockResolvedValue({ enabled: true, vaultChanged: false })
+
+    await syncInBackground()
+
+    expect(invoke).toHaveBeenCalledWith('sync_now')
+    expect(listener).not.toHaveBeenCalled()
+    expect(statusListener).toHaveBeenCalledOnce()
+    window.removeEventListener(SYNC_COMPLETE_EVENT, listener)
+    window.removeEventListener(SYNC_STATUS_EVENT, statusListener)
+  })
+
+  it('keeps the last successful check time in memory without a vault write', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(123_456)
+    try {
+      invoke.mockResolvedValue({ enabled: true, lastSyncedAt: 100, vaultChanged: false })
+
+      expect((await syncNow()).lastSyncedAt).toBe(123_456)
+      expect((await getSyncStatus()).lastSyncedAt).toBe(123_456)
+    } finally {
+      now.mockRestore()
+    }
+  })
 
   it('reports an automatic failure once and keeps it visible until a successful sync', async () => {
     const listener = vi.fn()
@@ -75,6 +106,26 @@ describe('sync commands', () => {
 
     expect(getBackgroundSyncError()).toBeUndefined()
     window.removeEventListener(SYNC_BACKGROUND_ERROR_EVENT, listener)
+  })
+
+  it('queues one more pass when another background sync starts during an active one', async () => {
+    let finishFirstSync: (status: SyncStatus) => void = () => {}
+    invoke.mockImplementationOnce(
+      () =>
+        new Promise<SyncStatus>((resolve) => {
+          finishFirstSync = resolve
+        }),
+    )
+    invoke.mockResolvedValue({ enabled: true })
+
+    const firstSync = syncInBackground()
+    await syncInBackground()
+    await syncInBackground()
+    expect(invoke).toHaveBeenCalledTimes(1)
+
+    finishFirstSync({ enabled: true })
+    await firstSync
+    expect(invoke).toHaveBeenCalledTimes(2)
   })
 
   it.each(['syncNotConfigured', 'vault is locked'])(

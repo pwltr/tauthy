@@ -23,6 +23,7 @@ import {
   mergeConflictedSyncCopy,
   syncNow,
   SYNC_BACKGROUND_ERROR_EVENT,
+  SYNC_STATUS_EVENT,
   type SyncStatus,
 } from '~/utils/sync'
 
@@ -82,6 +83,12 @@ const Sync = () => {
     const updateBackgroundError = () => setBackgroundError(getBackgroundSyncError())
     window.addEventListener(SYNC_BACKGROUND_ERROR_EVENT, updateBackgroundError)
     return () => window.removeEventListener(SYNC_BACKGROUND_ERROR_EVENT, updateBackgroundError)
+  }, [])
+
+  useEffect(() => {
+    const updateStatus = (event: Event) => setStatus((event as CustomEvent<SyncStatus>).detail)
+    window.addEventListener(SYNC_STATUS_EVENT, updateStatus)
+    return () => window.removeEventListener(SYNC_STATUS_EVENT, updateStatus)
   }, [])
 
   const chooseCreate = async () => {

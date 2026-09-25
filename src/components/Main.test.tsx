@@ -12,9 +12,11 @@ const vault = vi.hoisted(() => ({
 const idleTimer = vi.hoisted(() => ({
   onIdle: undefined as (() => Promise<void>) | undefined,
 }))
+const syncInBackground = vi.hoisted(() => vi.fn())
 
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/components/AppBar', () => ({ default: () => <div>Header</div> }))
+vi.mock('~/utils/sync', () => ({ syncInBackground }))
 vi.mock('react-idle-timer', () => ({
   useIdleTimer: vi.fn(({ onIdle }: { onIdle: () => Promise<void> }) => {
     idleTimer.onIdle = onIdle
@@ -55,6 +57,7 @@ describe('vault initialization', () => {
     vault.lock.mockResolvedValue(undefined)
     vault.reset.mockResolvedValue(undefined)
     vault.unlock.mockResolvedValue(undefined)
+    syncInBackground.mockReset()
   })
 
   it('sends a new user to onboarding without reading the vault', async () => {
@@ -73,6 +76,26 @@ describe('vault initialization', () => {
     expect(vault.checkVault).toHaveBeenCalledOnce()
     expect(vault.reset).not.toHaveBeenCalled()
     expect(screen.getByText('Accounts')).toBeInTheDocument()
+  })
+
+  it('checks for remote changes while open and stops after leaving the vault', async () => {
+    vi.useFakeTimers()
+    try {
+      const view = renderMain()
+      await flushPromises()
+
+      expect(syncInBackground).toHaveBeenCalledOnce()
+      await act(() => vi.advanceTimersByTimeAsync(59_999))
+      expect(syncInBackground).toHaveBeenCalledOnce()
+      await act(() => vi.advanceTimersByTimeAsync(1))
+      expect(syncInBackground).toHaveBeenCalledTimes(2)
+
+      view.unmount()
+      await act(() => vi.advanceTimersByTimeAsync(60_000))
+      expect(syncInBackground).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('recovers from a stale password setting by showing the unlock screen', async () => {
