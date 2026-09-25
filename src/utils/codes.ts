@@ -15,7 +15,16 @@ import type {
   TwoFasService,
 } from '~/types'
 
-export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy'
+export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy' | 'otpauth'
+
+export type OtpAuthImportPreview = {
+  entries: VaultEntry[]
+  newCount: number
+  duplicateCount: number
+}
+
+const MAX_OTP_AUTH_FILE_SIZE = 1024 * 1024
+const MAX_OTP_AUTH_ENTRIES = 500
 
 export type GeneratedTOTPs = {
   codes: Array<string | null>
@@ -143,6 +152,62 @@ export const parseOtpAuthUri = (value: string): VaultEntry => {
     issuer: issuer || undefined,
     secret,
   }
+}
+
+export const parseOtpAuthUriList = (text: string): VaultEntry[] => {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r\n|\r|\n/)
+  const entries = lines
+    .filter((line) => line.trim())
+    .map((line) => {
+      const entry = parseOtpAuthUri(line.trim())
+      if (!/^[A-Z2-7]+$/.test(normalizedSecret(entry.secret))) throw Error('importFailed')
+      return entry
+    })
+  if (entries.length === 0) throw Error('importFailed')
+  if (entries.length > MAX_OTP_AUTH_ENTRIES) throw Error('importOtpAuthTooMany')
+  return entries
+}
+
+const otpAuthEntryKey = (entry: VaultEntry) =>
+  JSON.stringify([
+    normalizedSecret(entry.secret),
+    entry.issuer?.trim().toLowerCase() ?? '',
+    entry.name.trim().toLowerCase(),
+  ])
+
+const otpAuthAdditions = (current: VaultEntry[], imported: VaultEntry[]) => {
+  const seen = new Set(current.map(otpAuthEntryKey))
+  const additions = imported.filter((entry) => {
+    const key = otpAuthEntryKey(entry)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+  return { additions, duplicateCount: imported.length - additions.length }
+}
+
+export const prepareOtpAuthImport = async (file: File): Promise<OtpAuthImportPreview> => {
+  if (file.size > MAX_OTP_AUTH_FILE_SIZE) throw Error('importOtpAuthTooLarge')
+  const entries = parseOtpAuthUriList(await file.text())
+  try {
+    const { codes } = await invoke<GeneratedTOTPs>('generate_totps', {
+      arguments: entries.map((entry) => entry.secret),
+    })
+    if (codes.length !== entries.length || codes.some((code) => code === null)) {
+      throw Error('importFailed')
+    }
+  } catch {
+    throw Error('importFailed')
+  }
+  const { additions, duplicateCount } = otpAuthAdditions(await vault.getVault(), entries)
+  return { entries, newCount: additions.length, duplicateCount }
+}
+
+export const commitOtpAuthImport = async (entries: VaultEntry[]) => {
+  const current = await vault.getVault()
+  const { additions } = otpAuthAdditions(current, entries)
+  if (additions.length > 0) await vault.save(JSON.stringify([...current, ...additions]))
+  return additions.length
 }
 
 const twoFasServiceToUri = (service: TwoFasService) => {
