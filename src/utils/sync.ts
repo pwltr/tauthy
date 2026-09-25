@@ -8,6 +8,8 @@ export const SYNC_BACKGROUND_ERROR_EVENT = 'tauthy:sync-background-error'
 
 let backgroundError: unknown
 let notifiedError: string | undefined
+let backgroundSyncInFlight = false
+let backgroundSyncPending = false
 
 export type SyncStatus = {
   enabled: boolean
@@ -51,18 +53,33 @@ export const syncNow = async () => {
 }
 
 export const syncInBackground = async () => {
+  if (backgroundSyncInFlight) {
+    // A local edit might arrive during a periodic read. Give it another pass
+    // after the current sync rather than leaving it unpublished until next tick.
+    backgroundSyncPending = true
+    return
+  }
+  backgroundSyncInFlight = true
   try {
-    await syncNow()
-  } catch (error) {
-    const message = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
-    if (message === 'syncNotConfigured' || message === 'vault is locked') return
+    do {
+      backgroundSyncPending = false
+      try {
+        await syncNow()
+      } catch (error) {
+        const message =
+          typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+        if (message === 'syncNotConfigured' || message === 'vault is locked') continue
 
-    backgroundError = error
-    window.dispatchEvent(new Event(SYNC_BACKGROUND_ERROR_EVENT))
-    if (message !== notifiedError) {
-      notifiedError = message
-      toast.error(i18n.t('toasts.syncBackgroundFailed'), { duration: 8000 })
-    }
+        backgroundError = error
+        window.dispatchEvent(new Event(SYNC_BACKGROUND_ERROR_EVENT))
+        if (message !== notifiedError) {
+          notifiedError = message
+          toast.error(i18n.t('toasts.syncBackgroundFailed'), { duration: 8000 })
+        }
+      }
+    } while (backgroundSyncPending)
+  } finally {
+    backgroundSyncInFlight = false
   }
 }
 

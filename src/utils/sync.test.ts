@@ -15,6 +15,7 @@ import {
   SYNC_COMPLETE_EVENT,
   syncInBackground,
   syncNow,
+  type SyncStatus,
 } from '~/utils/sync'
 
 describe('sync commands', () => {
@@ -75,6 +76,26 @@ describe('sync commands', () => {
 
     expect(getBackgroundSyncError()).toBeUndefined()
     window.removeEventListener(SYNC_BACKGROUND_ERROR_EVENT, listener)
+  })
+
+  it('queues one more pass when another background sync starts during an active one', async () => {
+    let finishFirstSync: (status: SyncStatus) => void = () => {}
+    invoke.mockImplementationOnce(
+      () =>
+        new Promise<SyncStatus>((resolve) => {
+          finishFirstSync = resolve
+        }),
+    )
+    invoke.mockResolvedValue({ enabled: true })
+
+    const firstSync = syncInBackground()
+    await syncInBackground()
+    await syncInBackground()
+    expect(invoke).toHaveBeenCalledTimes(1)
+
+    finishFirstSync({ enabled: true })
+    await firstSync
+    expect(invoke).toHaveBeenCalledTimes(2)
   })
 
   it.each(['syncNotConfigured', 'vault is locked'])(
