@@ -181,7 +181,6 @@
   "toasts": {
     "copied": "Copié dans le presse-papiers",
     "imported": "Comptes importés.",
-    "import2FasEncrypted": "Les sauvegardes 2FAS protégées par mot de passe ne sont pas prises en charge. Exportez une sauvegarde sans mot de passe depuis 2FAS, puis réessayez.",
     "importEncryptedWrongPassword": "Le mot de passe de la sauvegarde est incorrect.",
     "importEncryptedAuthenticationFailed": "Le mot de passe est incorrect, ou la sauvegarde a été endommagée ou modifiée.",
     "importEncryptedCorrupt": "La sauvegarde chiffrée est endommagée ou a été modifiée.",

@@ -10,6 +10,7 @@ mod otp;
 mod sync;
 mod tauthy_backup;
 mod tray;
+mod twofas;
 
 #[cfg(target_os = "macos")]
 mod menu;
@@ -55,6 +56,7 @@ fn main() {
       sync::sync_status,
       tauthy_backup::decrypt_tauthy_backup,
       tauthy_backup::encrypt_tauthy_backup,
+      twofas::decrypt_twofas_backup,
       tray::tray_configure,
     ]);
 

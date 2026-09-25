@@ -181,7 +181,6 @@
   "toasts": {
     "copied": "Copied to clipboard",
     "imported": "Accounts imported.",
-    "import2FasEncrypted": "Password-protected 2FAS backups are not supported. Export a backup without a password from 2FAS and try again.",
     "importEncryptedWrongPassword": "The backup password is incorrect.",
     "importEncryptedAuthenticationFailed": "The password is incorrect, or the backup has been damaged or modified.",
     "importEncryptedCorrupt": "The encrypted backup is corrupted or has been modified.",

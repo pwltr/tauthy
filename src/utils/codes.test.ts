@@ -21,6 +21,7 @@ import {
   isEncryptedAegisBackup,
   isEncryptedImport,
   isEncryptedTauthyBackup,
+  isEncryptedTwoFasBackup,
   parseImportedEntries,
   parseOtpAuthUri,
   parseOtpAuthUriList,
@@ -543,6 +544,12 @@ describe('shared import review', () => {
 })
 
 describe('2FAS imports', () => {
+  beforeEach(() => {
+    invoke.mockReset()
+    mockVault.getVault.mockReset()
+    mockVault.save.mockReset()
+  })
+
   it('imports linked and manually entered services and preserves groups', () => {
     const entries = parseImportedEntries(
       {
@@ -590,10 +597,62 @@ describe('2FAS imports', () => {
     })
   })
 
-  it('rejects password-protected backups with an actionable error', () => {
+  it('recognizes password-protected backups and requests a password', () => {
+    expect(isEncryptedTwoFasBackup({ servicesEncrypted: 'ciphertext:salt:iv' })).toBe(true)
+    expect(isEncryptedImport({ services: [] }, '2fas')).toBe(false)
     expect(() =>
       parseImportedEntries({ servicesEncrypted: 'ciphertext:salt:iv' }, '2fas'),
-    ).toThrowError('import2FasEncrypted')
+    ).toThrowError('importPasswordRequired')
+  })
+
+  it('decrypts into the existing import review without saving first', async () => {
+    const backup = { services: [], servicesEncrypted: 'ciphertext:salt:iv' }
+    const file = {
+      name: 'accounts.2fas',
+      size: 100,
+      text: vi.fn().mockResolvedValue(JSON.stringify(backup)),
+    } as unknown as File
+    invoke.mockResolvedValue({
+      services: [
+        {
+          name: 'Dropbox',
+          secret: 'JBSWY3DPEHPK3PXP',
+          otp: { account: 'alice@example.com', issuer: 'Dropbox' },
+        },
+      ],
+    })
+    mockVault.getVault.mockResolvedValue([])
+
+    await expect(prepareImport(file, '2fas')).rejects.toThrowError('importPasswordRequired')
+    const preview = await prepareImport(file, '2fas', 'password')
+    expect(invoke).toHaveBeenCalledWith('decrypt_twofas_backup', {
+      backup: JSON.stringify(backup),
+      password: 'password',
+    })
+    expect(preview.entries).toMatchObject([
+      { name: 'alice@example.com', issuer: 'Dropbox', secret: 'JBSWY3DPEHPK3PXP' },
+    ])
+    expect(preview.newCount).toBe(1)
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('preserves authentication errors for password retry and rejects oversized files', async () => {
+    const backup = { servicesEncrypted: 'ciphertext:salt:iv' }
+    const file = {
+      name: 'accounts.2fas',
+      size: 100,
+      text: vi.fn().mockResolvedValue(JSON.stringify(backup)),
+    } as unknown as File
+    invoke.mockRejectedValue('importEncryptedAuthenticationFailed')
+    await expect(prepareImport(file, '2fas', 'wrong')).rejects.toThrowError(
+      'importEncryptedAuthenticationFailed',
+    )
+    vi.mocked(file.text).mockClear()
+    const largeFile = { ...file, size: 90 * 1024 * 1024 + 1 } as File
+    await expect(prepareImport(largeFile, '2fas', 'password')).rejects.toThrowError(
+      'importEncryptedUnsupported',
+    )
+    expect(largeFile.text).not.toHaveBeenCalled()
   })
 
   it('rejects the whole backup when an entry would generate the wrong code', () => {

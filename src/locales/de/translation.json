@@ -181,7 +181,6 @@
   "toasts": {
     "copied": "In Zwischenablage kopiert",
     "imported": "Konten importiert.",
-    "import2FasEncrypted": "Passwortgeschützte 2FAS-Sicherungen werden nicht unterstützt. Exportiere eine Sicherung ohne Passwort aus 2FAS und versuche es erneut.",
     "importEncryptedWrongPassword": "Das Passwort der Sicherung ist falsch.",
     "importEncryptedAuthenticationFailed": "Das Passwort ist falsch oder die Sicherung wurde beschädigt oder verändert.",
     "importEncryptedCorrupt": "Die verschlüsselte Sicherung ist beschädigt oder wurde verändert.",

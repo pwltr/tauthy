@@ -181,7 +181,6 @@
   "toasts": {
     "copied": "Copiado al portapapeles.",
     "imported": "Cuentas importadas.",
-    "import2FasEncrypted": "Las copias de 2FAS protegidas con contraseña no son compatibles. Exporta una copia sin contraseña desde 2FAS e inténtalo de nuevo.",
     "importEncryptedWrongPassword": "La contraseña de la copia es incorrecta.",
     "importEncryptedAuthenticationFailed": "La contraseña es incorrecta o la copia está dañada o ha sido modificada.",
     "importEncryptedCorrupt": "La copia cifrada está dañada o ha sido modificada.",

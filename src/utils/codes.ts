@@ -28,6 +28,7 @@ export type ImportPreview = {
 
 const MAX_OTP_AUTH_FILE_SIZE = 1024 * 1024
 const MAX_OTP_AUTH_ENTRIES = 500
+const MAX_ENCRYPTED_2FAS_FILE_SIZE = 90 * 1024 * 1024
 
 export type GeneratedTOTPs = {
   codes: Array<string | null>
@@ -61,6 +62,9 @@ export const decryptAegisBackup = async (json: unknown, password: string) => {
 export const isEncryptedTauthyBackup = (json: unknown) =>
   (json as { format?: unknown })?.format === 'tauthy-backup-encrypted'
 
+export const isEncryptedTwoFasBackup = (json: unknown) =>
+  typeof (json as { servicesEncrypted?: unknown })?.servicesEncrypted === 'string'
+
 export const decryptTauthyBackup = async (json: unknown, password: string) => {
   if (!isEncryptedTauthyBackup(json)) throw Error('importFailed')
 
@@ -76,6 +80,20 @@ export const decryptTauthyBackup = async (json: unknown, password: string) => {
 }
 
 const encryptedImportAdapters: Partial<Record<ImportFormat, EncryptedImportAdapter>> = {
+  '2fas': {
+    isEncrypted: isEncryptedTwoFasBackup,
+    decrypt: async (json, password) => {
+      try {
+        return await invoke<TwoFasBackup>('decrypt_twofas_backup', {
+          backup: JSON.stringify(json),
+          password,
+        })
+      } catch (err) {
+        if (typeof err === 'string') throw Error(err)
+        throw Error('importFailed')
+      }
+    },
+  },
   aegis: {
     isEncrypted: isEncryptedAegisBackup,
     decrypt: async (json, password) => ({
@@ -259,7 +277,7 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
   if (format === '2fas') {
     const backup = json as TwoFasBackup
     if (typeof backup?.servicesEncrypted === 'string') {
-      throw Error('import2FasEncrypted')
+      throw Error('importPasswordRequired')
     }
     if (!Array.isArray(backup?.services)) {
       throw Error('importFailed')
@@ -402,6 +420,9 @@ export const deleteCode = async (id: string) => {
 
 const parseImportFile = async (file: File, format: ImportFormat, password?: string) => {
   if (format === 'otpauth') return parseOtpAuthImport(file)
+  if (format === '2fas' && file.size > MAX_ENCRYPTED_2FAS_FILE_SIZE) {
+    throw Error('importEncryptedUnsupported')
+  }
 
   let json: unknown
   try {
