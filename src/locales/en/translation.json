@@ -209,7 +209,7 @@
     "syncUnavailable": "The sync location is currently unavailable. Check that your cloud folder is accessible.",
     "syncUnsupported": "This sync file version or encryption configuration is not supported.",
     "syncFailed": "Sync failed. Your local vault was not lost.",
-    "syncBackgroundFailed": "Automatic sync could not finish. Your local changes are safe. Open Settings → Sync for details.",
+    "syncBackgroundFailed": "Automatic sync could not finish. Open Settings → Sync for details.",
     "error": "An error occured."
   }
 }
