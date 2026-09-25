@@ -3,7 +3,7 @@ import { dataDir, join } from '@tauri-apps/api/path'
 import { exists, mkdir, remove } from '@tauri-apps/plugin-fs'
 
 import { VaultEntry } from '~/types'
-import { SYNC_COMPLETE_EVENT, syncNow } from '~/utils/sync'
+import { SYNC_COMPLETE_EVENT, syncInBackground } from '~/utils/sync'
 
 const appName = import.meta.env.DEV ? 'tauthy-dev' : 'tauthy'
 const vaultName = 'vault.stronghold'
@@ -60,7 +60,7 @@ export class Vault {
     this.cachedRecord = record
     // Sync is deliberately best-effort. A missing cloud folder or network
     // failure must never turn a successful local vault edit into a failure.
-    void syncNow().catch(() => {})
+    void syncInBackground()
   }
 
   async reset() {

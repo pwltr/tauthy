@@ -12,6 +12,7 @@ const vault = vi.hoisted(() => ({
 
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/components/AppBar', () => ({ default: () => <div>Header</div> }))
+vi.mock('~/utils/sync', () => ({ syncInBackground: vi.fn() }))
 vi.mock('react-idle-timer', () => ({ useIdleTimer: vi.fn() }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

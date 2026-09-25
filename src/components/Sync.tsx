@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { confirm, open } from '@tauri-apps/plugin-dialog'
 import Box from '@mui/material/Box'
+import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -16,10 +17,12 @@ import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
   createSync,
   disconnectSync,
+  getBackgroundSyncError,
   getSyncStatus,
   joinSync,
   mergeConflictedSyncCopy,
   syncNow,
+  SYNC_BACKGROUND_ERROR_EVENT,
   type SyncStatus,
 } from '~/utils/sync'
 
@@ -51,6 +54,7 @@ const Sync = () => {
   const [status, setStatus] = useState<SyncStatus>()
   const [pending, setPending] = useState<PendingAction>()
   const [busy, setBusy] = useState(false)
+  const [backgroundError, setBackgroundError] = useState<unknown>(getBackgroundSyncError)
   const showRecovery = developerSettingsEnabled()
 
   const syncErrorMessage = (error: unknown) => {
@@ -72,6 +76,12 @@ const Sync = () => {
   useEffect(() => {
     setAppBarTitle(t('sync.pageTitle'))
     void loadStatus()
+  }, [])
+
+  useEffect(() => {
+    const updateBackgroundError = () => setBackgroundError(getBackgroundSyncError())
+    window.addEventListener(SYNC_BACKGROUND_ERROR_EVENT, updateBackgroundError)
+    return () => window.removeEventListener(SYNC_BACKGROUND_ERROR_EVENT, updateBackgroundError)
   }, [])
 
   const chooseCreate = async () => {
@@ -176,51 +186,61 @@ const Sync = () => {
         </Typography>
       </Box>
       {status.enabled ? (
-        <List>
-          <ListItem>
-            <ListItemText
-              primary={t('sync.connected')}
-              secondary={status.path}
-              slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary={t('sync.lastSynced')}
-              secondary={
-                status.lastSyncedAt
-                  ? new Intl.DateTimeFormat(i18n.language, {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    }).format(status.lastSyncedAt)
-                  : t('sync.never')
-              }
-            />
-          </ListItem>
-          <ListItem disablePadding onClick={() => !busy && void synchronize()}>
-            <ListItemButton disabled={busy}>
-              <ListItemText primary={t('sync.syncNow')} secondary={t('sync.syncNowDescription')} />
-            </ListItemButton>
-          </ListItem>
-          {showRecovery && (
-            <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+        <>
+          {backgroundError && (
+            <Alert severity="warning" sx={{ mx: 2, mt: 2 }}>
+              {syncErrorMessage(backgroundError)}
+            </Alert>
+          )}
+          <List>
+            <ListItem>
+              <ListItemText
+                primary={t('sync.connected')}
+                secondary={status.path}
+                slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText
+                primary={t('sync.lastSynced')}
+                secondary={
+                  status.lastSyncedAt
+                    ? new Intl.DateTimeFormat(i18n.language, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }).format(status.lastSyncedAt)
+                    : t('sync.never')
+                }
+              />
+            </ListItem>
+            <ListItem disablePadding onClick={() => !busy && void synchronize()}>
               <ListItemButton disabled={busy}>
                 <ListItemText
-                  primary={t('sync.mergeConflictedCopy')}
-                  secondary={t('sync.mergeConflictedCopyDescription')}
+                  primary={t('sync.syncNow')}
+                  secondary={t('sync.syncNowDescription')}
                 />
               </ListItemButton>
             </ListItem>
-          )}
-          <ListItem disablePadding onClick={() => !busy && void disconnect()}>
-            <ListItemButton disabled={busy}>
-              <ListItemText
-                primary={t('sync.disconnect')}
-                secondary={t('sync.disconnectDescription')}
-              />
-            </ListItemButton>
-          </ListItem>
-        </List>
+            {showRecovery && (
+              <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+                <ListItemButton disabled={busy}>
+                  <ListItemText
+                    primary={t('sync.mergeConflictedCopy')}
+                    secondary={t('sync.mergeConflictedCopyDescription')}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
+            <ListItem disablePadding onClick={() => !busy && void disconnect()}>
+              <ListItemButton disabled={busy}>
+                <ListItemText
+                  primary={t('sync.disconnect')}
+                  secondary={t('sync.disconnectDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </>
       ) : (
         <List>
           <ListItem disablePadding onClick={() => void chooseCreate()}>

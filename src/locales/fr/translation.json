@@ -209,6 +209,7 @@
     "syncUnavailable": "L’emplacement de synchronisation est indisponible. Vérifiez que le dossier cloud est accessible.",
     "syncUnsupported": "Cette version ou configuration de chiffrement n’est pas prise en charge.",
     "syncFailed": "La synchronisation a échoué. Votre coffre local n’a pas été perdu.",
+    "syncBackgroundFailed": "La synchronisation automatique n’a pas abouti. Consultez Paramètres → Synchronisation pour les détails.",
     "error": "Une erreur s'est produite."
   }
 }
