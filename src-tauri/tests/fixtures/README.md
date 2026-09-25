@@ -19,3 +19,10 @@ represent the 32-byte iOS salt and 256-byte Android salt respectively. They were
 Node's crypto module, independently of Tauthy's decryptor, using 2FAS's PBKDF2-HMAC-SHA256
 (10,000 rounds) and AES-256-GCM scheme. Their password is `correct horse battery staple`. The fixed
 salts and nonces are test vectors only and must never be used for real backups.
+
+# Encrypted Ente Auth fixture
+
+`ente_encrypted_minimal.json` contains two dummy `otpauth://` entries and uses the password `test`.
+It was generated independently with libsodium's Argon2id and XChaCha20-Poly1305 secretstream
+implementations. Its 8 MiB KDF cost keeps the interoperability test fast; real Ente exports can
+specify a much higher memory cost. The fixed salt is for testing only.

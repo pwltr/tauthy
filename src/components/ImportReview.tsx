@@ -23,6 +23,7 @@ const formatNames = {
   '2fas': '2FAS',
   aegis: 'Aegis',
   authy: 'Authy',
+  ente: 'Ente Auth',
   google: 'Google Authenticator',
   tauthy: 'Tauthy',
 }

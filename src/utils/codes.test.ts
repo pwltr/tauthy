@@ -19,6 +19,7 @@ import {
   getTOTPRefreshDelay,
   importFile,
   isEncryptedAegisBackup,
+  isEncryptedEnteExport,
   isEncryptedImport,
   isEncryptedTauthyBackup,
   isEncryptedTwoFasBackup,
@@ -703,4 +704,66 @@ describe('2FAS imports', () => {
       expect(() => parseImportedEntries(backup, '2fas')).toThrowError('importFailed')
     },
   )
+})
+
+describe('Ente Auth encrypted exports', () => {
+  const backup = {
+    version: 1,
+    kdfParams: { memLimit: 8388608, opsLimit: 3, salt: 'salt' },
+    encryptedData: 'ciphertext',
+    encryptionNonce: 'header',
+  }
+  const file = (contents: unknown, size = 200) =>
+    ({
+      name: 'ente-export.json',
+      size,
+      text: vi.fn().mockResolvedValue(JSON.stringify(contents)),
+    }) as unknown as File
+
+  beforeEach(() => {
+    invoke.mockReset()
+    mockVault.getVault.mockReset()
+    mockVault.save.mockReset()
+  })
+
+  it('requires a password and previews decrypted accounts without saving', async () => {
+    expect(isEncryptedEnteExport(backup)).toBe(true)
+    expect(isEncryptedImport(backup, 'ente')).toBe(true)
+    invoke.mockImplementation(async (command: string) => {
+      if (command === 'decrypt_ente_export') {
+        return 'otpauth://totp/Example:alice?secret=JBSWY3DPEHPK3PXP&issuer=Example'
+      }
+      if (command === 'generate_totps') return { codes: ['123456'], expiresAtMs: 30_000 }
+      throw Error('unexpected command')
+    })
+    mockVault.getVault.mockResolvedValue([])
+
+    await expect(prepareImport(file(backup), 'ente')).rejects.toThrowError('importPasswordRequired')
+    const preview = await prepareImport(file(backup), 'ente', 'password')
+    expect(invoke).toHaveBeenCalledWith('decrypt_ente_export', {
+      export: JSON.stringify(backup),
+      password: 'password',
+    })
+    expect(preview.entries).toMatchObject([
+      { name: 'alice', issuer: 'Example', secret: 'JBSWY3DPEHPK3PXP' },
+    ])
+    expect(preview.newCount).toBe(1)
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('preserves authentication errors and rejects malformed or oversized exports', async () => {
+    invoke.mockRejectedValue('importEncryptedAuthenticationFailed')
+    await expect(prepareImport(file(backup), 'ente', 'wrong')).rejects.toThrowError(
+      'importEncryptedAuthenticationFailed',
+    )
+    await expect(prepareImport(file({}), 'ente', 'password')).rejects.toThrowError(
+      'importEncryptedUnsupported',
+    )
+    const oversized = file(backup, 4 * 1024 * 1024 + 1)
+    await expect(prepareImport(oversized, 'ente', 'password')).rejects.toThrowError(
+      'importEncryptedUnsupported',
+    )
+    expect(oversized.text).not.toHaveBeenCalled()
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
 })

@@ -29,6 +29,7 @@ const formatNames: Record<ImportFormat, string> = {
   '2fas': '2FAS',
   aegis: 'Aegis',
   authy: 'Authy',
+  ente: 'Ente Auth',
   google: 'Google Authenticator',
   tauthy: 'Tauthy',
   otpauth: 'Authenticator links (.txt)',
@@ -143,6 +144,12 @@ const ImportModal = ({
             <ListItem disablePadding onClick={() => handleClick('authy')}>
               <ListItemButton>
                 <ListItemText primary="Authy" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding onClick={() => handleClick('ente')}>
+              <ListItemButton>
+                <ListItemText primary="Ente Auth" />
               </ListItemButton>
             </ListItem>
 

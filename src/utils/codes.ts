@@ -15,7 +15,7 @@ import type {
   TwoFasService,
 } from '~/types'
 
-export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy' | 'otpauth'
+export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'ente' | 'google' | 'tauthy' | 'otpauth'
 
 export type ImportPreview = {
   format: ImportFormat
@@ -29,6 +29,7 @@ export type ImportPreview = {
 const MAX_OTP_AUTH_FILE_SIZE = 1024 * 1024
 const MAX_OTP_AUTH_ENTRIES = 500
 const MAX_ENCRYPTED_2FAS_FILE_SIZE = 90 * 1024 * 1024
+const MAX_ENCRYPTED_ENTE_FILE_SIZE = 4 * 1024 * 1024
 
 export type GeneratedTOTPs = {
   codes: Array<string | null>
@@ -65,6 +66,10 @@ export const isEncryptedTauthyBackup = (json: unknown) =>
 export const isEncryptedTwoFasBackup = (json: unknown) =>
   typeof (json as { servicesEncrypted?: unknown })?.servicesEncrypted === 'string'
 
+export const isEncryptedEnteExport = (json: unknown) =>
+  typeof (json as { encryptedData?: unknown })?.encryptedData === 'string' &&
+  typeof (json as { encryptionNonce?: unknown })?.encryptionNonce === 'string'
+
 export const decryptTauthyBackup = async (json: unknown, password: string) => {
   if (!isEncryptedTauthyBackup(json)) throw Error('importFailed')
 
@@ -86,6 +91,20 @@ const encryptedImportAdapters: Partial<Record<ImportFormat, EncryptedImportAdapt
       try {
         return await invoke<TwoFasBackup>('decrypt_twofas_backup', {
           backup: JSON.stringify(json),
+          password,
+        })
+      } catch (err) {
+        if (typeof err === 'string') throw Error(err)
+        throw Error('importFailed')
+      }
+    },
+  },
+  ente: {
+    isEncrypted: isEncryptedEnteExport,
+    decrypt: async (json, password) => {
+      try {
+        return await invoke<string>('decrypt_ente_export', {
+          export: JSON.stringify(json),
           password,
         })
       } catch (err) {
@@ -198,9 +217,7 @@ const importEntryKey = (entry: VaultEntry) =>
     entry.icon ?? '',
   ])
 
-const parseOtpAuthImport = async (file: File) => {
-  if (file.size > MAX_OTP_AUTH_FILE_SIZE) throw Error('importOtpAuthTooLarge')
-  const entries = parseOtpAuthUriList(await file.text())
+const validateOtpAuthEntries = async (entries: VaultEntry[]) => {
   try {
     const { codes } = await invoke<GeneratedTOTPs>('generate_totps', {
       arguments: entries.map((entry) => entry.secret),
@@ -212,6 +229,11 @@ const parseOtpAuthImport = async (file: File) => {
     throw Error('importFailed')
   }
   return entries
+}
+
+const parseOtpAuthImport = async (file: File) => {
+  if (file.size > MAX_OTP_AUTH_FILE_SIZE) throw Error('importOtpAuthTooLarge')
+  return validateOtpAuthEntries(parseOtpAuthUriList(await file.text()))
 }
 
 const planImport = (current: VaultEntry[], imported: VaultEntry[], format: ImportFormat) => {
@@ -423,6 +445,9 @@ const parseImportFile = async (file: File, format: ImportFormat, password?: stri
   if (format === '2fas' && file.size > MAX_ENCRYPTED_2FAS_FILE_SIZE) {
     throw Error('importEncryptedUnsupported')
   }
+  if (format === 'ente' && file.size > MAX_ENCRYPTED_ENTE_FILE_SIZE) {
+    throw Error('importEncryptedUnsupported')
+  }
 
   let json: unknown
   try {
@@ -435,6 +460,11 @@ const parseImportFile = async (file: File, format: ImportFormat, password?: stri
   if (isEncryptedImport(json, format)) {
     if (password === undefined) throw Error('importPasswordRequired')
     json = await decryptImport(json, format, password)
+  }
+
+  if (format === 'ente') {
+    if (typeof json !== 'string') throw Error('importEncryptedUnsupported')
+    return validateOtpAuthEntries(parseOtpAuthUriList(json))
   }
 
   return parseImportedEntries(json, format)
