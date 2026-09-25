@@ -11,3 +11,11 @@ The fixture contains dummy data only:
 
 The compatibility tests use it to verify the legacy PBKDF2 derivation, v2 snapshot decryption, and
 end-to-end migration into a current Stronghold snapshot.
+
+# Encrypted 2FAS fixture
+
+`2fas_encrypted_minimal.json` and `2fas_encrypted_android.json` contain dummy TOTP entries and
+represent the 32-byte iOS salt and 256-byte Android salt respectively. They were generated with
+Node's crypto module, independently of Tauthy's decryptor, using 2FAS's PBKDF2-HMAC-SHA256
+(10,000 rounds) and AES-256-GCM scheme. Their password is `correct horse battery staple`. The fixed
+salts and nonces are test vectors only and must never be used for real backups.

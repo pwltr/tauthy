@@ -11,7 +11,6 @@ import ListItem from '~/components/ListItem'
 import ImportPasswordModal from '~/components/modals/ImportPassword'
 
 const knownImportErrors = [
-  'import2FasEncrypted',
   'importEncryptedCorrupt',
   'importEncryptedAuthenticationFailed',
   'importEncryptedNoPasswordKey',
