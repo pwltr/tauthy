@@ -1,0 +1,2 @@
+otpauth://totp/Example:alice?secret=JBSWY3DPEHPK3PXP&issuer=Example
+otpauth://totp/Other:bob?secret=MZXW6YTBOI&issuer=Other

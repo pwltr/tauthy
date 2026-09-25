@@ -46,9 +46,9 @@
     "security": "Sicherheit",
     "securityDescription": "Passwort und automatisches Sperren",
     "import": "Import & Export",
-    "importDescription": "Tresor importieren oder Export erstellen",
+    "importDescription": "Konten importieren oder Sicherung exportieren",
     "sync": "Synchronisierung",
-    "syncDescription": "Verschlüsselten Tresor in einem Cloud-Ordner abgleichen",
+    "syncDescription": "Konten über verschlüsselte Dateien in einem Cloud-Ordner synchronisieren",
     "aboutDescription": "Version, Projektlinks und Unterstützung"
   },
   "appearance": {
@@ -88,19 +88,21 @@
     "passwordResetDescription": "Passwortschutz entfernen",
     "behaviour": "Verhalten",
     "autoLock": "Automatisches Sperren",
-    "autoLockDescription": "Nach 1 Minute Inaktivität sperren"
+    "autoLockDescription": "Nach 1 Minute Inaktivität sperren",
+    "dangerZone": "Gefahrenbereich",
+    "deleteVault": "Lokalen Tresor löschen",
+    "deleteVaultDescription": "Tresor auf diesem Gerät entfernen; exportierte Sicherungen und Sync-Dateien bleiben erhalten"
   },
   "import": {
     "pageTitle": "Import & Export",
     "import": "Importieren",
-    "importDescription": "Sicherungen aus anderen Apps importieren",
+    "importDescription": "Konten aus einer Sicherung oder Textdatei importieren",
+    "otpAuth": "Authenticator-Links (.txt)",
     "export": "Exportieren",
     "exportEncrypted": "Verschlüsselte Sicherung exportieren",
     "exportEncryptedDescription": "Portable Tauthy-Sicherung mit einem Passwort schützen",
     "exportPlaintext": "Unverschlüsselte Sicherung exportieren",
-    "exportPlaintextDescription": "Lesbare JSON-Sicherung erstellen",
-    "reset": "Tresor löschen",
-    "resetDescription": "Aktuellen Tresor endgültig löschen"
+    "exportPlaintextDescription": "Lesbare JSON-Sicherung erstellen"
   },
   "sync": {
     "pageTitle": "Synchronisierung",
@@ -154,12 +156,16 @@
     "encrypting": "Wird verschlüsselt…",
     "export": "Exportieren",
     "import": "Importieren",
-    "selectImport": "Import wählen",
-    "deleteWarning": "Diese Aktion wird deinen Tresor löschen und kann nicht rückgängig gemacht werden. Bist du sicher?",
+    "importPreviewTitle": "Import prüfen",
+    "importPreviewTotal": "{{total}} Konten",
+    "importPreviewNew": "{{total}} neu",
+    "importPreviewDuplicates": "{{total}} Duplikate übersprungen",
+    "importPreviewDuplicate": "Duplikat",
+    "importNoNew": "Keine neuen Konten zum Importieren.",
+    "deleteWarning": "Tresor auf diesem Gerät löschen? Die Konten und die Sync-Verbindung auf diesem Gerät werden entfernt. Exportierte Sicherungen und Dateien im Sync-Ordner bleiben erhalten.",
     "exportWarning": "Dieser Export ist nicht verschlüsselt und enthält deine Authentifizierungsgeheimnisse. Bewahre ihn sicher auf. Fortfahren?",
     "noResults": "Keine Ergebnisse",
     "confirm": "Bestätigen",
-    "delete": "Löschen",
     "cancel": "Abbrechen"
   },
   "tray": {
@@ -174,7 +180,7 @@
   },
   "toasts": {
     "copied": "In Zwischenablage kopiert",
-    "imported": "Tresor erfolgreich importiert",
+    "imported": "Konten importiert.",
     "import2FasEncrypted": "Passwortgeschützte 2FAS-Sicherungen werden nicht unterstützt. Exportiere eine Sicherung ohne Passwort aus 2FAS und versuche es erneut.",
     "importEncryptedWrongPassword": "Das Passwort der Sicherung ist falsch.",
     "importEncryptedAuthenticationFailed": "Das Passwort ist falsch oder die Sicherung wurde beschädigt oder verändert.",
@@ -184,9 +190,12 @@
     "importTauthyNewerVersion": "Diese Sicherung wurde mit einer neueren Version von Tauthy erstellt. Aktualisiere Tauthy und versuche es erneut.",
     "importTauthyDuplicateIds": "Diese Sicherung enthält doppelte Konto-IDs und kann nicht sicher importiert werden.",
     "importTauthyIdConflict": "Ein Konto in dieser Sicherung steht im Konflikt mit einem anderen lokalen Konto mit derselben ID.",
-    "importUnsupportedOtp": "Die Sicherung enthält OTP-Formate, die Tauthy noch nicht unterstützt. Es können nur 6-stellige SHA-1-TOTP-Einträge mit einem 30-Sekunden-Zeitraum importiert werden.",
-    "importFailed": "Import fehlgeschlagen. Prüfe, ob du das richtige Sicherungsformat ausgewählt hast.",
-    "exportSuccess": "Tresor exportiert.",
+    "importIdConflict": "Ein Konto in dieser Datei hat dieselbe ID wie ein anderes lokales Konto.",
+    "importUnsupportedOtp": "Die Datei enthält OTP-Formate, die Tauthy noch nicht unterstützt. Es können nur 6-stellige SHA-1-TOTP-Einträge mit einem 30-Sekunden-Zeitraum importiert werden.",
+    "importFailed": "Import fehlgeschlagen. Prüfe die Datei und das gewählte Format.",
+    "importOtpAuthTooLarge": "Die URI-Liste ist zu groß (maximal 1 MiB).",
+    "importOtpAuthTooMany": "Die URI-Liste enthält zu viele Konten (maximal 500).",
+    "exportSuccess": "Sicherung exportiert.",
     "exportEmpty": "Tresor ist leer.",
     "exportCancelled": "Export abgebrochen.",
     "exportFailed": "Export fehlgeschlagen.",

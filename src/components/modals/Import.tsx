@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 
-import { importFile, ImportFormat } from '~/utils'
+import { ImportFormat, ImportPreview, prepareImport } from '~/utils'
 import Modal from '~/components/Modal'
 import ListItem from '~/components/ListItem'
 import ImportPasswordModal from '~/components/modals/ImportPassword'
@@ -21,21 +20,33 @@ const knownImportErrors = [
   'importTauthyDuplicateIds',
   'importTauthyIdConflict',
   'importTauthyNewerVersion',
+  'importIdConflict',
   'importUnsupportedOtp',
+  'importOtpAuthTooLarge',
+  'importOtpAuthTooMany',
   'importFailed',
 ]
-
 const formatNames: Record<ImportFormat, string> = {
   '2fas': '2FAS',
   aegis: 'Aegis',
   authy: 'Authy',
   google: 'Google Authenticator',
   tauthy: 'Tauthy',
+  otpauth: 'Authenticator links (.txt)',
 }
 
-const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const ImportModal = ({
+  open,
+  onClose,
+  onReview,
+}: {
+  open: boolean
+  onClose: () => void
+  onReview: (preview: ImportPreview) => void
+}) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const formatName = (value: ImportFormat) =>
+    value === 'otpauth' ? t('import.otpAuth') : formatNames[value]
   const inputRef = useRef<HTMLInputElement>(null)
   const [format, setFormat] = useState<ImportFormat>()
   const [pendingEncryptedImport, setPendingEncryptedImport] = useState<{
@@ -47,14 +58,9 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
 
   const handleClick = (format: ImportFormat) => {
     setFormat(format)
+    if (inputRef.current)
+      inputRef.current.accept = format === 'otpauth' ? '.txt,.uris' : '.json,.2fas,.tauthy'
     inputRef.current?.click()
-  }
-
-  const finishImport = () => {
-    toast.success(t('toasts.imported'))
-    setPendingEncryptedImport(undefined)
-    setPasswordError(undefined)
-    navigate('/')
   }
 
   const showImportError = (err: unknown) => {
@@ -73,8 +79,10 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
     setIsDecrypting(true)
     setPasswordError(undefined)
     try {
-      await importFile(pendingEncryptedImport.file, pendingEncryptedImport.format, password)
-      finishImport()
+      onReview(
+        await prepareImport(pendingEncryptedImport.file, pendingEncryptedImport.format, password),
+      )
+      closePasswordPrompt()
     } catch (err) {
       if (
         err instanceof Error &&
@@ -106,8 +114,7 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
               const file = input.files?.[0]
               if (format && file) {
                 try {
-                  await importFile(file, format)
-                  finishImport()
+                  onReview(await prepareImport(file, format))
                 } catch (err) {
                   if (err instanceof Error && err.message === 'importPasswordRequired') {
                     setPendingEncryptedImport({ file, format })
@@ -151,12 +158,18 @@ const ImportModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
                 <ListItemText primary="Tauthy" />
               </ListItemButton>
             </ListItem>
+
+            <ListItem disablePadding onClick={() => handleClick('otpauth')}>
+              <ListItemButton>
+                <ListItemText primary={t('import.otpAuth')} />
+              </ListItemButton>
+            </ListItem>
           </List>
         </>
       </Modal>
       <ImportPasswordModal
         open={!!pendingEncryptedImport}
-        formatName={pendingEncryptedImport ? formatNames[pendingEncryptedImport.format] : ''}
+        formatName={pendingEncryptedImport ? formatName(pendingEncryptedImport.format) : ''}
         busy={isDecrypting}
         error={passwordError}
         onClose={closePasswordPrompt}

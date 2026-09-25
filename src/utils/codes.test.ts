@@ -13,6 +13,7 @@ vi.mock('~/utils/storage', () => ({ vault: mockVault }))
 import {
   decryptAegisBackup,
   decryptTauthyBackup,
+  commitPreparedImport,
   exportCodes,
   generateTOTPs,
   getTOTPRefreshDelay,
@@ -22,6 +23,8 @@ import {
   isEncryptedTauthyBackup,
   parseImportedEntries,
   parseOtpAuthUri,
+  parseOtpAuthUriList,
+  prepareImport,
 } from '~/utils/codes'
 
 describe('Aegis imports', () => {
@@ -230,7 +233,7 @@ describe('Tauthy import and export', () => {
 
     await importFile(file, 'tauthy')
 
-    expect(mockVault.save).toHaveBeenCalledWith(JSON.stringify([entry]))
+    expect(mockVault.save).not.toHaveBeenCalled()
   })
 
   it('detects, decrypts, and imports an encrypted Tauthy backup', async () => {
@@ -333,6 +336,210 @@ describe('otpauth URI parsing', () => {
       expect(() => parseOtpAuthUri(uri)).toThrowError('importFailed')
     },
   )
+})
+
+describe('otpauth URI-list imports', () => {
+  const first = 'otpauth://totp/Example:alice?secret=JBSWY3DPEHPK3PXP&issuer=Example'
+  const second = 'otpauth://totp/Other:bob?secret=MZXW6YTBOI&issuer=Other'
+  const file = (text: string, size = text.length) =>
+    ({ size, text: vi.fn().mockResolvedValue(text) }) as unknown as File
+
+  beforeEach(() => {
+    invoke.mockReset()
+    invoke.mockImplementation(async (command: string, options: { arguments: string[] }) =>
+      command === 'generate_totps'
+        ? { codes: options.arguments.map(() => '123456'), expiresAtMs: 30_000 }
+        : undefined,
+    )
+    mockVault.getVault.mockReset()
+    mockVault.save.mockReset()
+  })
+
+  it('parses a UTF-8 list with blank lines and Windows line endings', () => {
+    expect(parseOtpAuthUriList(`\uFEFF${first}\r\n\r\n${second}\r\n`)).toMatchObject([
+      { issuer: 'Example', name: 'alice', secret: 'JBSWY3DPEHPK3PXP' },
+      { issuer: 'Other', name: 'bob', secret: 'MZXW6YTBOI' },
+    ])
+  })
+
+  it('rejects malformed, unsupported, or invalid-secret lines without a partial import', async () => {
+    mockVault.getVault.mockResolvedValue([])
+    for (const badLine of [
+      'not a URI',
+      'otpauth://hotp/Other:bob?secret=ABC234',
+      'otpauth://totp/Other:bob?secret=BAD!&issuer=Other',
+    ]) {
+      await expect(prepareImport(file(`${first}\n${badLine}`), 'otpauth')).rejects.toThrow()
+    }
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('bounds file size and account count before committing', async () => {
+    await expect(prepareImport(file(first, 1024 * 1024 + 1), 'otpauth')).rejects.toThrowError(
+      'importOtpAuthTooLarge',
+    )
+    expect(() => parseOtpAuthUriList(Array(501).fill(first).join('\n'))).toThrowError(
+      'importOtpAuthTooMany',
+    )
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('rejects secrets that the code generator cannot decode', async () => {
+    invoke.mockResolvedValueOnce({ codes: [null], expiresAtMs: 30_000 })
+    await expect(prepareImport(file(first), 'otpauth')).rejects.toThrowError('importFailed')
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('previews duplicates without saving, then merges only new accounts on confirmation', async () => {
+    const existing = {
+      uuid: 'existing',
+      name: 'alice',
+      issuer: 'Example',
+      secret: 'JBSWY3DPEHPK3PXP',
+    }
+    mockVault.getVault.mockResolvedValueOnce([existing]).mockResolvedValueOnce([existing])
+    const preview = await prepareImport(file(`${first}\n${second}\n${second}`), 'otpauth')
+
+    expect(preview.entries).toHaveLength(3)
+    expect(preview.newCount).toBe(1)
+    expect(preview.duplicateCount).toBe(2)
+    expect(mockVault.save).not.toHaveBeenCalled()
+
+    expect(await commitPreparedImport(preview)).toBe(1)
+    expect(JSON.parse(mockVault.save.mock.calls[0][0])).toMatchObject([
+      existing,
+      { name: 'bob', issuer: 'Other', secret: 'MZXW6YTBOI' },
+    ])
+  })
+
+  it('rechecks the current vault on confirmation and skips saving when all accounts exist', async () => {
+    const entry = parseOtpAuthUri(first)
+    mockVault.getVault.mockResolvedValue([entry])
+    expect(
+      await commitPreparedImport({
+        format: 'otpauth',
+        sourceName: 'accounts.txt',
+        entries: [entry],
+        newCount: 1,
+        duplicateCount: 0,
+        duplicateIndices: [],
+      }),
+    ).toBe(0)
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+})
+
+describe('shared import review', () => {
+  const account = { uuid: 'entry-id', name: 'alice', issuer: 'Example', secret: 'JBSWY3DPEHPK3PXP' }
+  const file = (contents: unknown) =>
+    ({
+      name: 'backup.json',
+      text: vi.fn().mockResolvedValue(JSON.stringify(contents)),
+    }) as unknown as File
+  const backupCases = [
+    [
+      '2fas',
+      { services: [{ name: 'Example', secret: account.secret, otp: { account: account.name } }] },
+    ],
+    [
+      'aegis',
+      {
+        db: {
+          entries: [
+            {
+              uuid: account.uuid,
+              type: 'totp',
+              name: account.name,
+              issuer: account.issuer,
+              info: { secret: account.secret, algo: 'SHA1', digits: 6, period: 30 },
+            },
+          ],
+        },
+      },
+    ],
+    ['authy', [{ name: account.name, secret: account.secret }]],
+    [
+      'tauthy',
+      {
+        format: 'tauthy-backup',
+        version: 1,
+        exportedAt: '2026-09-20T12:30:00.000Z',
+        entries: [
+          {
+            id: account.uuid,
+            name: account.name,
+            issuer: account.issuer,
+            otp: { type: 'totp', secret: account.secret, algorithm: 'SHA1', digits: 6, period: 30 },
+          },
+        ],
+      },
+    ],
+  ] as const
+
+  beforeEach(() => {
+    invoke.mockReset()
+    mockVault.getVault.mockReset()
+    mockVault.save.mockReset()
+    mockVault.getVault.mockResolvedValue([])
+  })
+
+  it.each(backupCases)(
+    'previews %s without writing, then commits on confirmation',
+    async (format, backup) => {
+      const preview = await prepareImport(file(backup), format)
+
+      expect(preview.format).toBe(format)
+      expect(preview.newCount).toBe(1)
+      expect(mockVault.save).not.toHaveBeenCalled()
+
+      expect(await commitPreparedImport(preview)).toBe(1)
+      expect(JSON.parse(mockVault.save.mock.calls[0][0])).toHaveLength(1)
+    },
+  )
+
+  it('detects duplicates for legacy formats and rechecks the vault before committing', async () => {
+    mockVault.getVault
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ ...account, issuer: undefined }])
+    const preview = await prepareImport(
+      file([{ name: account.name, secret: account.secret }]),
+      'authy',
+    )
+
+    expect(preview.newCount).toBe(1)
+    expect(await commitPreparedImport(preview)).toBe(0)
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('rejects a different Aegis account with an existing ID before review', async () => {
+    mockVault.getVault.mockResolvedValue([account])
+    const backup = {
+      db: {
+        entries: [
+          {
+            uuid: account.uuid,
+            type: 'totp',
+            name: 'different',
+            issuer: account.issuer,
+            info: { secret: account.secret, algo: 'SHA1', digits: 6, period: 30 },
+          },
+        ],
+      },
+    }
+    await expect(prepareImport(file(backup), 'aegis')).rejects.toThrowError('importIdConflict')
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+
+  it('decrypts a protected Tauthy backup before review without saving', async () => {
+    const encrypted = { format: 'tauthy-backup-encrypted', version: 1 }
+    invoke.mockResolvedValue(backupCases[3][1])
+    await expect(prepareImport(file(encrypted), 'tauthy')).rejects.toThrowError(
+      'importPasswordRequired',
+    )
+    const preview = await prepareImport(file(encrypted), 'tauthy', 'password')
+    expect(preview.newCount).toBe(1)
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
 })
 
 describe('2FAS imports', () => {

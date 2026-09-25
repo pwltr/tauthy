@@ -15,7 +15,19 @@ import type {
   TwoFasService,
 } from '~/types'
 
-export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy'
+export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'google' | 'tauthy' | 'otpauth'
+
+export type ImportPreview = {
+  format: ImportFormat
+  sourceName: string
+  entries: VaultEntry[]
+  newCount: number
+  duplicateCount: number
+  duplicateIndices: number[]
+}
+
+const MAX_OTP_AUTH_FILE_SIZE = 1024 * 1024
+const MAX_OTP_AUTH_ENTRIES = 500
 
 export type GeneratedTOTPs = {
   codes: Array<string | null>
@@ -143,6 +155,73 @@ export const parseOtpAuthUri = (value: string): VaultEntry => {
     issuer: issuer || undefined,
     secret,
   }
+}
+
+export const parseOtpAuthUriList = (text: string): VaultEntry[] => {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r\n|\r|\n/)
+  const entries = lines
+    .filter((line) => line.trim())
+    .map((line) => {
+      const entry = parseOtpAuthUri(line.trim())
+      if (!/^[A-Z2-7]+$/.test(normalizedSecret(entry.secret))) throw Error('importFailed')
+      return entry
+    })
+  if (entries.length === 0) throw Error('importFailed')
+  if (entries.length > MAX_OTP_AUTH_ENTRIES) throw Error('importOtpAuthTooMany')
+  return entries
+}
+
+const importEntryKey = (entry: VaultEntry) =>
+  JSON.stringify([
+    normalizedSecret(entry.secret),
+    entry.issuer?.trim().toLowerCase() ?? '',
+    entry.name.trim().toLowerCase(),
+    entry.group?.trim().toLowerCase() ?? '',
+    entry.icon ?? '',
+  ])
+
+const parseOtpAuthImport = async (file: File) => {
+  if (file.size > MAX_OTP_AUTH_FILE_SIZE) throw Error('importOtpAuthTooLarge')
+  const entries = parseOtpAuthUriList(await file.text())
+  try {
+    const { codes } = await invoke<GeneratedTOTPs>('generate_totps', {
+      arguments: entries.map((entry) => entry.secret),
+    })
+    if (codes.length !== entries.length || codes.some((code) => code === null)) {
+      throw Error('importFailed')
+    }
+  } catch {
+    throw Error('importFailed')
+  }
+  return entries
+}
+
+const planImport = (current: VaultEntry[], imported: VaultEntry[], format: ImportFormat) => {
+  if (format === 'tauthy') {
+    const merged = mergeTauthyImport(current, imported)
+    const existingIds = new Set(current.map((entry) => entry.uuid))
+    const duplicateIndices = imported.flatMap((entry, index) =>
+      existingIds.has(entry.uuid) ? [index] : [],
+    )
+    return { merged, duplicateIndices }
+  }
+
+  const seenKeys = new Set(current.map(importEntryKey))
+  const seenIds = new Set(current.map((entry) => entry.uuid))
+  const additions: VaultEntry[] = []
+  const duplicateIndices: number[] = []
+  imported.forEach((entry, index) => {
+    const key = importEntryKey(entry)
+    if (seenKeys.has(key)) {
+      duplicateIndices.push(index)
+      return
+    }
+    if (seenIds.has(entry.uuid)) throw Error('importIdConflict')
+    seenKeys.add(key)
+    seenIds.add(entry.uuid)
+    additions.push(entry)
+  })
+  return { merged: [...current, ...additions], duplicateIndices }
 }
 
 const twoFasServiceToUri = (service: TwoFasService) => {
@@ -321,7 +400,9 @@ export const deleteCode = async (id: string) => {
   }
 }
 
-export const importFile = async (file: File, format: ImportFormat, password?: string) => {
+const parseImportFile = async (file: File, format: ImportFormat, password?: string) => {
+  if (format === 'otpauth') return parseOtpAuthImport(file)
+
   let json: unknown
   try {
     json = JSON.parse(await file.text())
@@ -335,14 +416,39 @@ export const importFile = async (file: File, format: ImportFormat, password?: st
     json = await decryptImport(json, format, password)
   }
 
-  const importedEntries = parseImportedEntries(json, format)
+  return parseImportedEntries(json, format)
+}
+
+export const prepareImport = async (
+  file: File,
+  format: ImportFormat,
+  password?: string,
+): Promise<ImportPreview> => {
+  const entries = await parseImportFile(file, format, password)
   const currentVault = await vault.getVault()
-  const entries =
-    format === 'tauthy'
-      ? mergeTauthyImport(currentVault, importedEntries)
-      : [...currentVault, ...importedEntries]
-  await vault.save(JSON.stringify(entries))
-  return json
+  const { duplicateIndices } = planImport(currentVault, entries, format)
+  return {
+    format,
+    sourceName: file.name,
+    entries,
+    newCount: entries.length - duplicateIndices.length,
+    duplicateCount: duplicateIndices.length,
+    duplicateIndices,
+  }
+}
+
+export const commitPreparedImport = async (preview: ImportPreview) => {
+  const currentVault = await vault.getVault()
+  const { merged } = planImport(currentVault, preview.entries, preview.format)
+  const addedCount = merged.length - currentVault.length
+  if (addedCount > 0) await vault.save(JSON.stringify(merged))
+  return addedCount
+}
+
+export const importFile = async (file: File, format: ImportFormat, password?: string) => {
+  const preview = await prepareImport(file, format, password)
+  await commitPreparedImport(preview)
+  return preview
 }
 
 export const importCodes = (event: ChangeEvent<HTMLInputElement>, format: ImportFormat) => {

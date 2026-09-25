@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import Button from '@mui/material/Button'
+import Typography from '@mui/material/Typography'
 
 import { vault } from '~/utils/storage'
 import { useLocalStorage } from '~/hooks'
@@ -31,10 +32,13 @@ const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =
 
   return (
     <Modal open={open} onClose={onClose}>
-      <div>{t('modals.deleteWarning')}</div>
+      <Typography variant="h6" component="h2" gutterBottom>
+        {t('security.deleteVault')}
+      </Typography>
+      <Typography variant="body2">{t('modals.deleteWarning')}</Typography>
       <Buttons>
         <Button color="error" variant="contained" onClick={handleResetVault}>
-          {t('modals.delete')}
+          {t('security.deleteVault')}
         </Button>
         <Button variant="contained" onClick={onClose}>
           {t('modals.cancel')}
