@@ -99,10 +99,10 @@
     "importDescription": "Importer des comptes depuis une sauvegarde ou un fichier texte",
     "otpAuth": "Liens d’authentification (.txt)",
     "export": "Exporter",
-    "exportEncrypted": "Exporter une sauvegarde chiffrée",
-    "exportEncryptedDescription": "Protéger une sauvegarde Tauthy portable avec un mot de passe",
-    "exportPlaintext": "Exporter une sauvegarde non chiffrée",
-    "exportPlaintextDescription": "Créer une sauvegarde JSON lisible"
+    "exportTitle": "Exporter une sauvegarde",
+    "exportDescription": "Créer une sauvegarde protégée par mot de passe ou en texte clair",
+    "exportEncrypted": "Protégée par mot de passe",
+    "exportPlaintext": "Texte clair"
   },
   "sync": {
     "pageTitle": "Synchronisation",

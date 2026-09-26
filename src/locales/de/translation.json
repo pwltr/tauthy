@@ -99,10 +99,10 @@
     "importDescription": "Konten aus einer Sicherung oder Textdatei importieren",
     "otpAuth": "Authenticator-Links (.txt)",
     "export": "Exportieren",
-    "exportEncrypted": "Verschlüsselte Sicherung exportieren",
-    "exportEncryptedDescription": "Portable Tauthy-Sicherung mit einem Passwort schützen",
-    "exportPlaintext": "Unverschlüsselte Sicherung exportieren",
-    "exportPlaintextDescription": "Lesbare JSON-Sicherung erstellen"
+    "exportTitle": "Sicherung exportieren",
+    "exportDescription": "Eine passwortgeschützte oder unverschlüsselte Sicherung erstellen",
+    "exportEncrypted": "Passwortgeschützt",
+    "exportPlaintext": "Unverschlüsselt"
   },
   "sync": {
     "pageTitle": "Synchronisierung",

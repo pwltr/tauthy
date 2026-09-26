@@ -99,10 +99,10 @@
     "importDescription": "Import accounts from a backup or text file",
     "otpAuth": "Authenticator links (.txt)",
     "export": "Export",
-    "exportEncrypted": "Export encrypted backup",
-    "exportEncryptedDescription": "Protect a portable Tauthy backup with a password",
-    "exportPlaintext": "Export unencrypted backup",
-    "exportPlaintextDescription": "Create a readable JSON backup"
+    "exportTitle": "Export backup",
+    "exportDescription": "Create a password-protected or plain text backup",
+    "exportEncrypted": "Password protected",
+    "exportPlaintext": "Plain text"
   },
   "sync": {
     "pageTitle": "Sync",

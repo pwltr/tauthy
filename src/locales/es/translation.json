@@ -99,10 +99,10 @@
     "importDescription": "Importar cuentas desde una copia de seguridad o un archivo de texto",
     "otpAuth": "Enlaces de autenticador (.txt)",
     "export": "Exportar",
-    "exportEncrypted": "Exportar copia cifrada",
-    "exportEncryptedDescription": "Proteger una copia portátil de Tauthy con una contraseña",
-    "exportPlaintext": "Exportar copia sin cifrar",
-    "exportPlaintextDescription": "Crear una copia JSON legible"
+    "exportTitle": "Exportar copia de seguridad",
+    "exportDescription": "Crear una copia protegida con contraseña o en texto sin cifrar",
+    "exportEncrypted": "Protegida con contraseña",
+    "exportPlaintext": "Texto sin cifrar"
   },
   "sync": {
     "pageTitle": "Sincronización",

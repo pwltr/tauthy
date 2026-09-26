@@ -2,7 +2,7 @@ import { useEffect, useContext, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import { confirm } from '@tauri-apps/plugin-dialog'
+import { confirm, message } from '@tauri-apps/plugin-dialog'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -23,6 +23,7 @@ const Import = () => {
   const [preview, setPreview] = useState<ImportPreview>()
   const [isExportPasswordModalOpen, setIsExportPasswordModalOpen] = useState(false)
   const [isExportingEncrypted, setIsExportingEncrypted] = useState(false)
+  const [isChoosingExport, setIsChoosingExport] = useState(false)
 
   const handleOpenImportModal = () => setIsImportModalOpen(true)
   const handleCloseImportModal = () => setIsImportModalOpen(false)
@@ -61,6 +62,29 @@ const Import = () => {
     await showExportResult()
   }
 
+  const handleChooseExport = async () => {
+    if (isChoosingExport) return
+    setIsChoosingExport(true)
+    try {
+      const encryptedLabel = t('import.exportEncrypted')
+      const plaintextLabel = t('import.exportPlaintext')
+      const choice = await message('', {
+        title: t('import.exportTitle'),
+        buttons: {
+          yes: encryptedLabel,
+          no: plaintextLabel,
+          cancel: t('modals.cancel'),
+        },
+      })
+      if (choice === encryptedLabel) setIsExportPasswordModalOpen(true)
+      else if (choice === plaintextLabel) await handleExportPlaintext()
+    } catch {
+      toast.error(t('toasts.exportFailed'))
+    } finally {
+      setIsChoosingExport(false)
+    }
+  }
+
   useEffect(() => {
     if (location.pathname === '/import') {
       setAppBarTitle(t('import.pageTitle'))
@@ -93,20 +117,11 @@ const Import = () => {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding onClick={() => setIsExportPasswordModalOpen(true)}>
-              <ListItemButton>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleChooseExport} disabled={isChoosingExport}>
                 <ListItemText
-                  primary={t('import.exportEncrypted')}
-                  secondary={t('import.exportEncryptedDescription')}
-                />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding onClick={handleExportPlaintext}>
-              <ListItemButton>
-                <ListItemText
-                  primary={t('import.exportPlaintext')}
-                  secondary={t('import.exportPlaintextDescription')}
+                  primary={t('import.export')}
+                  secondary={t('import.exportDescription')}
                 />
               </ListItemButton>
             </ListItem>
