@@ -13,6 +13,12 @@ mod sync;
 mod tauthy_backup;
 mod tray;
 mod twofas;
+// New storage is deliberately not connected to commands until migration and
+// platform credential handling have passed end-to-end verification.
+#[allow(dead_code)]
+mod vault_file;
+#[allow(dead_code)]
+mod vault_journal;
 
 #[cfg(target_os = "macos")]
 mod menu;

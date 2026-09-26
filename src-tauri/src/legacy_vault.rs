@@ -32,6 +32,10 @@ const APP_DATA_DIRECTORY: &str = "tauthy-dev";
 const SNAPSHOT_FILE_NAME: &str = "vault.stronghold";
 const CLIENT_NAME: &[u8] = b"vault";
 const STORE_NAME: &[u8] = b"vault";
+// Known-name regression fixtures only. Migration and password verification use
+// the full raw store inventory, including unknown keys.
+#[cfg(test)]
+const OWNED_RECORD_NAMES: [&[u8]; 2] = [STORE_NAME, crate::sync::SYNC_STORE_NAME];
 const SNAPSHOT_MAGIC: &[u8; 5] = b"PARTI";
 const SNAPSHOT_V2: [u8; 2] = [2, 0];
 const SNAPSHOT_V3: [u8; 2] = [3, 0];
@@ -101,6 +105,27 @@ impl VaultState {
 }
 
 impl UnlockedVault {
+  pub(crate) fn raw_records(&self) -> Result<crate::vault_file::Records, String> {
+    let store = self.client.store();
+    let mut records = crate::vault_file::Records::default();
+    for key in store.keys().map_err(|error| error.to_string())? {
+      let value = store
+        .get(&key)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "The vault record inventory changed during extraction.".to_string())?;
+      records.insert(key, value);
+    }
+    Ok(records)
+  }
+
+  #[cfg(test)]
+  fn owned_records(&self) -> Result<Vec<zeroize::Zeroizing<Option<Vec<u8>>>>, String> {
+    OWNED_RECORD_NAMES
+      .iter()
+      .map(|name| self.get_record(name).map(zeroize::Zeroizing::new))
+      .collect()
+  }
+
   pub(crate) fn get_record(&self, name: &[u8]) -> Result<Option<Vec<u8>>, String> {
     self
       .client
@@ -449,11 +474,9 @@ pub(crate) fn vault_change_password_at(
     // Verify the replacement password and every record Tauthy currently owns
     // before moving the user's existing snapshot out of the way.
     let verified = open_current_snapshot(&temporary_path, &password)?;
-    for name in [STORE_NAME, crate::sync::SYNC_STORE_NAME] {
-      if vault.get_record(name)? != verified.get_record(name)? {
-        let _ = std::fs::remove_file(&temporary_path);
-        return Err("The password replacement failed record verification.".into());
-      }
+    if !vault.raw_records()?.same_as(&verified.raw_records()?) {
+      let _ = std::fs::remove_file(&temporary_path);
+      return Err("The password replacement failed record verification.".into());
     }
     verified
       .stronghold
@@ -697,6 +720,119 @@ mod tests {
     assert_eq!(vault_get_at(&state).unwrap(), record);
     vault_unload_at(&state).unwrap();
     std::fs::remove_file(snapshot).unwrap();
+  }
+
+  #[test]
+  fn record_inventory_preserves_accounts_and_opaque_sync_state_across_password_change() {
+    initialize_tests();
+    let directory = tempfile::tempdir().unwrap();
+    let snapshot = directory.path().join("vault.stronghold");
+    let state = VaultState::default();
+    // Include unknown fields and non-JSON bytes so preservation cannot depend
+    // on today's account/sync deserializers or their default values.
+    let accounts = br#"[{"id":"stable-id","futureField":{"keep":true}}]"#.to_vec();
+    let sync = vec![0, 255, 1, 2, 3];
+    vault_load_at(&state, snapshot.clone(), "old password".into()).unwrap();
+    state
+      .with_unlocked(|vault| {
+        vault.put_record(STORE_NAME, accounts.clone())?;
+        vault.put_record(crate::sync::SYNC_STORE_NAME, sync.clone())?;
+        vault.commit()
+      })
+      .unwrap();
+    let before = state.with_unlocked(|vault| vault.owned_records()).unwrap();
+
+    vault_change_password_at(&state, "new password".into()).unwrap();
+    vault_unload_at(&state).unwrap();
+    vault_load_at(&state, snapshot, "new password".into()).unwrap();
+    let after = state.with_unlocked(|vault| vault.owned_records()).unwrap();
+
+    assert_eq!(before, after);
+    assert_eq!(after[0].as_ref(), Some(&accounts));
+    assert_eq!(after[1].as_ref(), Some(&sync));
+  }
+
+  #[test]
+  fn record_inventory_distinguishes_missing_records_from_empty_records() {
+    initialize_tests();
+    let directory = tempfile::tempdir().unwrap();
+    let state = VaultState::default();
+    vault_load_at(
+      &state,
+      directory.path().join("vault.stronghold"),
+      String::new(),
+    )
+    .unwrap();
+    state
+      .with_unlocked(|vault| {
+        let missing = vault.owned_records()?;
+        assert!(missing.iter().all(|record| record.is_none()));
+        vault.put_record(STORE_NAME, Vec::new())?;
+        let present = vault.owned_records()?;
+        assert_eq!(present[0].as_ref(), Some(&Vec::new()));
+        assert!(present[1].is_none());
+        Ok(())
+      })
+      .unwrap();
+  }
+
+  #[test]
+  fn encrypted_file_preserves_all_stronghold_store_keys_without_touching_source() {
+    initialize_tests();
+    let directory = tempfile::tempdir().unwrap();
+    let snapshot = directory.path().join("vault.stronghold");
+    let state = VaultState::default();
+    vault_load_at(&state, snapshot.clone(), String::new()).unwrap();
+    state
+      .with_unlocked(|vault| {
+        vault.put_record(STORE_NAME, b"[]".to_vec())?;
+        vault.put_record(crate::sync::SYNC_STORE_NAME, vec![0, 255])?;
+        vault
+          .client
+          .store()
+          .insert(vec![13, 37], vec![4, 5, 6], None)
+          .map_err(|error| error.to_string())?;
+        vault.commit()
+      })
+      .unwrap();
+    let source = std::fs::read(&snapshot).unwrap();
+    let extracted = state.with_unlocked(|vault| vault.raw_records()).unwrap();
+    let new_vault = crate::vault_file::Vault::create(extracted, None).unwrap();
+    let encoded = new_vault.seal().unwrap();
+    let reopened = crate::vault_file::Envelope::read(encoded.as_slice())
+      .unwrap()
+      .unlock_credential(Some(*new_vault.credential_key()))
+      .unwrap();
+    assert!(reopened.records.same_as(&new_vault.records));
+    assert_eq!(reopened.records.get(&[13, 37]), Some([4, 5, 6].as_slice()));
+    assert_eq!(std::fs::read(&snapshot).unwrap(), source);
+    // Protection changes must preserve unknown records too.
+    vault_change_password_at(&state, "replacement".into()).unwrap();
+    let changed = state.with_unlocked(|vault| vault.raw_records()).unwrap();
+    assert!(changed.same_as(&reopened.records));
+  }
+
+  #[test]
+  fn legacy_fixture_converts_to_envelope_only_through_a_copy() {
+    initialize_tests();
+    let directory = tempfile::tempdir().unwrap();
+    let original = directory.path().join("original.stronghold");
+    let working = directory.path().join("transaction.stronghold");
+    copy_legacy_fixture(&original);
+    let before = std::fs::read(&original).unwrap();
+    std::fs::copy(&original, &working).unwrap();
+    let state = VaultState::default();
+    vault_load_at(&state, working, "correct horse".into()).unwrap();
+    let records = state.with_unlocked(|vault| vault.raw_records()).unwrap();
+    let envelope = crate::vault_file::Vault::create(records, Some("correct horse")).unwrap();
+    let encoded = envelope.seal().unwrap();
+    let reopened = crate::vault_file::Envelope::read(encoded.as_slice())
+      .unwrap()
+      .unlock_password("correct horse")
+      .unwrap();
+    assert!(envelope.records.same_as(&reopened.records));
+    assert_eq!(std::fs::read(&original).unwrap(), before);
+    assert_eq!(snapshot_version(&original).unwrap(), SNAPSHOT_V2);
   }
 
   #[test]
