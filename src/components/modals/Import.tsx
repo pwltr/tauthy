@@ -4,11 +4,44 @@ import toast from 'react-hot-toast'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import Box from '@mui/material/Box'
+import LinkIcon from '@mui/icons-material/Link'
 
 import { ImportFormat, ImportPreview, prepareImport } from '~/utils'
 import Modal from '~/components/Modal'
 import ListItem from '~/components/ListItem'
 import ImportPasswordModal from '~/components/modals/ImportPassword'
+import twoFasIcon from '../../../assets/import-providers/2fas.svg'
+import aegisIcon from '../../../assets/import-providers/aegis.svg'
+import andOtpIcon from '../../../assets/import-providers/andotp.svg'
+import authyIcon from '../../../assets/import-providers/authy.svg'
+import enteIcon from '../../../assets/import-providers/ente.svg'
+import bitwardenIcon from '../../../assets/import-providers/bitwarden.svg'
+import protonIcon from '../../../assets/import-providers/proton.svg'
+import tauthyIcon from '../../../assets/import-providers/tauthy.svg'
+
+const importFormats: ImportFormat[] = [
+  '2fas',
+  'aegis',
+  'andotp',
+  'authy',
+  'bitwarden',
+  'ente',
+  'proton',
+  'tauthy',
+  'otpauth',
+]
+const providerIcons: Partial<Record<ImportFormat, string>> = {
+  '2fas': twoFasIcon,
+  aegis: aegisIcon,
+  andotp: andOtpIcon,
+  authy: authyIcon,
+  ente: enteIcon,
+  bitwarden: bitwardenIcon,
+  proton: protonIcon,
+  tauthy: tauthyIcon,
+}
 
 const knownImportErrors = [
   'importEncryptedCorrupt',
@@ -28,8 +61,11 @@ const knownImportErrors = [
 const formatNames: Record<ImportFormat, string> = {
   '2fas': '2FAS',
   aegis: 'Aegis',
+  andotp: 'andOTP',
   authy: 'Authy',
   ente: 'Ente Auth',
+  bitwarden: 'Bitwarden',
+  proton: 'Proton Authenticator',
   google: 'Google Authenticator',
   tauthy: 'Tauthy',
   otpauth: 'Authenticator links (.txt)',
@@ -129,47 +165,44 @@ const ImportModal = ({
           />
 
           <List disablePadding>
-            <ListItem disablePadding onClick={() => handleClick('2fas')}>
-              <ListItemButton>
-                <ListItemText primary="2FAS" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding onClick={() => handleClick('aegis')}>
-              <ListItemButton>
-                <ListItemText primary="Aegis" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding onClick={() => handleClick('authy')}>
-              <ListItemButton>
-                <ListItemText primary="Authy" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding onClick={() => handleClick('ente')}>
-              <ListItemButton>
-                <ListItemText primary="Ente Auth" />
-              </ListItemButton>
-            </ListItem>
-
-            {/* <ListItem disablePadding onClick={() => handleClick("google")}>
-              <ListItemButton>
-                <ListItemText primary="Google Authenticator" />
-              </ListItemButton>
-            </ListItem> */}
-
-            <ListItem disablePadding onClick={() => handleClick('tauthy')}>
-              <ListItemButton>
-                <ListItemText primary="Tauthy" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding onClick={() => handleClick('otpauth')}>
-              <ListItemButton>
-                <ListItemText primary={t('import.otpAuth')} />
-              </ListItemButton>
-            </ListItem>
+            {importFormats.map((provider) => (
+              <ListItem key={provider} disablePadding>
+                <ListItemButton onClick={() => handleClick(provider)} sx={{ minHeight: 56 }}>
+                  <ListItemIcon sx={{ minWidth: 48 }}>
+                    <Box
+                      aria-hidden="true"
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: provider === 'otpauth' ? 'action.hover' : '#fff',
+                        color: 'text.secondary',
+                      }}
+                    >
+                      {providerIcons[provider] ? (
+                        <Box
+                          component="img"
+                          src={providerIcons[provider]}
+                          alt=""
+                          sx={{
+                            width: provider === '2fas' || provider === 'authy' ? 24 : 32,
+                            height: provider === '2fas' || provider === 'authy' ? 24 : 32,
+                            objectFit: 'contain',
+                          }}
+                        />
+                      ) : (
+                        <LinkIcon fontSize="small" />
+                      )}
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText primary={formatName(provider)} />
+                </ListItemButton>
+              </ListItem>
+            ))}
           </List>
         </>
       </Modal>

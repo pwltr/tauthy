@@ -8,6 +8,7 @@ mod commands;
 mod ente;
 mod legacy_vault;
 mod otp;
+mod proton;
 mod sync;
 mod tauthy_backup;
 mod tray;
@@ -42,6 +43,7 @@ fn main() {
     .invoke_handler(tauri::generate_handler![
       aegis::decrypt_aegis_vault,
       ente::decrypt_ente_export,
+      proton::decrypt_proton_export,
       commands::generate_totp,
       commands::generate_totps,
       legacy_vault::vault_load,

@@ -29,6 +29,246 @@ import {
   prepareImport,
 } from '~/utils/codes'
 
+describe('andOTP plaintext imports', () => {
+  const entry = {
+    secret: 'JBSWY3DPEHPK3PXP',
+    issuer: 'Dropbox',
+    label: 'Dropbox',
+    type: 'TOTP',
+    algorithm: 'SHA1',
+    digits: 6,
+    period: 30,
+  }
+  const file = (backup: unknown, size = 100) =>
+    ({
+      name: 'andotp.json',
+      size,
+      text: vi.fn().mockResolvedValue(JSON.stringify(backup)),
+    }) as unknown as File
+
+  beforeEach(() => {
+    invoke.mockReset().mockResolvedValue({ codes: ['123456'] })
+    mockVault.getVault.mockReset().mockResolvedValue([])
+    mockVault.save.mockReset()
+  })
+
+  it('preserves separate issuer/label fields and normalizes secrets', () => {
+    expect(
+      parseImportedEntries(
+        [{ ...entry, secret: ' jbswy3dpehpk3pxp= ', label: 'Work - Dropbox' }],
+        'andotp',
+      )[0],
+    ).toMatchObject({ name: 'Work - Dropbox', issuer: 'Dropbox', secret: entry.secret })
+  })
+
+  it('supports legacy labels and omitted standard OTP settings', () => {
+    expect(
+      parseImportedEntries(
+        [{ label: 'Dropbox - Work - Personal', secret: entry.secret }],
+        'andotp',
+      )[0],
+    ).toMatchObject({ name: 'Work - Personal', issuer: 'Dropbox' })
+    expect(
+      parseImportedEntries([{ label: 'Dropbox', secret: entry.secret }], 'andotp')[0],
+    ).toMatchObject({ name: 'Dropbox', issuer: undefined })
+    expect(parseImportedEntries([{ ...entry, issuer: '' }], 'andotp')[0].issuer).toBeUndefined()
+  })
+
+  it.each([
+    { type: 'HOTP' },
+    { type: 'STEAM' },
+    { type: null },
+    { algorithm: 'SHA256' },
+    { digits: 8 },
+    { period: 60 },
+    { period: null },
+  ])('rejects explicit unsupported settings: %j', (settings) => {
+    expect(() => parseImportedEntries([{ ...entry, ...settings }], 'andotp')).toThrow(
+      'importUnsupportedOtp',
+    )
+  })
+
+  it.each([
+    {},
+    [],
+    [null],
+    [{ ...entry, secret: 'invalid!' }],
+    [{ ...entry, label: '' }],
+    [{ ...entry, issuer: 123 }],
+  ])('rejects malformed or empty exports: %j', (backup) => {
+    expect(() => parseImportedEntries(backup, 'andotp')).toThrow('importFailed')
+  })
+
+  it('reviews without writing, imports on confirmation and skips reimports', async () => {
+    const preview = await prepareImport(file([entry]), 'andotp')
+    expect(preview.newCount).toBe(1)
+    expect(mockVault.save).not.toHaveBeenCalled()
+    expect(await commitPreparedImport(preview)).toBe(1)
+    expect(mockVault.save).toHaveBeenCalledTimes(1)
+    mockVault.getVault.mockResolvedValue(preview.entries)
+    expect((await prepareImport(file([entry]), 'andotp')).duplicateCount).toBe(1)
+    expect(await commitPreparedImport(preview)).toBe(0)
+    expect(mockVault.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('bounds files before reading and limits entry counts', async () => {
+    const oversized = file([entry], 16 * 1024 * 1024 + 1)
+    await expect(prepareImport(oversized, 'andotp')).rejects.toThrow('importEncryptedUnsupported')
+    expect(oversized.text).not.toHaveBeenCalled()
+    expect(() => parseImportedEntries(Array(501).fill(entry), 'andotp')).toThrow(
+      'importOtpAuthTooMany',
+    )
+  })
+
+  it('validates secrets with the backend before touching the vault', async () => {
+    invoke.mockResolvedValue({ codes: [null] })
+    await expect(prepareImport(file([entry]), 'andotp')).rejects.toThrow('importFailed')
+    expect(mockVault.getVault).not.toHaveBeenCalled()
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+})
+
+describe('Bitwarden and Proton imports', () => {
+  const uri = 'otpauth://totp/Dropbox:Demo?secret=JBSWY3DPEHPK3PXP&issuer=Dropbox'
+  const bitwarden = { encrypted: false, items: [{ name: 'Dropbox', login: { totp: uri } }] }
+  const proton = { version: 1, entries: [{ content: { name: 'Dropbox', uri } }] }
+  const file = (backup: unknown, size = 100) =>
+    ({
+      name: 'export.json',
+      size,
+      text: vi.fn().mockResolvedValue(JSON.stringify(backup)),
+    }) as unknown as File
+
+  beforeEach(() => {
+    invoke.mockReset()
+    mockVault.getVault.mockReset().mockResolvedValue([])
+    mockVault.save.mockReset()
+    invoke.mockImplementation(async (command, args) => {
+      if (command === 'generate_totps') return { codes: args.arguments.map(() => '123456') }
+      if (command === 'decrypt_proton_export') return proton
+      throw Error('unexpected command')
+    })
+  })
+
+  it('extracts URI and raw-secret TOTPs without importing other Password Manager data', () => {
+    const entries = parseImportedEntries(
+      {
+        encrypted: false,
+        items: [
+          ...bitwarden.items,
+          {
+            name: 'GitHub',
+            login: { totp: ' jbswy3dpehpk3pxp= ', password: 'not imported', username: 'demo' },
+          },
+          { name: 'No TOTP', login: { password: 'not imported', totp: null } },
+          { name: 'Secure note', notes: 'not imported' },
+        ],
+      },
+      'bitwarden',
+    )
+    expect(entries).toHaveLength(2)
+    expect(entries[0]).toMatchObject({ name: 'Dropbox', issuer: 'Dropbox' })
+    expect(entries[1]).toMatchObject({ name: 'GitHub', secret: 'JBSWY3DPEHPK3PXP' })
+    expect(JSON.stringify(entries)).not.toContain('not imported')
+  })
+
+  it('preserves Proton custom names, falls back to URI labels and ignores notes', () => {
+    expect(parseImportedEntries(proton, 'proton')[0]).toMatchObject({
+      name: 'Dropbox',
+      issuer: 'Dropbox',
+    })
+    expect(
+      parseImportedEntries(
+        { version: 1, entries: [{ content: { uri }, note: 'private' }] },
+        'proton',
+      )[0],
+    ).toMatchObject({ name: 'Demo' })
+  })
+
+  it.each(['bitwarden', 'proton'] as const)(
+    'prepares %s imports without writing and skips identical reimports',
+    async (format) => {
+      const backup = format === 'bitwarden' ? bitwarden : proton
+      const preview = await prepareImport(file(backup), format)
+      expect(preview.newCount).toBe(1)
+      expect(mockVault.save).not.toHaveBeenCalled()
+      mockVault.getVault.mockResolvedValue(preview.entries)
+      expect((await prepareImport(file(backup), format)).duplicateCount).toBe(1)
+      expect(await commitPreparedImport(preview)).toBe(0)
+      expect(mockVault.save).not.toHaveBeenCalled()
+    },
+  )
+
+  it('prompts for Proton passwords and preserves backend authentication failures', async () => {
+    const encrypted = { version: 1, salt: 'salt', content: 'ciphertext' }
+    expect(isEncryptedImport(encrypted, 'proton')).toBe(true)
+    await expect(prepareImport(file(encrypted), 'proton')).rejects.toThrow('importPasswordRequired')
+    await expect(prepareImport(file(encrypted), 'proton', 'test')).resolves.toMatchObject({
+      newCount: 1,
+    })
+    expect(invoke).toHaveBeenCalledWith('decrypt_proton_export', {
+      export: JSON.stringify(encrypted),
+      password: 'test',
+    })
+    invoke.mockRejectedValue('importEncryptedAuthenticationFailed')
+    await expect(prepareImport(file(encrypted), 'proton', 'wrong')).rejects.toThrow(
+      'importEncryptedAuthenticationFailed',
+    )
+  })
+
+  it('rejects encrypted Bitwarden, future Proton versions and malformed entries', () => {
+    expect(() => parseImportedEntries({ ...bitwarden, encrypted: true }, 'bitwarden')).toThrow(
+      'importEncryptedUnsupported',
+    )
+    expect(() => parseImportedEntries({ ...proton, version: 2 }, 'proton')).toThrow(
+      'importEncryptedUnsupported',
+    )
+    for (const totp of [123, 'not a secret!', 'steam://ABCDE']) {
+      expect(() =>
+        parseImportedEntries(
+          { encrypted: false, items: [{ name: 'Dropbox', login: { totp } }] },
+          'bitwarden',
+        ),
+      ).toThrow()
+    }
+    expect(() => parseImportedEntries({ version: 1, entries: [null] }, 'proton')).toThrow(
+      'importFailed',
+    )
+    expect(() =>
+      parseImportedEntries({ version: 1, entries: [{ content: { uri, name: 123 } }] }, 'proton'),
+    ).toThrow('importFailed')
+  })
+
+  it.each(['bitwarden', 'proton'] as const)('rejects unsupported OTP settings in %s', (format) => {
+    const unsupportedUri = `${uri}&algorithm=SHA256`
+    const backup =
+      format === 'bitwarden'
+        ? { encrypted: false, items: [{ name: 'Dropbox', login: { totp: unsupportedUri } }] }
+        : { version: 1, entries: [{ content: { uri: unsupportedUri } }] }
+    expect(() => parseImportedEntries(backup, format)).toThrow('importUnsupportedOtp')
+  })
+
+  it.each(['bitwarden', 'proton'] as const)(
+    'bounds %s files before reading and limits entry count',
+    async (format) => {
+      const oversized = file({}, 16 * 1024 * 1024 + 1)
+      await expect(prepareImport(oversized, format)).rejects.toThrow('importEncryptedUnsupported')
+      expect(oversized.text).not.toHaveBeenCalled()
+      const backup =
+        format === 'bitwarden'
+          ? { encrypted: false, items: Array(501).fill(bitwarden.items[0]) }
+          : { version: 1, entries: Array(501).fill(proton.entries[0]) }
+      expect(() => parseImportedEntries(backup, format)).toThrow('importOtpAuthTooMany')
+    },
+  )
+
+  it('rejects secrets that cannot generate a code before accessing the vault', async () => {
+    invoke.mockResolvedValue({ codes: [null] })
+    await expect(prepareImport(file(proton), 'proton')).rejects.toThrow('importFailed')
+    expect(mockVault.getVault).not.toHaveBeenCalled()
+  })
+})
+
 describe('Aegis imports', () => {
   beforeEach(() => {
     invoke.mockReset()

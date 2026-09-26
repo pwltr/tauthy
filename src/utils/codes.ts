@@ -15,7 +15,17 @@ import type {
   TwoFasService,
 } from '~/types'
 
-export type ImportFormat = '2fas' | 'aegis' | 'authy' | 'ente' | 'google' | 'tauthy' | 'otpauth'
+export type ImportFormat =
+  | '2fas'
+  | 'aegis'
+  | 'andotp'
+  | 'authy'
+  | 'bitwarden'
+  | 'ente'
+  | 'proton'
+  | 'google'
+  | 'tauthy'
+  | 'otpauth'
 
 export type ImportPreview = {
   format: ImportFormat
@@ -30,6 +40,7 @@ const MAX_OTP_AUTH_FILE_SIZE = 1024 * 1024
 const MAX_OTP_AUTH_ENTRIES = 500
 const MAX_ENCRYPTED_2FAS_FILE_SIZE = 90 * 1024 * 1024
 const MAX_ENCRYPTED_ENTE_FILE_SIZE = 4 * 1024 * 1024
+const MAX_PROVIDER_JSON_FILE_SIZE = 16 * 1024 * 1024
 
 export type GeneratedTOTPs = {
   codes: Array<string | null>
@@ -85,6 +96,20 @@ export const decryptTauthyBackup = async (json: unknown, password: string) => {
 }
 
 const encryptedImportAdapters: Partial<Record<ImportFormat, EncryptedImportAdapter>> = {
+  proton: {
+    isEncrypted: (json) => typeof (json as { content?: unknown })?.content === 'string',
+    decrypt: async (json, password) => {
+      try {
+        return await invoke<unknown>('decrypt_proton_export', {
+          export: JSON.stringify(json),
+          password,
+        })
+      } catch (err) {
+        if (typeof err === 'string') throw Error(err)
+        throw Error('importFailed')
+      }
+    },
+  },
   '2fas': {
     isEncrypted: isEncryptedTwoFasBackup,
     decrypt: async (json, password) => {
@@ -296,6 +321,87 @@ const twoFasServiceToUri = (service: TwoFasService) => {
 export const parseImportedEntries = (json: unknown, format: ImportFormat): VaultEntry[] => {
   let importedEntries: VaultEntry[] = []
 
+  if (format === 'andotp') {
+    if (!Array.isArray(json)) throw Error('importFailed')
+    if (json.length > MAX_OTP_AUTH_ENTRIES) throw Error('importOtpAuthTooMany')
+    importedEntries = json.map((entry) => {
+      if (
+        typeof entry?.secret !== 'string' ||
+        typeof entry?.label !== 'string' ||
+        !entry.label.trim() ||
+        (entry.issuer !== undefined && typeof entry.issuer !== 'string')
+      ) {
+        throw Error('importFailed')
+      }
+      // Older andOTP backups omit these fields and use the standard TOTP defaults.
+      // Explicit nonstandard settings must never be silently changed.
+      const type = entry.type === undefined ? 'TOTP' : entry.type
+      if (
+        typeof type !== 'string' ||
+        type.toUpperCase() !== 'TOTP' ||
+        !supportedOtpSettings(
+          entry.algorithm === undefined ? 'SHA1' : entry.algorithm,
+          entry.digits === undefined ? 6 : entry.digits,
+          entry.period === undefined ? 30 : entry.period,
+        )
+      ) {
+        throw Error('importUnsupportedOtp')
+      }
+      const secret = normalizedSecret(entry.secret)
+      if (!/^[A-Z2-7]+$/.test(secret)) throw Error('importFailed')
+      let name = entry.label.trim()
+      let issuer = entry.issuer?.trim()
+      // Before issuer became a separate field, andOTP used "Issuer - Label".
+      if (entry.issuer === undefined) {
+        const separator = name.indexOf(' - ')
+        if (separator > 0) {
+          issuer = name.slice(0, separator).trim()
+          name = name.slice(separator + 3).trim() || issuer
+        }
+      }
+      return { uuid: generateUUID(), name, issuer: issuer || undefined, secret }
+    })
+  }
+
+  if (format === 'bitwarden') {
+    const backup = json as { encrypted?: unknown; items?: unknown }
+    if (backup?.encrypted !== false) throw Error('importEncryptedUnsupported')
+    if (!Array.isArray(backup.items)) throw Error('importFailed')
+    // Password Manager exports contain unrelated credentials. Only extract TOTPs.
+    importedEntries = backup.items.flatMap((item) => {
+      const totp = item?.login?.totp
+      if (totp === undefined || totp === null || totp === '') return []
+      if (typeof totp !== 'string' || typeof item.name !== 'string' || !item.name.trim()) {
+        throw Error('importFailed')
+      }
+      const secret = normalizedSecret(totp)
+      const entry = /^[A-Z2-7]+$/.test(secret)
+        ? { uuid: generateUUID(), name: item.name.trim(), secret }
+        : parseOtpAuthUri(totp.trim())
+      return [{ ...entry, name: item.name.trim() }]
+    })
+  }
+
+  if (format === 'proton') {
+    const backup = json as { version?: unknown; entries?: unknown }
+    if (backup?.version !== 1) throw Error('importEncryptedUnsupported')
+    if (!Array.isArray(backup.entries)) throw Error('importFailed')
+    importedEntries = backup.entries.map((item) => {
+      if (typeof item?.content?.uri !== 'string') throw Error('importFailed')
+      const entry = parseOtpAuthUri(item.content.uri)
+      const name = item.content.name
+      if (name !== undefined && typeof name !== 'string') throw Error('importFailed')
+      return { ...entry, name: name?.trim() || entry.name }
+    })
+  }
+
+  if (format === 'bitwarden' || format === 'proton') {
+    if (importedEntries.length > MAX_OTP_AUTH_ENTRIES) throw Error('importOtpAuthTooMany')
+    if (importedEntries.some((entry) => !/^[A-Z2-7]+$/.test(normalizedSecret(entry.secret)))) {
+      throw Error('importFailed')
+    }
+  }
+
   if (format === '2fas') {
     const backup = json as TwoFasBackup
     if (typeof backup?.servicesEncrypted === 'string') {
@@ -442,6 +548,12 @@ export const deleteCode = async (id: string) => {
 
 const parseImportFile = async (file: File, format: ImportFormat, password?: string) => {
   if (format === 'otpauth') return parseOtpAuthImport(file)
+  if (
+    (format === 'bitwarden' || format === 'proton' || format === 'andotp') &&
+    file.size > MAX_PROVIDER_JSON_FILE_SIZE
+  ) {
+    throw Error('importEncryptedUnsupported')
+  }
   if (format === '2fas' && file.size > MAX_ENCRYPTED_2FAS_FILE_SIZE) {
     throw Error('importEncryptedUnsupported')
   }
@@ -467,7 +579,10 @@ const parseImportFile = async (file: File, format: ImportFormat, password?: stri
     return validateOtpAuthEntries(parseOtpAuthUriList(json))
   }
 
-  return parseImportedEntries(json, format)
+  const entries = parseImportedEntries(json, format)
+  return format === 'bitwarden' || format === 'proton' || format === 'andotp'
+    ? validateOtpAuthEntries(entries)
+    : entries
 }
 
 export const prepareImport = async (
