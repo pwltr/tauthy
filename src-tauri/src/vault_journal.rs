@@ -89,6 +89,10 @@ pub(crate) struct Journal {
   pub(crate) source_fingerprint: Option<[u8; 32]>,
   pub(crate) source_identity: Option<Identity>,
   pub(crate) target: Option<Identity>,
+  #[serde(default)]
+  pub(crate) target_fingerprint: Option<[u8; 32]>,
+  #[serde(default)]
+  pub(crate) cleanup_identities: Vec<Identity>,
 }
 
 impl Journal {
@@ -130,6 +134,29 @@ impl Journal {
     if self.version != 1 {
       return Err(Error::Unsupported);
     }
+    if self.cleanup_identities.len() > 8
+      || self
+        .cleanup_identities
+        .iter()
+        .any(|identity| !identity.credential)
+      || (self.operation != Operation::Delete && !self.cleanup_identities.is_empty())
+    {
+      return Err(Error::Corrupt);
+    }
+    for (index, identity) in self.cleanup_identities.iter().enumerate() {
+      if self.cleanup_identities[..index].contains(identity) {
+        return Err(Error::Corrupt);
+      }
+    }
+    if matches!(self.operation, Operation::Rotate | Operation::Replace)
+      && matches!(
+        self.phase,
+        Phase::ReplaceIntent | Phase::Activated | Phase::CleanupIntent | Phase::Completed
+      )
+      && self.target_fingerprint.is_none()
+    {
+      return Err(Error::Corrupt);
+    }
     match self.operation {
       Operation::Migrate if self.source_fingerprint.is_none() || self.source_identity.is_some() => {
         return Err(Error::Corrupt)
@@ -157,6 +184,18 @@ impl Journal {
       if source.vault_id != target.vault_id || source.key_generation == target.key_generation {
         return Err(Error::Corrupt);
       }
+    }
+    if self.operation == Operation::Replace {
+      let source = self.source_identity.as_ref().ok_or(Error::Corrupt)?;
+      let target = self.target.as_ref().ok_or(Error::Corrupt)?;
+      if source.vault_id == target.vault_id || source.key_generation == target.key_generation {
+        return Err(Error::Corrupt);
+      }
+    }
+    if !matches!(self.operation, Operation::Rotate | Operation::Replace)
+      && self.target_fingerprint.is_some()
+    {
+      return Err(Error::Corrupt);
     }
     let valid = match self.operation {
       Operation::Delete => matches!(self.phase, Phase::DeleteIntent | Phase::Deleted),
@@ -332,6 +371,8 @@ mod tests {
         key_generation: [4; 16],
         credential,
       }),
+      target_fingerprint: None,
+      cleanup_identities: Vec::new(),
     }
   }
 
@@ -488,10 +529,14 @@ mod tests {
       Phase::CleanupIntent,
       Phase::Completed,
     ] {
+      if phase == Phase::ReplaceIntent {
+        journal.target_fingerprint = Some([9; 32]);
+      }
       journal.advance(phase).unwrap();
     }
     journal.operation = Operation::Delete;
     journal.target = None;
+    journal.target_fingerprint = None;
     journal.phase = Phase::DeleteIntent;
     journal.advance(Phase::Deleted).unwrap();
   }
@@ -520,5 +565,39 @@ mod tests {
         .unwrap(),
       selector
     );
+  }
+
+  #[test]
+  fn replacement_fingerprints_and_deletion_inventory_are_validated() {
+    let mut change = journal(false);
+    change.operation = Operation::Replace;
+    change.source_identity = change.target.clone();
+    assert_eq!(change.validate(), Err(Error::Corrupt));
+    change.source_identity.as_mut().unwrap().vault_id = [8; 16];
+    change.source_identity.as_mut().unwrap().key_generation = [9; 16];
+    change.validate().unwrap();
+    change.phase = Phase::ReplaceIntent;
+    assert_eq!(change.validate(), Err(Error::Corrupt));
+    change.target_fingerprint = Some([3; 32]);
+    change.validate().unwrap();
+    let mut deletion = journal(true);
+    deletion.source_identity = deletion.target.take();
+    deletion.operation = Operation::Delete;
+    deletion.phase = Phase::DeleteIntent;
+    let id = deletion.source_identity.clone().unwrap();
+    deletion.cleanup_identities = vec![id.clone(), id];
+    assert_eq!(deletion.validate(), Err(Error::Corrupt));
+    deletion.cleanup_identities.pop();
+    deletion.validate().unwrap();
+    deletion.cleanup_identities[0].credential = false;
+    assert_eq!(deletion.validate(), Err(Error::Corrupt));
+    deletion.cleanup_identities = (0..9)
+      .map(|index| Identity {
+        vault_id: [index; 16],
+        key_generation: [0; 16],
+        credential: true,
+      })
+      .collect();
+    assert_eq!(deletion.validate(), Err(Error::Corrupt));
   }
 }

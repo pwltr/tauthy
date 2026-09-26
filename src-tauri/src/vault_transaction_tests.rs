@@ -1,12 +1,24 @@
 use super::*;
 use std::collections::BTreeMap;
 
+#[path = "vault_change_tests.rs"]
+mod changes;
+
 #[derive(Default)]
 struct Keys {
   entries: BTreeMap<String, Zeroizing<[u8; 32]>>,
   denied: bool,
 }
 impl Credentials for Keys {
+  fn remove(&mut self, identity: &Identity) -> Result<(), Error> {
+    if self.denied {
+      return Err(Error::CredentialUnavailable);
+    }
+    self
+      .entries
+      .remove(&identity.credential_selector(true).unwrap().1);
+    Ok(())
+  }
   fn get(&mut self, identity: &Identity) -> Result<Option<Zeroizing<[u8; 32]>>, Error> {
     if self.denied {
       return Err(Error::CredentialUnavailable);
@@ -262,6 +274,8 @@ fn explicit_creation_supersedes_deleted_but_not_unfinished_or_unclean_deletion()
     source_fingerprint: None,
     source_identity: Some(source_identity.clone()),
     target: None,
+    target_fingerprint: None,
+    cleanup_identities: Vec::new(),
   };
   vault_journal::persist(directory.path(), &journal).unwrap();
   let new = Vault::create(Records::default(), None).unwrap();

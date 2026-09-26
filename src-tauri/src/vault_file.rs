@@ -63,6 +63,10 @@ impl Records {
     self.0 == other.0
   }
 
+  pub(crate) fn copy(&self) -> Result<Self, Error> {
+    Self::decode(&self.encode()?)
+  }
+
   fn encode(&self) -> Result<Zeroizing<Vec<u8>>, Error> {
     if self.0.len() > MAX_RECORDS {
       return Err(Error::TooLarge);
@@ -221,6 +225,11 @@ impl Envelope {
 
   pub(crate) fn unlock_password(self, password: &str) -> Result<Vault, Error> {
     self.unlock_password_with(password, derive)
+  }
+
+  #[cfg(test)]
+  pub(crate) fn unlock_password_for_tests(self, password: &str) -> Result<Vault, Error> {
+    self.unlock_password_with(password, test_kdf)
   }
 
   fn unlock_password_with(
@@ -411,6 +420,28 @@ impl Vault {
     self.rotate_with(password, derive)
   }
 
+  #[cfg(test)]
+  pub(crate) fn create_for_tests(records: Records, password: Option<&str>) -> Result<Self, Error> {
+    let mut id = [0; 16];
+    SystemRandom::new().fill(&mut id).map_err(|_| Error::Io)?;
+    Self::create_with(records, password, id, test_kdf)
+  }
+
+  #[cfg(test)]
+  pub(crate) fn create_identity_for_tests(
+    records: Records,
+    password: Option<&str>,
+    id: [u8; 16],
+    generation: [u8; 16],
+  ) -> Result<Self, Error> {
+    Self::create_with_ids(records, password, id, generation, test_kdf)
+  }
+
+  #[cfg(test)]
+  pub(crate) fn rotate_for_tests(&self, password: Option<&str>) -> Result<Self, Error> {
+    self.rotate_with(password, test_kdf)
+  }
+
   fn rotate_with(
     &self,
     password: Option<&str>,
@@ -419,6 +450,13 @@ impl Vault {
     let records = Records::decode(&self.records.encode()?)?;
     Self::create_with(records, password, self.identity().0, kdf)
   }
+}
+
+#[cfg(test)]
+fn test_kdf(password: &str, salt: &[u8]) -> Result<Zeroizing<[u8; 32]>, Error> {
+  let bytes = Zeroizing::new([password.as_bytes(), salt].concat());
+  let hash = ring::digest::digest(&ring::digest::SHA256, &bytes);
+  Ok(Zeroizing::new(hash.as_ref().try_into().unwrap()))
 }
 
 #[cfg(test)]

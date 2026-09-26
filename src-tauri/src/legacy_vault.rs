@@ -863,6 +863,9 @@ mod tests {
     use zeroize::Zeroizing;
     struct NoCredentials;
     impl Credentials for NoCredentials {
+      fn remove(&mut self, _: &Identity) -> Result<(), Error> {
+        Err(Error::CredentialUnavailable)
+      }
       fn get(&mut self, _: &Identity) -> Result<Option<Zeroizing<[u8; 32]>>, Error> {
         Err(Error::CredentialUnavailable)
       }
