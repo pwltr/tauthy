@@ -59,6 +59,12 @@ impl Records {
     self.0.get(key).map(Vec::as_slice)
   }
 
+  pub(crate) fn remove(&mut self, key: &[u8]) {
+    if let Some(mut value) = self.0.remove(key) {
+      value.zeroize();
+    }
+  }
+
   pub(crate) fn same_as(&self, other: &Self) -> bool {
     self.0 == other.0
   }
@@ -441,6 +447,18 @@ impl Vault {
       )
       .map_err(|_| Error::Authentication)?;
     Ok([header.as_slice(), ciphertext.as_slice()].concat())
+  }
+
+  /// Internal save candidate: keep the already-authenticated data key and
+  /// wrapping header, preflight the complete map, and seal with a fresh nonce.
+  /// Never expose this key or the candidate through IPC.
+  pub(crate) fn with_records(&self, records: Records) -> Result<Self, Error> {
+    records.encode()?;
+    Ok(Self {
+      header: self.header,
+      key: Zeroizing::new(*self.key),
+      records,
+    })
   }
 
   pub(crate) fn rotate(&self, password: Option<&str>) -> Result<Self, Error> {
