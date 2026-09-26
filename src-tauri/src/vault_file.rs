@@ -173,8 +173,44 @@ pub(crate) struct Envelope {
 }
 
 impl Envelope {
+  /// Unauthenticated prompt metadata only. Reads exactly the fixed header;
+  /// callers must obtain file_size from the same open file handle. This never
+  /// proves the ciphertext or identity authentic and must not authorize writes.
+  pub(crate) fn inspect(
+    reader: impl Read,
+    file_size: u64,
+  ) -> Result<(Protection, [u8; 16], [u8; 16]), Error> {
+    let (header, length) = Self::read_header(reader)?;
+    if file_size != HEADER_SIZE as u64 + length {
+      return Err(Error::Corrupt);
+    }
+    Ok((
+      if header[10] == 1 {
+        Protection::Password
+      } else {
+        Protection::Credential
+      },
+      header[11..27].try_into().unwrap(),
+      header[27..43].try_into().unwrap(),
+    ))
+  }
+
   /// Reader is capped even if the file grows after metadata inspection.
   pub(crate) fn read(mut reader: impl Read) -> Result<Self, Error> {
+    let (header, length) = Self::read_header(&mut reader)?;
+    let mut ciphertext = Vec::new();
+    reader
+      .by_ref()
+      .take(length + 1)
+      .read_to_end(&mut ciphertext)
+      .map_err(|_| Error::Io)?;
+    if ciphertext.len() as u64 != length {
+      return Err(Error::Corrupt);
+    }
+    Ok(Self { header, ciphertext })
+  }
+
+  fn read_header(mut reader: impl Read) -> Result<([u8; HEADER_SIZE], u64), Error> {
     let mut header = [0; HEADER_SIZE];
     reader.read_exact(&mut header).map_err(|_| Error::Corrupt)?;
     if &header[..8] != MAGIC {
@@ -196,16 +232,7 @@ impl Envelope {
     if length > MAX_PLAINTEXT as u64 + 16 {
       return Err(Error::TooLarge);
     }
-    let mut ciphertext = Vec::new();
-    reader
-      .by_ref()
-      .take(length + 1)
-      .read_to_end(&mut ciphertext)
-      .map_err(|_| Error::Io)?;
-    if ciphertext.len() as u64 != length {
-      return Err(Error::Corrupt);
-    }
-    Ok(Self { header, ciphertext })
+    Ok((header, length))
   }
 
   pub(crate) fn protection(&self) -> Protection {
