@@ -171,19 +171,14 @@ fn windows_policy_pins_local_not_enterprise_persistence() {
 
 #[cfg(windows)]
 #[test]
-fn windows_native_entry_has_local_persistence() {
+fn windows_native_entry_accepts_the_explicit_local_modifier() {
   let backend = NativeBackend::new().unwrap();
-  let entry = backend
+  backend
     .entry("tauthy-dev.local-vault.v1", "test-account")
     .unwrap();
-  let credential = entry
-    .as_any()
-    .downcast_ref::<windows_native_keyring_store::cred::Cred>()
-    .unwrap();
-  assert_eq!(
-    credential.persistence,
-    windows_native_keyring_store::CredPersist::Local
-  );
+  // Cred is private in this dependency. Do not downcast through its internals.
+  // The pure policy test pins Local; the opt-in native round trip exercises
+  // read()'s persistence attribute check on the actual saved credential.
 }
 
 #[test]

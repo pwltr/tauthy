@@ -77,15 +77,18 @@ fn create_installs_verified_private_vault_and_keeps_terminal_journal() {
       .phase,
     Phase::Completed
   );
-  use std::os::unix::fs::PermissionsExt;
-  assert_eq!(
-    fs::metadata(directory.path().join(ACTIVE))
-      .unwrap()
-      .permissions()
-      .mode()
-      & 0o777,
-    0o600
-  );
+  #[cfg(unix)]
+  {
+    use std::os::unix::fs::PermissionsExt;
+    assert_eq!(
+      fs::metadata(directory.path().join(ACTIVE))
+        .unwrap()
+        .permissions()
+        .mode()
+        & 0o777,
+      0o600
+    );
+  }
 }
 
 #[test]
@@ -110,6 +113,58 @@ fn migration_journals_identity_before_source_copy_and_preserves_retired_bytes() 
     fs::read(directory.path().join(RETIRED)).unwrap(),
     b"source-snapshot"
   );
+}
+
+#[test]
+fn install_errors_distinguish_existing_files_from_io_failures() {
+  assert_eq!(
+    install_error(std::io::ErrorKind::AlreadyExists.into()),
+    Error::Conflict
+  );
+  assert_eq!(
+    install_error(std::io::ErrorKind::PermissionDenied.into()),
+    Error::Io
+  );
+  assert_eq!(
+    install_error(std::io::ErrorKind::Unsupported.into()),
+    Error::Journal(vault_journal::Error::Unsupported)
+  );
+}
+
+#[test]
+fn retirement_refuses_source_or_backup_changes_before_removing_source() {
+  for name in [LEGACY, RETIRED] {
+    let directory = tempfile::tempdir().unwrap();
+    fs::write(directory.path().join(LEGACY), b"source-snapshot").unwrap();
+    let mut keys = Keys::default();
+    let mut reader = source;
+    let mut hook = no_failure;
+    Coordinator::new(directory.path(), &mut keys, &mut hook)
+      .with_test_kdf()
+      .begin_migration("", &mut reader)
+      .unwrap();
+    let mut tamper = |point| {
+      if point == "beforeRetireRemove" {
+        fs::write(directory.path().join(name), b"changed externally").unwrap();
+      }
+      Ok(())
+    };
+    let result = Coordinator::new(directory.path(), &mut keys, &mut tamper)
+      .with_test_kdf()
+      .resume(None, &mut reader);
+    assert!(matches!(
+      result,
+      Err(Error::SourceChanged | Error::Conflict)
+    ));
+    assert!(directory.path().join(LEGACY).is_file());
+    assert_eq!(
+      vault_journal::read(directory.path())
+        .unwrap()
+        .unwrap()
+        .phase,
+      Phase::RetireIntent
+    );
+  }
 }
 
 #[test]

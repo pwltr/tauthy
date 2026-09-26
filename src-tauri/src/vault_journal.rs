@@ -6,7 +6,6 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-#[cfg(unix)]
 use std::io::Write;
 
 const MAX_JOURNAL: u64 = 16 * 1024;
@@ -319,39 +318,31 @@ pub(crate) fn read(directory: &Path) -> Result<Option<Journal>, Error> {
   Ok(Some(journal))
 }
 
-#[cfg(unix)]
 pub(crate) fn persist(directory: &Path, journal: &Journal) -> Result<(), Error> {
   journal.validate()?;
   let bytes = serde_json::to_vec(journal).map_err(|_| Error::Corrupt)?;
   if bytes.len() as u64 > MAX_JOURNAL {
     return Err(Error::Corrupt);
   }
-  let mut temporary = tempfile::NamedTempFile::new_in(directory).map_err(|_| Error::Io)?;
+  crate::vault_fs::require_supported(directory).map_err(filesystem_error)?;
+  let mut temporary = crate::vault_fs::temporary(directory).map_err(filesystem_error)?;
   temporary.write_all(&bytes).map_err(|_| Error::Io)?;
   temporary.as_file().sync_all().map_err(|_| Error::Io)?;
-  temporary
-    .persist(directory.join(JOURNAL_NAME))
-    .map_err(|_| Error::Io)?;
+  crate::vault_fs::persist(temporary, &directory.join(JOURNAL_NAME), true)
+    .map_err(filesystem_error)?;
   sync_directory(directory)
 }
 
-#[cfg(unix)]
 pub(crate) fn sync_directory(directory: &Path) -> Result<(), Error> {
-  File::open(directory)
-    .and_then(|file| file.sync_all())
-    .map_err(|_| Error::Io)
+  crate::vault_fs::sync_directory(directory).map_err(filesystem_error)
 }
 
-// Fail before writing anything until the Windows durability implementation is
-// available. Directory FlushFileBuffers is not a portable Unix-fsync analogue.
-#[cfg(not(unix))]
-pub(crate) fn persist(_directory: &Path, _journal: &Journal) -> Result<(), Error> {
-  Err(Error::Unsupported)
-}
-
-#[cfg(not(unix))]
-pub(crate) fn sync_directory(_directory: &Path) -> Result<(), Error> {
-  Err(Error::Unsupported)
+fn filesystem_error(error: std::io::Error) -> Error {
+  if error.kind() == std::io::ErrorKind::Unsupported {
+    Error::Unsupported
+  } else {
+    Error::Io
+  }
 }
 
 #[cfg(test)]
@@ -377,7 +368,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(unix)]
+  #[cfg(any(unix, windows))]
   fn journal_round_trip_replacement_and_terminal_marker() {
     let directory = tempfile::tempdir().unwrap();
     let mut journal = journal(false);
@@ -403,7 +394,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(unix)]
+  #[cfg(any(unix, windows))]
   fn password_startup_is_read_only_and_pending_not_failed() {
     let directory = tempfile::tempdir().unwrap();
     let mut journal = journal(false);
@@ -465,7 +456,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(unix)]
+  #[cfg(any(unix, windows))]
   fn invalid_journal_is_never_installed_and_hostile_input_is_bounded() {
     let directory = tempfile::tempdir().unwrap();
     let good = journal(false);
