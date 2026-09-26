@@ -14,6 +14,8 @@ if (platform === 'windows') {
   primary = '#191919'
 }
 
+const secondary = platform === 'macos' ? '#ffffff' : platform === 'windows' ? '#e4e4e5' : primary
+
 export default {
   mui: {
     palette: {
@@ -22,8 +24,8 @@ export default {
         darker: '#053e85',
       },
       secondary: {
-        main: platform === 'macos' ? '#ffffff' : primary,
-        ...(platform === 'macos' ? { contrastText: grey[900] } : {}),
+        main: secondary,
+        ...(platform === 'macos' || platform === 'windows' ? { contrastText: grey[900] } : {}),
       },
       neutral: {
         main: '#64748B',

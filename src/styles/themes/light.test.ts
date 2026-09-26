@@ -21,15 +21,24 @@ describe('platform light colors', () => {
     expect(light.mui.palette.primary.main).toBe('#363636')
   })
 
-  it.each([
-    ['linux', '#31363b'],
-    ['windows', '#191919'],
-  ])('preserves %s colors', async (platform, primary) => {
-    os.platform = platform
+  it('uses the Windows light header color with readable text without changing dark mode', async () => {
+    os.platform = 'windows'
+    vi.resetModules()
+    const { default: light } = await import('./light')
+    const { default: dark } = await import('./dark')
+
+    expect(light.mui.palette.secondary.main).toBe('#e4e4e5')
+    expect(light.mui.palette.secondary.contrastText).toBe(light.mui.palette.text.primary)
+    expect(light.mui.palette.primary.main).toBe('#191919')
+    expect(dark.mui.palette.secondary.main).toBe('#191919')
+  })
+
+  it('preserves Linux colors', async () => {
+    os.platform = 'linux'
     vi.resetModules()
     const { default: light } = await import('./light')
 
-    expect(light.mui.palette.secondary.main).toBe(primary)
+    expect(light.mui.palette.secondary.main).toBe('#31363b')
     expect(light.mui.palette.background.default).toBe('#232629')
   })
 })
