@@ -576,7 +576,10 @@ fn interrupted_foreign_replacement_needs_explicit_content_resubmission() {
 
 #[test]
 fn deleted_tombstone_creation_refuses_restored_local_artifacts() {
-  for name in crate::vault_transaction::changes::LOCAL_ARTIFACTS {
+  for name in crate::vault_transaction::changes::LOCAL_ARTIFACTS
+    .iter()
+    .chain(crate::vault_fs::MIGRATION_COPY_FILES.iter())
+  {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path();
     let mut keys = Keys::default();

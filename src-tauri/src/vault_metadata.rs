@@ -169,7 +169,10 @@ pub(crate) fn inspect(directory: &Path) -> Result<Metadata, Error> {
       "vault.pending.tauthy",
       "vault.rollback.tauthy",
       "vault.stronghold.retired",
-    ] {
+    ]
+    .iter()
+    .chain(crate::vault_fs::MIGRATION_COPY_FILES.iter())
+    {
       if open_regular(&directory.join(name))?.is_some() {
         return Err(Error::ReconciliationFailed);
       }

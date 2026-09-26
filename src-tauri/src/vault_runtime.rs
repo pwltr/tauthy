@@ -86,6 +86,14 @@ fn no_source(_: &Path, _: &str) -> Result<Records, TxError> {
   Err(TxError::NeedsPreparation)
 }
 
+fn cleanup_error(error: std::io::Error) -> TxError {
+  if error.kind() == std::io::ErrorKind::Unsupported {
+    TxError::Journal(vault_journal::Error::Unsupported)
+  } else {
+    TxError::ReconciliationFailed
+  }
+}
+
 fn identity(vault: &Vault) -> Identity {
   let (vault_id, key_generation) = vault.identity();
   Identity {
@@ -127,6 +135,42 @@ fn open_with_key(path: &Path, expected: &Vault) -> Result<Session, Error> {
 }
 
 impl Runtime {
+  /// Production entry points keep the legacy reader selected by Rust, not IPC.
+  pub(crate) fn migrate_legacy(
+    &self,
+    password: &str,
+    credentials: &mut dyn Credentials,
+  ) -> Result<(), Error> {
+    self.migrate(
+      password,
+      credentials,
+      &mut crate::legacy_vault::migration_records,
+    )
+  }
+
+  pub(crate) fn unlock_current(
+    &self,
+    password: Option<&str>,
+    target_password: Option<&str>,
+    credentials: &mut dyn Credentials,
+  ) -> Result<(), Error> {
+    self.unlock(
+      password,
+      target_password,
+      credentials,
+      &mut crate::legacy_vault::migration_records,
+    )
+  }
+
+  /// Called by the dispatcher at startup under the same directory ownership as
+  /// every other operation. Never adopts temporary bytes or changes a journal.
+  pub(crate) fn cleanup_temporary_files(&self) -> Result<(), Error> {
+    let _state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    vault_fs::cleanup_temporary_files(&self.directory).map_err(cleanup_error)?;
+    crate::legacy_vault::cleanup_migration_copy(&self.directory)?;
+    Ok(())
+  }
+
   /// Directory creation/path selection remains the app's responsibility. No
   /// implicit vault creation, deletion, key lookup or directory sweep here.
   pub(crate) fn new(directory: PathBuf) -> Self {
@@ -393,6 +437,148 @@ impl Runtime {
     coordinator.begin_delete(true)?;
     coordinator.resume_delete()?;
     Ok(())
+  }
+
+  fn authenticate_source(
+    &self,
+    session: &Session,
+    password: Option<&str>,
+    credentials: &mut dyn Credentials,
+  ) -> Result<Vault, Error> {
+    require_completed(&self.directory, &session.vault)?;
+    let active = self.directory.join("vault.tauthy");
+    if vault_transaction::fingerprint(&active)? != session.fingerprint {
+      return Err(TxError::SourceChanged.into());
+    }
+    let envelope = Envelope::read(File::open(&active).map_err(|_| TxError::Io)?)?;
+    if envelope.identity() != session.vault.identity() {
+      return Err(TxError::IdentityMismatch.into());
+    }
+    let source = match envelope.protection() {
+      crate::vault_file::Protection::Password => {
+        envelope.unlock_password(password.ok_or(TxError::PendingUnlock)?)?
+      }
+      crate::vault_file::Protection::Credential => {
+        let key = credentials
+          .get(&identity(&session.vault))?
+          .ok_or(TxError::CredentialMissing)?;
+        envelope.unlock_credential(Some(*key))?
+      }
+    };
+    if vault_transaction::fingerprint(&active)? != session.fingerprint {
+      return Err(TxError::SourceChanged.into());
+    }
+    if !source.records.same_as(&session.vault.records) {
+      return Err(TxError::RecordsChanged.into());
+    }
+    Ok(source)
+  }
+
+  /// Add/change/remove protection. None means a device credential, never an
+  /// empty-password wrapper. UI must explain raw-copy invalidation before
+  /// supplying confirmation. Re-authenticate before journaling any effects.
+  pub(crate) fn change_password(
+    &self,
+    current_password: Option<&str>,
+    new_password: Option<&str>,
+    confirmed: bool,
+    credentials: &mut dyn Credentials,
+  ) -> Result<(), Error> {
+    let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if !confirmed {
+      return Err(TxError::ConfirmationRequired.into());
+    }
+    let session = state.session.take().ok_or(Error::Locked)?;
+    let source = self.authenticate_source(&session, current_password, credentials)?;
+    let target = source.rotate(new_password)?;
+    let mut hook = no_failure;
+    let mut coordinator = Coordinator::new(&self.directory, credentials, &mut hook);
+    coordinator.begin_rotation(&source, &target)?;
+    let vault = coordinator.resume_change(current_password, new_password)?;
+    self.install_session(&mut state, vault)
+  }
+
+  /// Replaces the entire local vault, not an account merge. Foreign bytes must
+  /// have been authenticated into a Vault first; unknown records (including sync
+  /// configuration) are retained. Sync disposition is an explicit UI decision.
+  pub(crate) fn import_foreign(
+    &self,
+    foreign: &Vault,
+    current_password: Option<&str>,
+    new_password: Option<&str>,
+    confirmed: bool,
+    credentials: &mut dyn Credentials,
+  ) -> Result<(), Error> {
+    let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if !confirmed {
+      return Err(TxError::ConfirmationRequired.into());
+    }
+    let session = state.session.take().ok_or(Error::Locked)?;
+    let source = self.authenticate_source(&session, current_password, credentials)?;
+    let mut hook = no_failure;
+    let mut coordinator = Coordinator::new(&self.directory, credentials, &mut hook);
+    coordinator.begin_foreign_replacement(&source, foreign, new_password, true)?;
+    let vault = coordinator.resume_change(current_password, new_password)?;
+    self.install_session(&mut state, vault)
+  }
+
+  /// Explicit re-submission when replacement was interrupted before its target
+  /// content became durable. Never rebuild a foreign target from local records.
+  pub(crate) fn resume_foreign_import(
+    &self,
+    foreign: &Vault,
+    current_password: Option<&str>,
+    new_password: Option<&str>,
+    confirmed: bool,
+    credentials: &mut dyn Credentials,
+  ) -> Result<(), Error> {
+    let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if !confirmed {
+      return Err(TxError::ConfirmationRequired.into());
+    }
+    state.session.take();
+    let journal = vault_journal::read(&self.directory)
+      .map_err(TxError::from)?
+      .ok_or(TxError::ReconciliationFailed)?;
+    if journal.operation != Operation::Replace
+      || !matches!(
+        journal.phase,
+        Phase::Prepared
+          | Phase::CredentialStageIntent
+          | Phase::CredentialVerified
+          | Phase::FilePrepareIntent
+      )
+    {
+      return Err(TxError::ReconciliationFailed.into());
+    }
+    let source_id = journal
+      .source_identity
+      .as_ref()
+      .ok_or(TxError::ReconciliationFailed)?;
+    let path = self.directory.join("vault.tauthy");
+    if Some(vault_transaction::fingerprint(&path)?) != journal.source_fingerprint {
+      return Err(TxError::SourceChanged.into());
+    }
+    let envelope = Envelope::read(File::open(path).map_err(|_| TxError::Io)?)?;
+    if envelope.identity() != (source_id.vault_id, source_id.key_generation)
+      || (envelope.protection() == crate::vault_file::Protection::Credential)
+        != source_id.credential
+    {
+      return Err(TxError::IdentityMismatch.into());
+    }
+    let source = if source_id.credential {
+      let key = credentials
+        .get(source_id)?
+        .ok_or(TxError::CredentialMissing)?;
+      envelope.unlock_credential(Some(*key))?
+    } else {
+      envelope.unlock_password(current_password.ok_or(TxError::PendingUnlock)?)?
+    };
+    let mut hook = no_failure;
+    let mut coordinator = Coordinator::new(&self.directory, credentials, &mut hook);
+    coordinator.prepare_foreign_replacement(&source, foreign, new_password, true)?;
+    let vault = coordinator.resume_change(current_password, new_password)?;
+    self.install_session(&mut state, vault)
   }
 }
 
