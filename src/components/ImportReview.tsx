@@ -22,7 +22,11 @@ type ImportReviewContext = {
 const formatNames = {
   '2fas': '2FAS',
   aegis: 'Aegis',
+  andotp: 'andOTP',
   authy: 'Authy',
+  ente: 'Ente Auth',
+  bitwarden: 'Bitwarden',
+  proton: 'Proton Authenticator',
   google: 'Google Authenticator',
   tauthy: 'Tauthy',
 }

@@ -77,24 +77,55 @@ describe('import review', () => {
     mocks.commitPreparedImport.mockResolvedValue(1)
   })
 
-  it.each(['2FAS', 'Aegis', 'Authy', 'Tauthy', 'import.otpAuth'])(
-    'reviews %s account metadata before allowing an import',
-    async (label) => {
-      renderImport()
-      chooseFile(label)
+  it('shows locally bundled, decorative provider logos beside accessible labels', () => {
+    renderImport()
+    fireEvent.click(screen.getByText('import.import'))
 
-      expect(await screen.findByText('accounts.txt')).toBeInTheDocument()
-      expect(screen.queryByText('modals.importPreviewTitle')).not.toBeInTheDocument()
-      expect(screen.getByText('alice')).toBeInTheDocument()
-      expect(screen.getByText('bob')).toBeInTheDocument()
-      expect(screen.queryByText('JBSWY3DPEHPK3PXP')).not.toBeInTheDocument()
-      expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+    for (const label of [
+      '2FAS',
+      'Aegis',
+      'andOTP',
+      'Authy',
+      'Bitwarden',
+      'Ente Auth',
+      'Proton Authenticator',
+      'Tauthy',
+    ]) {
+      const button = screen.getByRole('button', { name: label })
+      const logo = button.querySelector('img')
+      expect(logo).toHaveAttribute('alt', '')
+      expect(logo?.getAttribute('src')).toBeTruthy()
+      expect(logo?.getAttribute('src')).not.toMatch(/^https?:/)
+      expect(logo?.parentElement).toHaveAttribute('aria-hidden', 'true')
+    }
+    expect(screen.getByRole('button', { name: 'import.otpAuth' })).toBeInTheDocument()
+  })
 
-      fireEvent.click(screen.getByText('modals.cancel'))
-      expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
-      expect(await screen.findByText('import.import')).toBeInTheDocument()
-    },
-  )
+  it.each([
+    '2FAS',
+    'Aegis',
+    'andOTP',
+    'Authy',
+    'Bitwarden',
+    'Ente Auth',
+    'Proton Authenticator',
+    'Tauthy',
+    'import.otpAuth',
+  ])('reviews %s account metadata before allowing an import', async (label) => {
+    renderImport()
+    chooseFile(label)
+
+    expect(await screen.findByText('accounts.txt')).toBeInTheDocument()
+    expect(screen.queryByText('modals.importPreviewTitle')).not.toBeInTheDocument()
+    expect(screen.getByText('alice')).toBeInTheDocument()
+    expect(screen.getByText('bob')).toBeInTheDocument()
+    expect(screen.queryByText('JBSWY3DPEHPK3PXP')).not.toBeInTheDocument()
+    expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('modals.cancel'))
+    expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+    expect(await screen.findByText('import.import')).toBeInTheDocument()
+  })
 
   it('commits the reviewed entries only after confirmation', async () => {
     renderImport()
