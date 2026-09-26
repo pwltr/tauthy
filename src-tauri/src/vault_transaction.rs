@@ -1,4 +1,4 @@
-//! Filesystem coordinator for create/migrate. Not connected to app commands.
+//! Filesystem coordinator for vault lifecycle transactions. Not connected to app commands.
 //! Each side effect follows durable intent; no automatic stale-vault fallback.
 //! Caller must serialize transactions for a directory (the app vault mutex).
 //! Credential-stage deferral leaves legacy authoritative until activation;
@@ -27,6 +27,8 @@ const LEGACY: &str = "vault.stronghold";
 const RETIRED: &str = "vault.stronghold.retired";
 const MAX_SOURCE: u64 = 256 * 1024 * 1024;
 
+#[path = "vault_change.rs"]
+mod changes;
 #[cfg(all(test, unix))]
 #[path = "vault_transaction_tests.rs"]
 mod tests;
@@ -50,6 +52,7 @@ pub(crate) enum Error {
   /// vault authenticated. Never present the cause as active-vault corruption.
   StagedCleanupFailed(Box<Error>),
   Interrupted,
+  ConfirmationRequired,
 }
 
 impl From<vault_file::Error> for Error {
@@ -68,6 +71,8 @@ impl From<vault_journal::Error> for Error {
 pub(crate) trait Credentials {
   fn get(&mut self, identity: &Identity) -> Result<Option<Zeroizing<[u8; 32]>>, Error>;
   fn set(&mut self, identity: &Identity, key: &[u8; 32]) -> Result<(), Error>;
+  /// Idempotent: missing is success, denied/unavailable is not.
+  fn remove(&mut self, identity: &Identity) -> Result<(), Error>;
 }
 
 pub(crate) struct Coordinator<'a> {
@@ -75,6 +80,9 @@ pub(crate) struct Coordinator<'a> {
   credentials: &'a mut dyn Credentials,
   // Production supplies a no-op; tests fail before/after individual effects.
   checkpoint: &'a mut dyn FnMut(&'static str) -> Result<(), Error>,
+  password_open: fn(Envelope, &str) -> Result<Vault, vault_file::Error>,
+  candidate_create:
+    fn(Records, Option<&str>, [u8; 16], [u8; 16]) -> Result<Vault, vault_file::Error>,
 }
 
 fn identity(vault: &Vault) -> Identity {
@@ -137,7 +145,17 @@ impl<'a> Coordinator<'a> {
       directory,
       credentials,
       checkpoint,
+      password_open: Envelope::unlock_password,
+      candidate_create: Vault::create_for_identity,
     }
+  }
+
+  // Only compiled into tests; production KDF parameters are not selectable.
+  #[cfg(test)]
+  fn with_test_kdf(mut self) -> Self {
+    self.password_open = Envelope::unlock_password_for_tests;
+    self.candidate_create = Vault::create_identity_for_tests;
+    self
   }
 
   fn point(&mut self, name: &'static str) -> Result<(), Error> {
@@ -214,9 +232,10 @@ impl<'a> Coordinator<'a> {
       if migrate || previous.operation != Operation::Delete || previous.phase != Phase::Deleted {
         return Err(Error::Conflict);
       }
-      if let Some(source) = previous
+      for source in previous
         .source_identity
-        .as_ref()
+        .iter()
+        .chain(previous.cleanup_identities.iter())
         .filter(|source| source.credential)
       {
         self.point("beforeDeletedCredentialCheck")?;
@@ -226,7 +245,10 @@ impl<'a> Coordinator<'a> {
         self.point("afterDeletedCredentialCheck")?;
       }
     }
-    for name in [ACTIVE, STAGED, RETIRED] {
+    for name in changes::LOCAL_ARTIFACTS
+      .iter()
+      .filter(|name| **name != LEGACY)
+    {
       if regular_file(&self.directory.join(name))? {
         return Err(Error::Conflict);
       }
@@ -259,6 +281,8 @@ impl<'a> Coordinator<'a> {
       source_fingerprint,
       source_identity: None,
       target: Some(target),
+      target_fingerprint: None,
+      cleanup_identities: Vec::new(),
     })
   }
 
@@ -278,9 +302,15 @@ impl<'a> Coordinator<'a> {
       return Err(Error::Conflict);
     }
     self.check_source(&journal)?;
+    self.stage_credentials(&mut journal, vault)?;
+    self.write_stage(vault)?;
+    self.advance(&mut journal, Phase::InstallIntent)
+  }
+
+  fn stage_credentials(&mut self, journal: &mut Journal, vault: &Vault) -> Result<(), Error> {
     if journal.phase == Phase::Prepared {
       self.advance(
-        &mut journal,
+        journal,
         if identity(vault).credential {
           Phase::CredentialStageIntent
         } else {
@@ -311,14 +341,18 @@ impl<'a> Coordinator<'a> {
         return Err(Error::Conflict);
       }
       self.point("afterCredentialVerify")?;
-      self.advance(&mut journal, Phase::CredentialVerified)?;
+      self.advance(journal, Phase::CredentialVerified)?;
     }
     if journal.phase == Phase::CredentialVerified {
-      self.advance(&mut journal, Phase::FilePrepareIntent)?;
+      self.advance(journal, Phase::FilePrepareIntent)?;
     }
     if journal.phase != Phase::FilePrepareIntent {
       return Err(Error::ReconciliationFailed);
     }
+    Ok(())
+  }
+
+  fn write_stage(&mut self, vault: &Vault) -> Result<(), Error> {
     let staged = self.directory.join(STAGED);
     if !regular_file(&staged)? {
       let bytes = vault.seal()?;
@@ -343,7 +377,7 @@ impl<'a> Coordinator<'a> {
       return Err(Error::RecordsChanged);
     }
     self.point("afterStageVerify")?;
-    self.advance(&mut journal, Phase::InstallIntent)
+    Ok(())
   }
 
   fn load(&self) -> Result<Journal, Error> {
@@ -422,7 +456,7 @@ impl<'a> Coordinator<'a> {
       self.point("afterUnlockCredentialGet")?;
       envelope.unlock_credential(Some(*key))?
     } else {
-      envelope.unlock_password(password.ok_or(Error::PendingUnlock)?)?
+      (self.password_open)(envelope, password.ok_or(Error::PendingUnlock)?)?
     })
   }
 
