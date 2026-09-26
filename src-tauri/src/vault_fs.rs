@@ -9,6 +9,51 @@ use std::{
 };
 use tempfile::NamedTempFile;
 
+// Exclusive scratch namespace, never a source of authoritative data. Do not
+// clean generic .tmp* names: older files or other tools may own them.
+const TEMP_PREFIX: &str = ".tauthy-write-";
+const TEMP_RANDOM_LENGTH: usize = 16;
+
+pub(crate) const MIGRATION_COPY_FILES: &[&str] = &[
+  "vault-migration.stronghold",
+  "vault-migration.stronghold.migrating",
+  "vault-migration.stronghold.v2-backup",
+  "vault-migration.stronghold.backup",
+  "vault-migration.stronghold.password-migrating",
+];
+
+fn owned_temporary_name(name: &std::ffi::OsStr) -> bool {
+  name.to_str().is_some_and(|name| {
+    name.strip_prefix(TEMP_PREFIX).is_some_and(|suffix| {
+      suffix.len() == TEMP_RANDOM_LENGTH && suffix.bytes().all(|byte| byte.is_ascii_alphanumeric())
+    })
+  })
+}
+
+/// Caller owns the directory exclusively (runtime mutex + single-instance app).
+/// Preflight all matching artifacts before any deletion; reject symlinks and
+/// directories. Only uncommitted scratch names are eligible, never staged files.
+pub(crate) fn cleanup_temporary_files(directory: &Path) -> io::Result<()> {
+  require_supported(directory)?;
+  let mut paths = Vec::new();
+  for entry in fs::read_dir(directory)? {
+    let entry = entry?;
+    if owned_temporary_name(&entry.file_name()) {
+      if !fs::symlink_metadata(entry.path())?.file_type().is_file() {
+        return Err(io::ErrorKind::InvalidData.into());
+      }
+      paths.push(entry.path());
+      if paths.len() > 1024 {
+        return Err(io::ErrorKind::InvalidData.into());
+      }
+    }
+  }
+  for path in paths {
+    remove(&path)?;
+  }
+  Ok(())
+}
+
 pub(crate) fn require_supported(directory: &Path) -> io::Result<()> {
   #[cfg(unix)]
   {
@@ -28,13 +73,15 @@ pub(crate) fn require_supported(directory: &Path) -> io::Result<()> {
 
 pub(crate) fn temporary(directory: &Path) -> io::Result<NamedTempFile> {
   require_supported(directory)?;
+  let mut builder = tempfile::Builder::new();
+  builder.prefix(TEMP_PREFIX).rand_bytes(TEMP_RANDOM_LENGTH);
   #[cfg(windows)]
   {
-    tempfile::Builder::new().make_in(directory, |path| windows::writable(path, true, false))
+    builder.make_in(directory, |path| windows::writable(path, true, false))
   }
   #[cfg(not(windows))]
   {
-    NamedTempFile::new_in(directory)
+    builder.tempfile_in(directory)
   }
 }
 

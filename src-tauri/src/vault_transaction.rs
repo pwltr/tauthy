@@ -54,6 +54,8 @@ pub(crate) enum Error {
   /// Cleanup/reconciliation of vault.pending.tauthy failed after the active
   /// vault authenticated. Never present the cause as active-vault corruption.
   StagedCleanupFailed(Box<Error>),
+  /// Disposable legacy working-copy cleanup failed; not active corruption.
+  LegacyCopyCleanupFailed,
   Interrupted,
   ConfirmationRequired,
 }
@@ -260,6 +262,7 @@ impl<'a> Coordinator<'a> {
     }
     for name in changes::LOCAL_ARTIFACTS
       .iter()
+      .chain(vault_fs::MIGRATION_COPY_FILES.iter())
       .filter(|name| **name != LEGACY)
     {
       if regular_file(&self.directory.join(name))? {

@@ -1,6 +1,20 @@
 use super::*;
 use std::{collections::HashMap, fs};
 
+#[test]
+fn unsupported_cleanup_is_not_a_reconciliation_failure() {
+  assert_eq!(
+    cleanup_error(std::io::ErrorKind::Unsupported.into()),
+    TxError::Journal(vault_journal::Error::Unsupported)
+  );
+  for kind in [
+    std::io::ErrorKind::InvalidData,
+    std::io::ErrorKind::PermissionDenied,
+  ] {
+    assert_eq!(cleanup_error(kind.into()), TxError::ReconciliationFailed);
+  }
+}
+
 #[derive(Default)]
 struct Keys {
   entries: HashMap<String, Zeroizing<[u8; 32]>>,
@@ -498,4 +512,364 @@ fn simultaneous_batches_are_serialized_and_cannot_lose_each_other() {
   });
   assert_eq!(runtime.get(b"first").unwrap(), Some(b"first".to_vec()));
   assert_eq!(runtime.get(b"second").unwrap(), Some(b"second".to_vec()));
+}
+
+#[test]
+fn protection_entry_point_covers_all_modes_and_retains_records() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  runtime.create(None, &mut keys).unwrap();
+  runtime
+    .save(vec![
+      put(b"vault", b"accounts"),
+      put(b"sync-config-v1", b"sync"),
+    ])
+    .unwrap();
+  let original = vault_journal::read(directory.path())
+    .unwrap()
+    .unwrap()
+    .target
+    .unwrap();
+  for (current, next) in [
+    (None, Some("first")),
+    (Some("first"), Some("second")),
+    (Some("second"), None),
+    (None, None),
+  ] {
+    let before = vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .target
+      .unwrap();
+    runtime
+      .change_password(current, next, true, &mut keys)
+      .unwrap();
+    let after = vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .target
+      .unwrap();
+    assert_eq!(original.vault_id, after.vault_id);
+    assert_ne!(before.key_generation, after.key_generation);
+    assert_eq!(after.credential, next.is_none());
+    assert_eq!(keys.entries.len(), usize::from(next.is_none()));
+    runtime.lock().unwrap();
+    runtime.unlock_current(next, None, &mut keys).unwrap();
+    assert_eq!(runtime.get(b"vault").unwrap(), Some(b"accounts".to_vec()));
+    assert_eq!(
+      runtime.get(b"sync-config-v1").unwrap(),
+      Some(b"sync".to_vec())
+    );
+  }
+}
+
+#[test]
+fn changes_require_confirmation_and_reauthentication_before_any_effect() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  runtime.create(Some("old"), &mut keys).unwrap();
+  let active = fs::read(directory.path().join("vault.tauthy")).unwrap();
+  let journal = fs::read(directory.path().join("vault.transaction.json")).unwrap();
+  assert_eq!(
+    runtime.change_password(Some("old"), None, false, &mut keys),
+    Err(TxError::ConfirmationRequired.into())
+  );
+  assert!(!runtime.status().unwrap().locked);
+  assert_eq!(
+    runtime.change_password(Some("wrong"), None, true, &mut keys),
+    Err(crate::vault_file::Error::Authentication.into())
+  );
+  assert!(runtime.status().unwrap().locked);
+  runtime
+    .unlock_current(Some("old"), None, &mut keys)
+    .unwrap();
+  assert_eq!(
+    runtime.change_password(Some("old"), Some(""), true, &mut keys),
+    Err(crate::vault_file::Error::EmptyPassword.into())
+  );
+  assert_eq!(
+    fs::read(directory.path().join("vault.tauthy")).unwrap(),
+    active
+  );
+  assert_eq!(
+    fs::read(directory.path().join("vault.transaction.json")).unwrap(),
+    journal
+  );
+  assert!(keys.entries.is_empty());
+}
+
+#[test]
+fn password_removal_failure_preserves_source_and_can_be_resumed() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  runtime.create(Some("old"), &mut keys).unwrap();
+  runtime.save(vec![put(b"vault", b"accounts")]).unwrap();
+  let active = fs::read(directory.path().join("vault.tauthy")).unwrap();
+  keys.unavailable = true;
+  assert_eq!(
+    runtime.change_password(Some("old"), None, true, &mut keys),
+    Err(TxError::CredentialUnavailable.into())
+  );
+  assert!(runtime.status().unwrap().locked);
+  assert_eq!(
+    fs::read(directory.path().join("vault.tauthy")).unwrap(),
+    active
+  );
+  assert_eq!(runtime.get(b"vault"), Err(Error::Locked));
+  keys.unavailable = false;
+  runtime
+    .unlock_current(Some("old"), None, &mut keys)
+    .unwrap();
+  runtime.lock().unwrap();
+  runtime.unlock_current(None, None, &mut keys).unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"accounts".to_vec()));
+}
+
+#[test]
+fn foreign_replacement_is_confirmed_reauthenticated_and_locally_rekeyed() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  runtime.create(None, &mut keys).unwrap();
+  runtime.save(vec![put(b"vault", b"incumbent")]).unwrap();
+  let incumbent = vault_journal::read(directory.path())
+    .unwrap()
+    .unwrap()
+    .target
+    .unwrap();
+  let mut records = Records::default();
+  records.insert(store_key_for(b"vault"), b"foreign".to_vec());
+  records.insert(store_key_for(b"sync-config-v1"), b"foreign-sync".to_vec());
+  records.insert(vec![255, 31], vec![11, 255]);
+  let foreign = Vault::create(records, Some("foreign-password")).unwrap();
+  assert_eq!(
+    runtime.import_foreign(&foreign, None, Some("local"), false, &mut keys),
+    Err(TxError::ConfirmationRequired.into())
+  );
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"incumbent".to_vec()));
+  keys.denied = true;
+  assert_eq!(
+    runtime.import_foreign(&foreign, None, Some("local"), true, &mut keys),
+    Err(TxError::CredentialAccessDenied.into())
+  );
+  keys.denied = false;
+  runtime.unlock_current(None, None, &mut keys).unwrap();
+  runtime
+    .import_foreign(&foreign, None, Some("local"), true, &mut keys)
+    .unwrap();
+  let local = vault_journal::read(directory.path())
+    .unwrap()
+    .unwrap()
+    .target
+    .unwrap();
+  assert_ne!(local.vault_id, incumbent.vault_id);
+  assert_ne!(local.vault_id, foreign.identity().0);
+  assert!(keys.entries.is_empty());
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"foreign".to_vec()));
+  assert_eq!(
+    runtime.get(b"sync-config-v1").unwrap(),
+    Some(b"foreign-sync".to_vec())
+  );
+  let opened = Envelope::read(File::open(directory.path().join("vault.tauthy")).unwrap())
+    .unwrap()
+    .unlock_password("local")
+    .unwrap();
+  assert!(opened.records.same_as(&foreign.records));
+  assert_ne!(opened.credential_key(), foreign.credential_key());
+  runtime.lock().unwrap();
+  assert_eq!(
+    runtime.unlock_current(Some("foreign-password"), None, &mut keys),
+    Err(crate::vault_file::Error::Authentication.into())
+  );
+  runtime
+    .unlock_current(Some("local"), None, &mut keys)
+    .unwrap();
+}
+
+#[test]
+fn startup_cleanup_discards_only_reserved_scratch_files_and_never_adopts_them() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let temporary = vault_fs::temporary(directory.path()).unwrap();
+  let (handle, orphan) = temporary.keep().unwrap();
+  drop(handle);
+  for name in [
+    ".tmp123",
+    ".tauthy-write-short",
+    ".tauthy-write-1234567890123456.extra",
+    "notes.txt",
+  ] {
+    fs::write(directory.path().join(name), b"unrelated").unwrap();
+  }
+  runtime.cleanup_temporary_files().unwrap();
+  assert!(!orphan.exists());
+  assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 4);
+  assert_eq!(runtime.status().unwrap().metadata.lifecycle, Lifecycle::New);
+  assert!(runtime.status().unwrap().locked);
+}
+
+#[cfg(unix)]
+#[test]
+fn startup_cleanup_rejects_symlinks_before_deleting_any_matching_file() {
+  let directory = tempfile::tempdir().unwrap();
+  let outside = tempfile::NamedTempFile::new().unwrap();
+  let temporary = vault_fs::temporary(directory.path()).unwrap();
+  let (handle, orphan) = temporary.keep().unwrap();
+  drop(handle);
+  std::os::unix::fs::symlink(
+    outside.path(),
+    directory.path().join(".tauthy-write-1234567890123456"),
+  )
+  .unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  assert_eq!(
+    runtime.cleanup_temporary_files(),
+    Err(TxError::ReconciliationFailed.into())
+  );
+  assert!(orphan.exists());
+  assert!(outside.path().exists());
+}
+
+#[test]
+fn interrupted_foreign_import_requires_explicit_resubmission_and_confirmation() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  runtime.create(Some("old"), &mut keys).unwrap();
+  runtime.save(vec![put(b"vault", b"incumbent")]).unwrap();
+  runtime.lock().unwrap();
+  let source = Envelope::read(File::open(directory.path().join("vault.tauthy")).unwrap())
+    .unwrap()
+    .unlock_password("old")
+    .unwrap();
+  let mut records = Records::default();
+  records.insert(store_key_for(b"vault"), b"foreign".to_vec());
+  let foreign = Vault::create(records, None).unwrap();
+  let mut hook = |point| {
+    if point == "afterJournal" {
+      Err(TxError::Interrupted)
+    } else {
+      Ok(())
+    }
+  };
+  let mut coordinator = Coordinator::new(directory.path(), &mut keys, &mut hook);
+  assert_eq!(
+    coordinator
+      .begin_foreign_replacement(&source, &foreign, Some("new"), true)
+      .err(),
+    Some(TxError::Interrupted)
+  );
+  let active = fs::read(directory.path().join("vault.tauthy")).unwrap();
+  let journal = fs::read(directory.path().join("vault.transaction.json")).unwrap();
+  assert_eq!(
+    runtime.unlock_current(Some("old"), Some("new"), &mut keys),
+    Err(TxError::NeedsPreparation.into())
+  );
+  assert_eq!(
+    runtime.resume_foreign_import(&foreign, Some("old"), Some("new"), false, &mut keys),
+    Err(TxError::ConfirmationRequired.into())
+  );
+  assert_eq!(
+    runtime.resume_foreign_import(&foreign, Some("wrong"), Some("new"), true, &mut keys),
+    Err(crate::vault_file::Error::Authentication.into())
+  );
+  assert_eq!(
+    fs::read(directory.path().join("vault.tauthy")).unwrap(),
+    active
+  );
+  assert_eq!(
+    fs::read(directory.path().join("vault.transaction.json")).unwrap(),
+    journal
+  );
+  runtime
+    .resume_foreign_import(&foreign, Some("old"), Some("new"), true, &mut keys)
+    .unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"foreign".to_vec()));
+}
+
+#[test]
+fn deletion_cleans_fixed_working_copies_but_not_unrelated_files() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  runtime.create(None, &mut keys).unwrap();
+  for name in vault_fs::MIGRATION_COPY_FILES {
+    fs::write(directory.path().join(name), b"inert").unwrap();
+  }
+  fs::write(directory.path().join("notes.txt"), b"unrelated").unwrap();
+  runtime.delete(true, &mut keys).unwrap();
+  for name in vault_fs::MIGRATION_COPY_FILES {
+    assert!(!directory.path().join(name).exists());
+  }
+  assert!(directory.path().join("notes.txt").exists());
+  runtime.create(None, &mut keys).unwrap();
+}
+
+#[test]
+#[ignore = "subprocess-only helper for the abrupt-termination regression"]
+fn scratch_crash_child() {
+  let directory =
+    std::env::var_os("TAUTHY_TEST_SCRATCH_CRASH_DIRECTORY").expect("subprocess fixture directory");
+  let directory = PathBuf::from(directory);
+  let mut temporary = vault_fs::temporary(&directory).unwrap();
+  temporary
+    .write_all(b"uncommitted encrypted fixture")
+    .unwrap();
+  temporary.as_file().sync_all().unwrap();
+  fs::write(
+    directory.join("ready.pending"),
+    temporary.path().to_str().unwrap(),
+  )
+  .unwrap();
+  fs::rename(directory.join("ready.pending"), directory.join("ready")).unwrap();
+  // Parent kills this process; NamedTempFile's destructor must NOT run.
+  loop {
+    std::thread::park();
+  }
+}
+
+#[test]
+fn abrupt_process_termination_leaves_only_sweepable_scratch_not_a_vault() {
+  let directory = tempfile::tempdir().unwrap();
+  let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+    .args([
+      "--exact",
+      "vault_runtime::tests::scratch_crash_child",
+      "--ignored",
+      "--nocapture",
+    ])
+    .env("TAUTHY_TEST_SCRATCH_CRASH_DIRECTORY", directory.path())
+    .stdin(std::process::Stdio::null())
+    .stdout(std::process::Stdio::null())
+    .stderr(std::process::Stdio::null())
+    .spawn()
+    .unwrap();
+  let started = std::time::Instant::now();
+  while !directory.path().join("ready").exists()
+    && started.elapsed() < std::time::Duration::from_secs(10)
+  {
+    if child.try_wait().unwrap().is_some() {
+      break;
+    }
+    std::thread::sleep(std::time::Duration::from_millis(10));
+  }
+  let ready = directory.path().join("ready").exists();
+  // Always reap the fixture child, including a failed readiness handshake.
+  let killed = child.kill();
+  let status = child.wait().unwrap();
+  assert!(ready, "scratch fixture child did not become ready");
+  killed.unwrap();
+  assert!(!status.success());
+  let orphan = PathBuf::from(fs::read_to_string(directory.path().join("ready")).unwrap());
+  assert_eq!(orphan.parent(), Some(directory.path()));
+  assert!(orphan.exists());
+  fs::remove_file(directory.path().join("ready")).unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  runtime.cleanup_temporary_files().unwrap();
+  assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 0);
+  assert!(runtime.status().unwrap().locked);
+  assert_eq!(runtime.status().unwrap().metadata.lifecycle, Lifecycle::New);
 }

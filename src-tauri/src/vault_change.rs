@@ -423,7 +423,10 @@ impl Coordinator<'_> {
     if incumbent.credential && !identities.contains(incumbent) {
       identities.push(incumbent.clone());
     }
-    for name in LOCAL_ARTIFACTS {
+    for name in LOCAL_ARTIFACTS
+      .iter()
+      .chain(vault_fs::MIGRATION_COPY_FILES.iter())
+    {
       let path = self.directory.join(name);
       if regular_file(&path)? {
         self.point("beforeDeleteFile")?;

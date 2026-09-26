@@ -41,6 +41,109 @@ const SNAPSHOT_V2: [u8; 2] = [2, 0];
 const SNAPSHOT_V3: [u8; 2] = [3, 0];
 const INVALID_PASSWORD_MESSAGE: &str = "Unable to unlock the vault. Please try another password.";
 
+// Fixed private copies used ONLY by the new journaled migration reader. Never
+// feed the canonical Stronghold path to the in-place v2 conversion routine.
+use crate::vault_fs::MIGRATION_COPY_FILES;
+
+/// Discard inert working copies, never restore/adopt them. A durable migration
+/// or deletion journal must own this namespace. Caller holds the runtime mutex.
+pub(crate) fn cleanup_migration_copy(
+  directory: &Path,
+) -> Result<(), crate::vault_transaction::Error> {
+  use crate::{vault_journal, vault_transaction::Error};
+  let mut paths = Vec::new();
+  for name in MIGRATION_COPY_FILES {
+    let path = directory.join(name);
+    match std::fs::symlink_metadata(&path) {
+      Ok(metadata) if metadata.file_type().is_file() => paths.push(path),
+      Ok(_) => return Err(Error::LegacyCopyCleanupFailed),
+      Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+      Err(_) => return Err(Error::LegacyCopyCleanupFailed),
+    }
+  }
+  if paths.is_empty() {
+    return Ok(());
+  }
+  let journal = vault_journal::read(directory)?.ok_or(Error::ReconciliationFailed)?;
+  if !matches!(
+    journal.operation,
+    vault_journal::Operation::Migrate | vault_journal::Operation::Delete
+  ) {
+    return Err(Error::ReconciliationFailed);
+  }
+  for path in paths {
+    crate::vault_fs::remove(&path).map_err(|_| Error::LegacyCopyCleanupFailed)?;
+  }
+  Ok(())
+}
+
+/// Production source reader for the new coordinator. Durable journal and a
+/// fingerprint-matching source precede every working-copy effect. Uses a fixed,
+/// private, bounded copy; a killed process leaves only recognizable inert files.
+pub(crate) fn migration_records(
+  source: &Path,
+  password: &str,
+) -> Result<crate::vault_file::Records, crate::vault_transaction::Error> {
+  use crate::{
+    vault_journal,
+    vault_transaction::{self, Error},
+  };
+  let directory = source.parent().ok_or(Error::Io)?;
+  if !matches!(
+    source.file_name().and_then(|name| name.to_str()),
+    Some("vault.stronghold" | "vault.stronghold.retired")
+  ) {
+    return Err(Error::ReconciliationFailed);
+  }
+  let journal = vault_journal::read(directory)?.ok_or(Error::ReconciliationFailed)?;
+  if journal.operation != vault_journal::Operation::Migrate {
+    return Err(Error::ReconciliationFailed);
+  }
+  let expected = journal
+    .source_fingerprint
+    .ok_or(Error::ReconciliationFailed)?;
+  if vault_transaction::fingerprint(source)? != expected {
+    return Err(Error::SourceChanged);
+  }
+  crate::vault_fs::require_supported(directory)
+    .map_err(|_| Error::Journal(vault_journal::Error::Unsupported))?;
+  cleanup_migration_copy(directory)?;
+  let result = (|| {
+    let mut temporary = crate::vault_fs::temporary(directory).map_err(|_| Error::Io)?;
+    let mut input = File::open(source)
+      .map_err(|_| Error::Io)?
+      .take(256 * 1024 * 1024 + 1);
+    let length = std::io::copy(&mut input, &mut temporary).map_err(|_| Error::Io)?;
+    if length > 256 * 1024 * 1024 || vault_transaction::fingerprint(source)? != expected {
+      return Err(Error::SourceChanged);
+    }
+    let copy = directory.join(MIGRATION_COPY_FILES[0]);
+    crate::vault_fs::persist(temporary, &copy, false).map_err(|_| Error::Io)?;
+    if vault_transaction::fingerprint(&copy)? != expected {
+      return Err(Error::SourceChanged);
+    }
+    let state = VaultState::default();
+    vault_load_at(&state, copy, password.to_string()).map_err(|error| {
+      if error == INVALID_PASSWORD_MESSAGE {
+        Error::Envelope(crate::vault_file::Error::Authentication)
+      } else {
+        Error::ReconciliationFailed
+      }
+    })?;
+    let records = state
+      .with_unlocked(|vault| vault.raw_records())
+      .map_err(|_| Error::ReconciliationFailed);
+    vault_unload_at(&state).map_err(|_| Error::ReconciliationFailed)?;
+    if vault_transaction::fingerprint(source)? != expected {
+      return Err(Error::SourceChanged);
+    }
+    records
+  })();
+  // Cleanup failures are about the disposable copy, not active-vault corruption.
+  cleanup_migration_copy(directory)?;
+  result
+}
+
 #[derive(Clone)]
 pub struct VaultState(Arc<Mutex<Option<UnlockedVault>>>);
 
@@ -600,6 +703,128 @@ mod tests {
     std::fs::copy(fixture, destination).unwrap();
   }
 
+  #[test]
+  fn production_reader_requires_journal_and_handles_v3_wrong_password_and_orphans() {
+    use crate::{
+      vault_journal,
+      vault_transaction::{Coordinator, Credentials, Error},
+    };
+    struct NoCredentials;
+    impl Credentials for NoCredentials {
+      fn get(
+        &mut self,
+        _: &vault_journal::Identity,
+      ) -> Result<Option<zeroize::Zeroizing<[u8; 32]>>, Error> {
+        Err(Error::CredentialUnavailable)
+      }
+      fn set(&mut self, _: &vault_journal::Identity, _: &[u8; 32]) -> Result<(), Error> {
+        Err(Error::CredentialUnavailable)
+      }
+      fn remove(&mut self, _: &vault_journal::Identity) -> Result<(), Error> {
+        Err(Error::CredentialUnavailable)
+      }
+    }
+    initialize_tests();
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("vault.stronghold");
+    let state = VaultState::default();
+    vault_load_at(&state, source.clone(), "password".into()).unwrap();
+    state
+      .with_unlocked(|vault| {
+        vault.put_record(STORE_NAME, b"accounts".to_vec())?;
+        vault.put_record(crate::sync::SYNC_STORE_NAME, b"sync".to_vec())?;
+        vault
+          .client
+          .store()
+          .insert(vec![255, 0], vec![11, 255], None)
+          .unwrap();
+        vault.commit()
+      })
+      .unwrap();
+    let expected = state.with_unlocked(|vault| vault.raw_records()).unwrap();
+    vault_unload_at(&state).unwrap();
+    let original = std::fs::read(&source).unwrap();
+    assert_eq!(
+      migration_records(&source, "password").err(),
+      Some(Error::ReconciliationFailed)
+    );
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 1);
+    let mut credentials = NoCredentials;
+    let mut hook = |point| {
+      if point == "afterJournal" {
+        Err(Error::Interrupted)
+      } else {
+        Ok(())
+      }
+    };
+    let mut coordinator = Coordinator::new(directory.path(), &mut credentials, &mut hook);
+    assert_eq!(
+      coordinator
+        .begin_migration("password", &mut |_, _| panic!("reader preceded interrupt"))
+        .err(),
+      Some(Error::Interrupted)
+    );
+    let journal = std::fs::read(directory.path().join("vault.transaction.json")).unwrap();
+    for name in MIGRATION_COPY_FILES {
+      std::fs::write(directory.path().join(name), b"interrupted inert copy").unwrap();
+    }
+    assert_eq!(
+      migration_records(&source, "wrong").err(),
+      Some(Error::Envelope(crate::vault_file::Error::Authentication))
+    );
+    for name in MIGRATION_COPY_FILES {
+      assert!(!directory.path().join(name).exists());
+    }
+    assert!(migration_records(&source, "password")
+      .unwrap()
+      .same_as(&expected));
+    assert_eq!(std::fs::read(&source).unwrap(), original);
+    assert_eq!(
+      std::fs::read(directory.path().join("vault.transaction.json")).unwrap(),
+      journal
+    );
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 2);
+    #[cfg(unix)]
+    {
+      let copy = directory.path().join(MIGRATION_COPY_FILES[0]);
+      let link = directory.path().join(MIGRATION_COPY_FILES[1]);
+      let outside = tempfile::NamedTempFile::new().unwrap();
+      std::fs::write(&copy, b"inert").unwrap();
+      std::os::unix::fs::symlink(outside.path(), &link).unwrap();
+      assert_eq!(
+        cleanup_migration_copy(directory.path()),
+        Err(Error::LegacyCopyCleanupFailed)
+      );
+      assert!(copy.exists());
+      assert!(outside.path().exists());
+      assert_eq!(std::fs::read(&source).unwrap(), original);
+      std::fs::remove_file(link).unwrap();
+      cleanup_migration_copy(directory.path()).unwrap();
+    }
+    std::fs::write(&source, b"changed").unwrap();
+    assert_eq!(
+      migration_records(&source, "password").err(),
+      Some(Error::SourceChanged)
+    );
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 2);
+  }
+
+  #[test]
+  fn orphan_working_copy_without_a_journal_is_recovery_not_creation_or_deletion() {
+    let directory = tempfile::tempdir().unwrap();
+    let copy = directory.path().join(MIGRATION_COPY_FILES[0]);
+    std::fs::write(&copy, b"inert").unwrap();
+    assert_eq!(
+      cleanup_migration_copy(directory.path()),
+      Err(crate::vault_transaction::Error::ReconciliationFailed)
+    );
+    assert!(copy.exists());
+    assert_eq!(
+      crate::vault_metadata::inspect(directory.path()).err(),
+      Some(crate::vault_metadata::Error::ReconciliationFailed)
+    );
+  }
+
   #[cfg(unix)]
   fn assert_private_permissions(snapshot: &Path) {
     assert_eq!(
@@ -880,21 +1105,10 @@ mod tests {
     let original = std::fs::read(&source).unwrap();
     let mut reader = |path: &Path, password: &str| -> Result<crate::vault_file::Records, Error> {
       assert!(vault_journal::read(directory.path()).unwrap().is_some());
-      let working = tempfile::tempdir_in(directory.path()).map_err(|_| Error::Io)?;
-      let copy = working.path().join("copy.stronghold");
-      std::fs::copy(path, &copy).map_err(|_| Error::Io)?;
-      let state = VaultState::default();
-      vault_load_at(&state, copy, password.to_string()).map_err(|error| {
-        if error == INVALID_PASSWORD_MESSAGE {
-          Error::Envelope(crate::vault_file::Error::Authentication)
-        } else {
-          Error::ReconciliationFailed
-        }
-      })?;
-      let records = state
-        .with_unlocked(|vault| vault.raw_records())
-        .map_err(|_| Error::ReconciliationFailed)?;
-      vault_unload_at(&state).map_err(|_| Error::ReconciliationFailed)?;
+      let records = migration_records(path, password)?;
+      for name in MIGRATION_COPY_FILES {
+        assert!(!directory.path().join(name).exists());
+      }
       assert_eq!(std::fs::read(path).unwrap(), original);
       assert_eq!(snapshot_version(path).unwrap(), SNAPSHOT_V2);
       Ok(records)
