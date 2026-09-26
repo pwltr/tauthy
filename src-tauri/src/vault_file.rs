@@ -279,6 +279,12 @@ impl Envelope {
       records,
     })
   }
+
+  /// Internal authenticated payload open; callers already own the data key.
+  /// This is never exposed as an IPC command or a password bypass.
+  pub(crate) fn unlock_data_key(self, key: [u8; 32]) -> Result<Vault, Error> {
+    self.unlock(Zeroizing::new(key))
+  }
 }
 
 pub(crate) struct Vault {
@@ -298,6 +304,25 @@ impl Vault {
     identity: [u8; 16],
     kdf: impl FnOnce(&str, &[u8]) -> Result<Zeroizing<[u8; 32]>, Error>,
   ) -> Result<Self, Error> {
+    Self::create_with_ids(records, password, identity, random()?, kdf)
+  }
+
+  pub(crate) fn create_for_identity(
+    records: Records,
+    password: Option<&str>,
+    identity: [u8; 16],
+    generation: [u8; 16],
+  ) -> Result<Self, Error> {
+    Self::create_with_ids(records, password, identity, generation, derive)
+  }
+
+  fn create_with_ids(
+    records: Records,
+    password: Option<&str>,
+    identity: [u8; 16],
+    generation: [u8; 16],
+    kdf: impl FnOnce(&str, &[u8]) -> Result<Zeroizing<[u8; 32]>, Error>,
+  ) -> Result<Self, Error> {
     // Preflight records before expensive derivation or future external effects.
     records.encode()?;
     let mut header = [0; HEADER_SIZE];
@@ -305,7 +330,7 @@ impl Vault {
     header[8..10].copy_from_slice(&1u16.to_le_bytes());
     header[10] = if password.is_some() { 1 } else { 2 };
     header[11..27].copy_from_slice(&identity);
-    header[27..43].copy_from_slice(&random::<16>()?);
+    header[27..43].copy_from_slice(&generation);
     let key = Zeroizing::new(random::<32>()?);
     if let Some(password) = password {
       if password.is_empty() {
@@ -343,6 +368,25 @@ impl Vault {
   /// Only Rust credential storage may access this; never expose it through IPC.
   pub(crate) fn credential_key(&self) -> &[u8; 32] {
     &self.key
+  }
+
+  pub(crate) fn restore_credential_candidate(
+    records: Records,
+    identity: [u8; 16],
+    generation: [u8; 16],
+    key: Zeroizing<[u8; 32]>,
+  ) -> Result<Self, Error> {
+    let mut vault = Self::create_for_identity(records, None, identity, generation)?;
+    vault.key = key;
+    Ok(vault)
+  }
+
+  pub(crate) fn protection(&self) -> Protection {
+    if self.header[10] == 1 {
+      Protection::Password
+    } else {
+      Protection::Credential
+    }
   }
 
   pub(crate) fn seal(&self) -> Result<Vec<u8>, Error> {

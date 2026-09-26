@@ -297,7 +297,7 @@ pub(crate) fn persist(directory: &Path, journal: &Journal) -> Result<(), Error> 
 }
 
 #[cfg(unix)]
-fn sync_directory(directory: &Path) -> Result<(), Error> {
+pub(crate) fn sync_directory(directory: &Path) -> Result<(), Error> {
   File::open(directory)
     .and_then(|file| file.sync_all())
     .map_err(|_| Error::Io)
@@ -307,6 +307,11 @@ fn sync_directory(directory: &Path) -> Result<(), Error> {
 // available. Directory FlushFileBuffers is not a portable Unix-fsync analogue.
 #[cfg(not(unix))]
 pub(crate) fn persist(_directory: &Path, _journal: &Journal) -> Result<(), Error> {
+  Err(Error::Unsupported)
+}
+
+#[cfg(not(unix))]
+pub(crate) fn sync_directory(_directory: &Path) -> Result<(), Error> {
   Err(Error::Unsupported)
 }
 

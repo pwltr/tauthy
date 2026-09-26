@@ -854,4 +854,69 @@ mod tests {
     vault_unload_at(&state).unwrap();
     std::fs::remove_file(snapshot).unwrap();
   }
+
+  #[cfg(unix)]
+  #[test]
+  fn coordinator_migrates_real_v2_fixture_after_journaling_and_retires_exact_source() {
+    use crate::vault_journal::{self, Identity, Phase};
+    use crate::vault_transaction::{Coordinator, Credentials, Error};
+    use zeroize::Zeroizing;
+    struct NoCredentials;
+    impl Credentials for NoCredentials {
+      fn get(&mut self, _: &Identity) -> Result<Option<Zeroizing<[u8; 32]>>, Error> {
+        Err(Error::CredentialUnavailable)
+      }
+      fn set(&mut self, _: &Identity, _: &[u8; 32]) -> Result<(), Error> {
+        Err(Error::CredentialUnavailable)
+      }
+    }
+    initialize_tests();
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("vault.stronghold");
+    copy_legacy_fixture(&source);
+    let original = std::fs::read(&source).unwrap();
+    let mut reader = |path: &Path, password: &str| -> Result<crate::vault_file::Records, Error> {
+      assert!(vault_journal::read(directory.path()).unwrap().is_some());
+      let working = tempfile::tempdir_in(directory.path()).map_err(|_| Error::Io)?;
+      let copy = working.path().join("copy.stronghold");
+      std::fs::copy(path, &copy).map_err(|_| Error::Io)?;
+      let state = VaultState::default();
+      vault_load_at(&state, copy, password.to_string()).map_err(|error| {
+        if error == INVALID_PASSWORD_MESSAGE {
+          Error::Envelope(crate::vault_file::Error::Authentication)
+        } else {
+          Error::ReconciliationFailed
+        }
+      })?;
+      let records = state
+        .with_unlocked(|vault| vault.raw_records())
+        .map_err(|_| Error::ReconciliationFailed)?;
+      vault_unload_at(&state).map_err(|_| Error::ReconciliationFailed)?;
+      assert_eq!(std::fs::read(path).unwrap(), original);
+      assert_eq!(snapshot_version(path).unwrap(), SNAPSHOT_V2);
+      Ok(records)
+    };
+    let mut credentials = NoCredentials;
+    let mut hook = |_: &'static str| Ok(());
+    let mut coordinator = Coordinator::new(directory.path(), &mut credentials, &mut hook);
+    let candidate = coordinator
+      .begin_migration("correct horse", &mut reader)
+      .unwrap();
+    let installed = coordinator
+      .resume(Some("correct horse"), &mut reader)
+      .unwrap();
+    assert!(candidate.records.same_as(&installed.records));
+    assert!(!source.exists());
+    let retired = directory.path().join("vault.stronghold.retired");
+    assert_eq!(std::fs::read(&retired).unwrap(), original);
+    assert_eq!(snapshot_version(&retired).unwrap(), SNAPSHOT_V2);
+    assert_private_permissions(&retired);
+    assert_eq!(
+      vault_journal::read(directory.path())
+        .unwrap()
+        .unwrap()
+        .phase,
+      Phase::Completed
+    );
+  }
 }
