@@ -42,7 +42,7 @@
   },
   "productName": "Tauthy",
   "mainBinaryName": "Tauthy",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "identifier": "com.pwltr.tauthy",
   "plugins": {
     "shell": {
