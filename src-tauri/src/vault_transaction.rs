@@ -46,6 +46,8 @@ pub(crate) enum Error {
   NeedsPreparation,
   CredentialMissing,
   CredentialUnavailable,
+  CredentialAccessDenied,
+  CredentialMalformed,
   SourceChanged,
   RecordsChanged,
   /// Cleanup/reconciliation of vault.pending.tauthy failed after the active
