@@ -18,6 +18,7 @@ use zeroize::Zeroizing;
 
 use crate::{
   vault_file::{self, Envelope, Protection, Records, Vault},
+  vault_fs,
   vault_journal::{self, Identity, Journal, Operation, Phase},
 };
 
@@ -29,7 +30,7 @@ const MAX_SOURCE: u64 = 256 * 1024 * 1024;
 
 #[path = "vault_change.rs"]
 mod changes;
-#[cfg(all(test, unix))]
+#[cfg(all(test, any(unix, windows)))]
 #[path = "vault_transaction_tests.rs"]
 mod tests;
 
@@ -96,11 +97,21 @@ fn identity(vault: &Vault) -> Identity {
   }
 }
 
-fn require_supported_durability() -> Result<(), Error> {
-  if cfg!(unix) {
-    Ok(())
-  } else {
-    Err(Error::Journal(vault_journal::Error::Unsupported))
+fn require_supported_durability(directory: &Path) -> Result<(), Error> {
+  vault_fs::require_supported(directory).map_err(|error| {
+    if error.kind() == std::io::ErrorKind::Unsupported {
+      Error::Journal(vault_journal::Error::Unsupported)
+    } else {
+      Error::Io
+    }
+  })
+}
+
+fn install_error(error: std::io::Error) -> Error {
+  match error.kind() {
+    std::io::ErrorKind::AlreadyExists => Error::Conflict,
+    std::io::ErrorKind::Unsupported => Error::Journal(vault_journal::Error::Unsupported),
+    _ => Error::Io,
   }
 }
 
@@ -180,7 +191,7 @@ impl<'a> Coordinator<'a> {
 
   /// Starts explicitly; never replaces a prior journal, active or retired vault.
   pub(crate) fn begin_create(&mut self, vault: &Vault) -> Result<(), Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     self.require_empty_transaction(false)?;
     let journal = self.new_journal(identity(vault), None)?;
     self.persist(&journal)?;
@@ -194,7 +205,7 @@ impl<'a> Coordinator<'a> {
     password: &str,
     source_reader: &mut dyn FnMut(&Path, &str) -> Result<Records, Error>,
   ) -> Result<Vault, Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     self.require_empty_transaction(true)?;
     let source = self.directory.join(LEGACY);
     let digest = fingerprint(&source)?;
@@ -292,7 +303,7 @@ impl<'a> Coordinator<'a> {
   /// If its key was lost before staging, the future UI/factory must supply a
   /// verified reconstruction; resume never invents one from a stale snapshot.
   pub(crate) fn prepare(&mut self, vault: &Vault) -> Result<(), Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     let mut journal = self.load()?;
     if !matches!(journal.operation, Operation::Create | Operation::Migrate) {
       return Err(Error::ReconciliationFailed);
@@ -359,16 +370,14 @@ impl<'a> Coordinator<'a> {
     if !regular_file(&staged)? {
       let bytes = vault.seal()?;
       self.point("beforeStageWrite")?;
-      let mut temporary = tempfile::NamedTempFile::new_in(self.directory).map_err(|_| Error::Io)?;
+      let mut temporary = vault_fs::temporary(self.directory).map_err(|_| Error::Io)?;
       temporary.write_all(&bytes).map_err(|_| Error::Io)?;
       self.point("afterStageWrite")?;
       self.point("beforeStageSync")?;
       temporary.as_file().sync_all().map_err(|_| Error::Io)?;
       self.point("afterStageSync")?;
       self.point("beforeStagePersist")?;
-      temporary
-        .persist_noclobber(&staged)
-        .map_err(|_| Error::Conflict)?;
+      vault_fs::persist(temporary, &staged, false).map_err(install_error)?;
       self.point("afterStagePersist")?;
       self.sync()?;
     }
@@ -469,7 +478,7 @@ impl<'a> Coordinator<'a> {
     password: Option<&str>,
     source_reader: &mut dyn FnMut(&Path, &str) -> Result<Records, Error>,
   ) -> Result<Vault, Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     let mut journal = self.load()?;
     if !matches!(journal.operation, Operation::Create | Operation::Migrate) {
       return Err(Error::ReconciliationFailed);
@@ -556,9 +565,8 @@ impl<'a> Coordinator<'a> {
     if journal.phase == Phase::InstallIntent {
       if !active_exists {
         self.point("beforeInstall")?;
-        // Hard-link installation never clobbers an unrelated active file.
-        // Staged and active reside on the same filesystem.
-        fs::hard_link(&staged, &active).map_err(|_| Error::Conflict)?;
+        // No-clobber install; staged survives until authenticated cleanup.
+        vault_fs::install(&staged, &active).map_err(install_error)?;
         self.point("afterInstall")?;
       }
       self.sync()?;
@@ -585,25 +593,32 @@ impl<'a> Coordinator<'a> {
       if regular_file(&legacy)? {
         self.point("beforeRetireLink")?;
         if !regular_file(&retired)? {
-          fs::hard_link(&legacy, &retired).map_err(|_| Error::Conflict)?;
-        } else if Some(fingerprint(&retired)?) != journal.source_fingerprint {
+          vault_fs::snapshot(&legacy, &retired).map_err(install_error)?;
+        }
+        if Some(fingerprint(&retired)?) != journal.source_fingerprint {
           return Err(Error::Conflict);
         }
         self.point("afterRetireLink")?;
         self.point("beforeRetireSync")?;
-        let retired_file = File::open(&retired).map_err(|_| Error::Io)?;
         #[cfg(unix)]
         {
+          let retired_file = File::open(&retired).map_err(|_| Error::Io)?;
           use std::os::unix::fs::PermissionsExt;
           retired_file
             .set_permissions(fs::Permissions::from_mode(0o600))
             .map_err(|_| Error::Io)?;
         }
-        retired_file.sync_all().map_err(|_| Error::Io)?;
+        vault_fs::sync_file(&retired).map_err(|_| Error::Io)?;
         self.point("afterRetireSync")?;
         self.sync()?;
         self.point("beforeRetireRemove")?;
-        fs::remove_file(&legacy).map_err(|_| Error::Io)?;
+        // Windows retirement is a copy, not the same inode. Frame both the
+        // source and immutable backup before removing the canonical source.
+        self.check_source(&journal)?;
+        if Some(fingerprint(&retired)?) != journal.source_fingerprint {
+          return Err(Error::Conflict);
+        }
+        vault_fs::remove(&legacy).map_err(|_| Error::Io)?;
         self.point("afterRetireRemove")?;
         self.sync()?;
       }
@@ -637,7 +652,7 @@ impl<'a> Coordinator<'a> {
       }
       envelope.unlock_data_key(*vault.credential_key())?;
       self.point("beforeStageCleanup")?;
-      fs::remove_file(staged).map_err(|_| Error::Io)?;
+      vault_fs::remove(&staged).map_err(|_| Error::Io)?;
       self.point("afterStageCleanup")?;
     }
     // Also flush after a restart that interrupted cleanup after unlink but

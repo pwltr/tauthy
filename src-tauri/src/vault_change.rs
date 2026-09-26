@@ -41,7 +41,7 @@ impl Coordinator<'_> {
     replacement: bool,
     confirmed: bool,
   ) -> Result<(), Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     if replacement && !confirmed {
       return Err(Error::ConfirmationRequired);
     }
@@ -174,7 +174,7 @@ impl Coordinator<'_> {
   }
 
   pub(crate) fn prepare_change(&mut self, source: &Vault, target: &Vault) -> Result<(), Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     let mut journal = self.load()?;
     if !matches!(journal.operation, Operation::Rotate | Operation::Replace)
       || journal.source_identity.as_ref() != Some(&identity(source))
@@ -218,17 +218,14 @@ impl Coordinator<'_> {
     let rollback = self.directory.join(ROLLBACK);
     self.point("beforeRollbackLink")?;
     if !regular_file(&rollback)? {
-      fs::hard_link(&active, &rollback).map_err(|_| Error::Conflict)?;
+      vault_fs::snapshot(&active, &rollback).map_err(install_error)?;
     }
     if Some(fingerprint(&rollback)?) != journal.source_fingerprint {
       return Err(Error::SourceChanged);
     }
     self.point("afterRollbackLink")?;
     self.point("beforeRollbackSync")?;
-    File::open(&rollback)
-      .map_err(|_| Error::Io)?
-      .sync_all()
-      .map_err(|_| Error::Io)?;
+    vault_fs::sync_file(&rollback).map_err(|_| Error::Io)?;
     self.point("afterRollbackSync")?;
     self.sync()?;
     journal.target_fingerprint = Some(fingerprint(&self.directory.join(STAGED))?);
@@ -242,7 +239,7 @@ impl Coordinator<'_> {
     source_password: Option<&str>,
     target_password: Option<&str>,
   ) -> Result<Vault, Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     let mut journal = self.load()?;
     if !matches!(journal.operation, Operation::Rotate | Operation::Replace) {
       return Err(Error::ReconciliationFailed);
@@ -320,7 +317,7 @@ impl Coordinator<'_> {
         }
         // Same-directory rename atomically replaces, keeping rollback intact.
         self.point("beforeReplace")?;
-        fs::rename(&staged, &active).map_err(|_| Error::Io)?;
+        vault_fs::replace(&staged, &active).map_err(|_| Error::Io)?;
         self.point("afterReplace")?;
       }
       self.sync()?;
@@ -353,7 +350,7 @@ impl Coordinator<'_> {
     }
     if rollback_exists {
       self.point("beforeRollbackCleanup")?;
-      fs::remove_file(&rollback).map_err(|_| Error::Io)?;
+      vault_fs::remove(&rollback).map_err(|_| Error::Io)?;
       self.point("afterRollbackCleanup")?;
     }
     self.sync()?;
@@ -367,7 +364,7 @@ impl Coordinator<'_> {
   /// Explicit destructive action, including recovery from missing active data.
   /// Fixed local artifacts only; never touches cloud sync or user backup files.
   pub(crate) fn begin_delete(&mut self, confirmed: bool) -> Result<(), Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     if !confirmed {
       return Err(Error::ConfirmationRequired);
     }
@@ -409,7 +406,7 @@ impl Coordinator<'_> {
   }
 
   pub(crate) fn resume_delete(&mut self) -> Result<(), Error> {
-    require_supported_durability()?;
+    require_supported_durability(self.directory)?;
     let mut journal = self.load()?;
     if journal.operation != Operation::Delete {
       return Err(Error::ReconciliationFailed);
@@ -430,7 +427,7 @@ impl Coordinator<'_> {
       let path = self.directory.join(name);
       if regular_file(&path)? {
         self.point("beforeDeleteFile")?;
-        fs::remove_file(path).map_err(|_| Error::Io)?;
+        vault_fs::remove(&path).map_err(|_| Error::Io)?;
         self.point("afterDeleteFile")?;
       }
     }

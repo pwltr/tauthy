@@ -36,3 +36,7 @@ yarn lint:check
 yarn format:check
 cargo test --manifest-path src-tauri/Cargo.toml --locked
 ```
+
+Windows vault tests require an NTFS temporary directory. ReFS/Dev Drive and
+network/removable volumes are intentionally unsupported; if `%TEMP%` points to
+one, set `TEMP` and `TMP` to an existing local NTFS directory before running tests.
