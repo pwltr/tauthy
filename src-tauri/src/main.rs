@@ -22,6 +22,8 @@ mod vault_file;
 #[allow(dead_code)]
 mod vault_journal;
 #[allow(dead_code)]
+mod vault_metadata;
+#[allow(dead_code)]
 mod vault_transaction;
 
 #[cfg(target_os = "macos")]

@@ -113,7 +113,7 @@ fn regular_file(path: &Path) -> Result<bool, Error> {
   }
 }
 
-fn fingerprint(path: &Path) -> Result<[u8; 32], Error> {
+pub(crate) fn fingerprint(path: &Path) -> Result<[u8; 32], Error> {
   if !regular_file(path)? {
     return Err(Error::SourceChanged);
   }
