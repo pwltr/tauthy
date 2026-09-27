@@ -202,7 +202,7 @@
     "pubkyConnect": "Connect Pubky",
     "pubkyConnectDescription": "Sync encrypted accounts through your Pubky homeserver",
     "pubkyTitle": "Connect to Pubky",
-    "pubkyApproval": "Scan this code with Pubky Ring and approve Tauthy's access to its own sync folder. Tauthy never sees your identity key. The sync files are encrypted, but publicly downloadable.",
+    "pubkyApproval": "Scan this code with Pubky Ring and approve access to Tauthy's private sync folder. Your accounts stay encrypted, and Tauthy never sees your identity key.",
     "pubkyWaiting": "Waiting for approval in Pubky Ring…",
     "pubkyCopyLink": "Copy Pubky Ring link",
     "pubkyCreate": "Create Pubky sync",

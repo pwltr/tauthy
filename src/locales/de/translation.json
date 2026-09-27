@@ -202,7 +202,7 @@
     "pubkyConnect": "Mit Pubky verbinden",
     "pubkyConnectDescription": "Verschlüsselte Konten über deinen Pubky-Homeserver synchronisieren",
     "pubkyTitle": "Mit Pubky verbinden",
-    "pubkyApproval": "Scanne diesen Code mit Pubky Ring und erlaube Tauthy den Zugriff auf seinen eigenen Sync-Ordner. Tauthy erhält deinen Identitätsschlüssel nicht. Die Sync-Dateien sind verschlüsselt, aber öffentlich abrufbar.",
+    "pubkyApproval": "Scanne diesen Code mit Pubky Ring und erlaube den Zugriff auf Tauthys privaten Sync-Ordner. Deine Konten bleiben verschlüsselt und Tauthy erhält deinen Identitätsschlüssel nicht.",
     "pubkyWaiting": "Warte auf Bestätigung in Pubky Ring…",
     "pubkyCopyLink": "Pubky-Ring-Link kopieren",
     "pubkyCreate": "Pubky-Synchronisierung erstellen",

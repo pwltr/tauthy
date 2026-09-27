@@ -47,9 +47,9 @@ const SYNC_FOLDER_NAME: &str = "Tauthy Sync";
 const FOLDER_ANCHOR_NAME: &str = "anchor.tauthy-sync";
 const WRAP_AAD: &[u8] = b"tauthy-sync-key:v1";
 const PAYLOAD_AAD: &[u8] = b"tauthy-sync-payload:v1";
-const PUBKY_ROOT: &str = "/pub/tauthy/sync/v1/";
-const PUBKY_ANCHOR: &str = "/pub/tauthy/sync/v1/anchor.json";
-const PUBKY_DEVICES: &str = "/pub/tauthy/sync/v1/devices/";
+const PUBKY_ROOT: &str = "/priv/tauthy/sync/v1/";
+const PUBKY_ANCHOR: &str = "/priv/tauthy/sync/v1/anchor.json";
+const PUBKY_DEVICES: &str = "/priv/tauthy/sync/v1/devices/";
 const PUBKY_CLIENT_ID: &str = "com.pwltr.tauthy";
 
 const ERR_AUTHENTICATION: &str = "syncAuthenticationFailed";
@@ -1138,10 +1138,7 @@ pub async fn pubky_sync_start(
     Ok(())
   })?;
   let client = pubky_state.client().await?;
-  let caps = Capabilities::builder()
-    .read_write(PUBKY_ROOT)
-    .map_err(|_| ERR_CORRUPT.to_string())?
-    .finish();
+  let caps = pubky_capabilities()?;
   let client_id = ClientId::new(PUBKY_CLIENT_ID).map_err(|_| ERR_CORRUPT.to_string())?;
   let flow = client
     .start_grant_auth_flow(&caps, AuthFlowKind::signin(), client_id)
@@ -1151,6 +1148,15 @@ pub async fn pubky_sync_start(
   *pubky_state.session.lock().await = None;
   *pending = Some(flow);
   Ok(url)
+}
+
+fn pubky_capabilities() -> Result<Capabilities, String> {
+  Ok(
+    Capabilities::builder()
+      .read_write(PUBKY_ROOT)
+      .map_err(|_| ERR_CORRUPT.to_string())?
+      .finish(),
+  )
 }
 
 #[tauri::command]
@@ -2194,10 +2200,21 @@ mod tests {
   }
 
   #[test]
+  fn pubky_grant_and_storage_are_scoped_to_private_sync_data() {
+    assert_eq!(
+      pubky_capabilities().unwrap().to_string(),
+      "/priv/tauthy/sync/v1/:rw"
+    );
+    assert_eq!(PUBKY_ANCHOR, format!("{PUBKY_ROOT}anchor.json"));
+    assert_eq!(PUBKY_DEVICES, format!("{PUBKY_ROOT}devices/"));
+    assert!(!PUBKY_ROOT.starts_with("/pub/"));
+  }
+
+  #[test]
   fn pubky_device_paths_accept_only_generated_ids() {
     assert_eq!(
       pubky_device_path("0123456789abcdef0123456789abcdef").unwrap(),
-      "/pub/tauthy/sync/v1/devices/0123456789abcdef0123456789abcdef.json"
+      "/priv/tauthy/sync/v1/devices/0123456789abcdef0123456789abcdef.json"
     );
     for invalid in ["../anchor", "ABCDEF0123456789abcdef0123456789", "short"] {
       assert!(pubky_device_path(invalid).is_err());
