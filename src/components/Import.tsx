@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { confirm, message } from '@tauri-apps/plugin-dialog'
+import { type } from '@tauri-apps/plugin-os'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -69,7 +70,9 @@ const Import = () => {
     try {
       const encryptedLabel = t('import.exportEncrypted')
       const plaintextLabel = t('import.exportPlaintext')
-      const choice = await message('', {
+      // macOS presents the title above stacked choices; other native dialogs
+      // reserve a message area, which looks broken when its body is empty.
+      const choice = await message(type() === 'macos' ? '' : t('import.exportDescription'), {
         title: t('import.exportTitle'),
         buttons: {
           yes: encryptedLabel,

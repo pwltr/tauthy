@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  platform: vi.fn(),
   message: vi.fn(),
   confirm: vi.fn(),
   exportCodes: vi.fn(),
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 vi.mock('@tauri-apps/plugin-dialog', () => ({ message: mocks.message, confirm: mocks.confirm }))
+vi.mock('@tauri-apps/plugin-os', () => ({ type: mocks.platform }))
 vi.mock('~/utils', () => ({ exportCodes: mocks.exportCodes }))
 vi.mock('react-hot-toast', () => ({ default: { success: mocks.success, error: mocks.error } }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
@@ -44,6 +46,7 @@ const chooseExport = () => fireEvent.click(screen.getByRole('button', { name: /i
 describe('native export choice', () => {
   beforeEach(() => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
+    mocks.platform.mockReturnValue('windows')
     mocks.exportCodes.mockResolvedValue('exportSuccess')
   })
 
@@ -52,7 +55,7 @@ describe('native export choice', () => {
     renderPage()
     chooseExport()
     await waitFor(() =>
-      expect(mocks.message).toHaveBeenCalledWith('', {
+      expect(mocks.message).toHaveBeenCalledWith('import.exportDescription', {
         title: 'import.exportTitle',
         buttons: {
           yes: 'import.exportEncrypted',
@@ -64,6 +67,14 @@ describe('native export choice', () => {
     expect(screen.queryByText('import.exportEncrypted')).not.toBeInTheDocument()
     expect(screen.queryByText('import.exportPlaintext')).not.toBeInTheDocument()
     expect(mocks.exportCodes).not.toHaveBeenCalled()
+  })
+
+  it('keeps the compact native macOS choice dialog', async () => {
+    mocks.platform.mockReturnValue('macos')
+    mocks.message.mockResolvedValue('modals.cancel')
+    renderPage()
+    chooseExport()
+    await waitFor(() => expect(mocks.message).toHaveBeenCalledWith('', expect.any(Object)))
   })
 
   it('opens password protection only after that choice and exports on submission', async () => {

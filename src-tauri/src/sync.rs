@@ -1306,9 +1306,15 @@ mod tests {
     assert_eq!(fs::read(&file).unwrap(), before);
     a.lock().unwrap();
     assert_eq!(sync_at(a).err(), Some("vault is locked".into()));
-    a.unlock_current(Some("local"), None, &mut NoNative)
+    // Reconstruct the backend, not just its session: this must load the sync
+    // configuration from disk exactly as an application restart does.
+    let restarted = Runtime::new(root.path().join("a"));
+    restarted
+      .unlock_current(Some("local"), None, &mut NoNative)
       .unwrap();
+    let a = &restarted;
     assert!(status_at(a).unwrap().enabled);
+    assert!(!sync_at(a).unwrap().vault_changed);
     assert_eq!(
       a.with_records(|vault| vault.get_record(b"opaque")).unwrap(),
       Some(vec![0, 255])
