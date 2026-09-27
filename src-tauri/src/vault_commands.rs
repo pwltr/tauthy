@@ -370,6 +370,7 @@ pub(crate) async fn vault_import_foreign(
   password: Option<String>,
   confirmed: bool,
   recovery: bool,
+  disconnect_sync: bool,
 ) -> Result<(), CommandError> {
   let foreign_password = Zeroizing::new(foreign_password);
   let current = current_password.map(Zeroizing::new);
@@ -379,11 +380,21 @@ pub(crate) async fn vault_import_foreign(
       code: "vaultConfirmationRequired",
     });
   }
+  // Raw vault replacement is not a device clone. Require the caller to explain
+  // and explicitly acknowledge discarding the copied sync device identity.
+  if !disconnect_sync {
+    return Err(CommandError {
+      code: "vaultSyncDispositionRequired",
+    });
+  }
   let runtime = state.0.clone();
   mutate(&app, move || {
     // A raw keychain-bound file is not a portable backup. Do not request a
     // guessed credential based on a foreign, unauthenticated header.
-    let foreign = read_foreign(std::path::Path::new(&path), &foreign_password)?;
+    let foreign = foreign_for_local_import(read_foreign(
+      std::path::Path::new(&path),
+      &foreign_password,
+    )?)?;
     let mut credentials = LazyCredentials::default();
     let current = current.as_deref().map(String::as_str);
     let password = password.as_deref().map(String::as_str);
@@ -395,6 +406,18 @@ pub(crate) async fn vault_import_foreign(
     .map_err(CommandError::from)
   })
   .await
+}
+
+fn foreign_for_local_import(foreign: vault_file::Vault) -> Result<vault_file::Vault, CommandError> {
+  let mut records = foreign.records.copy().map_err(|error| CommandError {
+    code: envelope_error(&error),
+  })?;
+  records.remove(&crate::legacy_vault::store_key_for(
+    crate::sync::SYNC_STORE_NAME,
+  ));
+  foreign.with_records(records).map_err(|error| CommandError {
+    code: envelope_error(&error),
+  })
 }
 
 fn read_foreign(path: &std::path::Path, password: &str) -> Result<vault_file::Vault, CommandError> {

@@ -16,6 +16,7 @@ const Import = lazy(() => import('~/components/Import'))
 const ImportReview = lazy(() => import('~/components/ImportReview'))
 const Sync = lazy(() => import('~/components/Sync'))
 const About = lazy(() => import('~/components/About'))
+const VaultRecovery = lazy(() => import('~/components/VaultRecovery'))
 
 const deferred = (component: ReactNode) => <Suspense fallback={null}>{component}</Suspense>
 
@@ -35,6 +36,7 @@ const AppRouter = () => (
       <Routes>
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/unlock" element={<Unlock />} />
+        <Route path="/vault-recovery" element={deferred(<VaultRecovery />)} />
 
         <Route path="/" element={<Main />}>
           <Route index element={<Codes />} />

@@ -14,9 +14,12 @@ import ResetModal from '~/components/modals/Reset'
 import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
+import { vault } from '~/utils/storage'
+import { useNavigate } from 'react-router-dom'
 
 const Security = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const isPasswordSet = useVaultProtection()
   const [shouldAutoLock, setShouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const { setAppBarTitle } = useContext(AppBarTitleContext)
@@ -76,6 +79,16 @@ const Security = () => {
 
         <ListSection>
           <ListSubheader sx={{ color: 'error.main' }}>{t('security.dangerZone')}</ListSubheader>
+          {vault.fileBackend && (
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => navigate('/vault-recovery')}>
+                <ListItemText
+                  primary={t('vaultUi.replaceTitle')}
+                  secondary={t('vaultUi.replaceWarning')}
+                />
+              </ListItemButton>
+            </ListItem>
+          )}
           <ListItem disablePadding onClick={() => setOpenResetModal(true)}>
             <ListItemButton>
               <ListItemText

@@ -1,5 +1,12 @@
 {
   "vaultUi": {
+    "replaceTitle": "Tresor aus Datei ersetzen",
+    "replaceExplanation": "Nur zur Wiederherstellung aus einer passwortgeschützten vault.tauthy-Datei. Verwende Importieren, um Konten aus einer Sicherung hinzuzufügen. Gerätegeschützte Dateien sind keine portablen Sicherungen.",
+    "replaceWarning": "Alle lokalen Konten werden ersetzt und die Synchronisierung getrennt. Cloud-Dateien werden nicht gelöscht. Erstelle zuerst einen unabhängigen Export und verbinde die Synchronisierung danach neu.",
+    "replaceResume": "Wähle die ursprüngliche Datei erneut und verwende dasselbe Zielpasswort wie vor der Unterbrechung. Lasse es nur leer, wenn du den Geräteschutz gewählt hast.",
+    "replaceConfirm": "Meinen lokalen Tresor ersetzen und kopierte Synchronisierungseinstellungen trennen.",
+    "chooseFile": "Tresordatei auswählen",
+    "filePassword": "Passwort der ausgewählten Datei",
     "migration": "Aktualisiere den Tresorspeicher mit deinem bisherigen Passwort oder lasse das Feld leer, wenn keines gesetzt ist. Konten und Synchronisierung bleiben erhalten. Ohne Passwort wird der Schlüssel im Anmeldedatenspeicher dieses Geräts gespeichert: Bewahre einen unabhängigen Export auf, da eine Kopie der Tresordatei allein keine portable Sicherung mehr ist.",
     "create": "Tresor erstellen",
     "retry": "Erneut versuchen",
