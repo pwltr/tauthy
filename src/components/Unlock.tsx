@@ -39,6 +39,7 @@ const Unlock = () => {
   const [errorMessage, setErrorMessage] = useState('')
   const [migration, setMigration] = useState(false)
   const [rotation, setRotation] = useState(false)
+  const [replacement, setReplacement] = useState(false)
   const [targetPassword, setTargetPassword] = useState('')
   const [openReset, setOpenReset] = useState(false)
   const [isDisabled, setIsDisabled] = useState(true)
@@ -94,7 +95,13 @@ const Unlock = () => {
           setMigration(
             status.lifecycle === 'legacy' || status.lifecycle === 'legacyMigrationPending',
           )
-          setRotation(status.lifecycle === 'transactionPending' && status.operation === 'rotate')
+          setRotation(
+            status.lifecycle === 'transactionPending' &&
+              (status.operation === 'rotate' || status.operation === 'replace'),
+          )
+          setReplacement(
+            status.lifecycle === 'transactionPending' && status.operation === 'replace',
+          )
         })
         .catch((error) => {
           setError(true)
@@ -174,6 +181,9 @@ const Unlock = () => {
           {t('unlock.unlock')}
         </Button>
       </form>
+      {vault.fileBackend && (error || replacement) && (
+        <Button onClick={() => navigate('/vault-recovery')}>{t('vaultUi.replaceTitle')}</Button>
+      )}
       {vault.fileBackend && error && (
         <Button color="error" onClick={() => setOpenReset(true)}>
           {t('security.deleteVault')}

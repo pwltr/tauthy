@@ -1,5 +1,12 @@
 {
   "vaultUi": {
+    "replaceTitle": "Replace vault from file",
+    "replaceExplanation": "For recovery from a password-protected vault.tauthy file only. To add accounts from a backup, use Import instead. Device-protected files are not portable backups.",
+    "replaceWarning": "This replaces all local accounts and disconnects sync. Cloud files are not deleted. Keep an independent export first; reconnect sync after replacement.",
+    "replaceResume": "Reselect the original file and use the same target password chosen before the interruption. Leave the target password empty only if you chose device protection.",
+    "replaceConfirm": "Replace my local vault and disconnect copied sync settings.",
+    "chooseFile": "Choose vault file",
+    "filePassword": "Password for the selected file",
     "migration": "Upgrade this vault's storage using your existing password, or leave it empty if none is set. Accounts and sync settings are preserved. Without a password, the key moves to this device's credential store: keep an independent export, as copying the vault file alone will no longer be a portable backup.",
     "create": "Create vault",
     "retry": "Retry",

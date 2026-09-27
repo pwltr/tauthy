@@ -1,5 +1,12 @@
 {
   "vaultUi": {
+    "replaceTitle": "Remplacer le coffre depuis un fichier",
+    "replaceExplanation": "Pour récupérer un fichier vault.tauthy protégé par mot de passe uniquement. Pour ajouter des comptes depuis une sauvegarde, utilisez Importer. Les fichiers protégés par un appareil ne sont pas des sauvegardes portables.",
+    "replaceWarning": "Tous les comptes locaux seront remplacés et la synchronisation déconnectée. Les fichiers cloud ne seront pas supprimés. Conservez d'abord un export indépendant, puis reconnectez la synchronisation.",
+    "replaceResume": "Sélectionnez le fichier d'origine et utilisez le même mot de passe cible qu'avant l'interruption. Laissez-le vide uniquement si vous aviez choisi la protection de l'appareil.",
+    "replaceConfirm": "Remplacer mon coffre local et déconnecter les paramètres de synchronisation copiés.",
+    "chooseFile": "Choisir un fichier de coffre",
+    "filePassword": "Mot de passe du fichier sélectionné",
     "migration": "Mettez à jour le stockage avec votre mot de passe actuel, ou laissez le champ vide si aucun n'est défini. Les comptes et la synchronisation sont conservés. Sans mot de passe, la clé passe au gestionnaire d'identifiants de cet appareil : conservez un export indépendant, car copier le fichier seul ne constitue plus une sauvegarde portable.",
     "create": "Créer un coffre",
     "retry": "Réessayer",

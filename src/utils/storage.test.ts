@@ -145,6 +145,28 @@ describe('file-vault frontend dispatcher', () => {
     expect(localStorage.getItem('isPasswordSet')).toBeNull()
   })
 
+  it('passes explicit replacement and sync-disconnect confirmation and does not rewrite the cloud', async () => {
+    const { vault } = await import('./storage')
+    await vault.importForeign({
+      path: '/foreign.tauthy',
+      foreignPassword: 'foreign',
+      currentPassword: 'current',
+      password: 'new',
+      recovery: false,
+    })
+    expect(mocks.invoke).toHaveBeenCalledWith('vault_import_foreign', {
+      path: '/foreign.tauthy',
+      foreignPassword: 'foreign',
+      currentPassword: 'current',
+      password: 'new',
+      recovery: false,
+      confirmed: true,
+      disconnectSync: true,
+    })
+    expect(mocks.remove).not.toHaveBeenCalled()
+    expect(mocks.sync).not.toHaveBeenCalled()
+  })
+
   it('keeps initialization errors visible and retries only on request', async () => {
     mocks.invoke.mockImplementation(async (command) => {
       if (command === 'vault_backend') return 'fileV1'

@@ -156,6 +156,64 @@ fn foreign_reader_authenticates_without_mutating_source_or_guessing_credentials(
   );
 }
 
+#[test]
+fn foreign_import_policy_discards_only_copied_sync_identity_and_rekeys_locally() {
+  let directory = tempfile::tempdir().unwrap();
+  let foreign_directory = tempfile::tempdir().unwrap();
+  let path = foreign_directory.path().join("foreign.tauthy");
+  let cloud = foreign_directory.path().join("tauthy-sync");
+  fs::write(&cloud, b"untouched cloud file").unwrap();
+  let account_key = crate::legacy_vault::store_key_for(b"vault");
+  let sync_key = crate::legacy_vault::store_key_for(crate::sync::SYNC_STORE_NAME);
+  let mut records = Records::default();
+  records.insert(account_key.clone(), b"foreign accounts".to_vec());
+  records.insert(
+    sync_key.clone(),
+    b"foreign sync key and shared device id".to_vec(),
+  );
+  records.insert(vec![255, 0], b"unknown opaque record".to_vec());
+  let foreign = Vault::create(records, Some("foreign password")).unwrap();
+  let original = foreign.seal().unwrap();
+  fs::write(&path, &original).unwrap();
+  let prepared =
+    foreign_for_local_import(read_foreign(&path, "foreign password").unwrap()).unwrap();
+  assert!(prepared.records.get(&sync_key).is_none());
+  assert_eq!(
+    prepared.records.get(&account_key).unwrap(),
+    b"foreign accounts"
+  );
+  assert_eq!(
+    prepared.records.get(&[255, 0]).unwrap(),
+    b"unknown opaque record"
+  );
+  let runtime = Runtime::new(directory.path().into());
+  let mut credentials = LazyCredentials::default();
+  runtime.create(Some("incumbent"), &mut credentials).unwrap();
+  runtime
+    .import_foreign(
+      &prepared,
+      Some("incumbent"),
+      Some("new password"),
+      true,
+      &mut credentials,
+    )
+    .unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap().unwrap(), b"foreign accounts");
+  assert!(runtime.get(crate::sync::SYNC_STORE_NAME).unwrap().is_none());
+  let local = Envelope::read(File::open(directory.path().join("vault.tauthy")).unwrap())
+    .unwrap()
+    .unlock_password("new password")
+    .unwrap();
+  assert_ne!(local.identity(), foreign.identity());
+  assert_eq!(
+    local.records.get(&[255, 0]).unwrap(),
+    b"unknown opaque record"
+  );
+  assert_eq!(fs::read(path).unwrap(), original);
+  assert_eq!(fs::read(cloud).unwrap(), b"untouched cloud file");
+  assert!(credentials.0.is_none());
+}
+
 #[cfg(unix)]
 #[test]
 fn foreign_reader_rejects_symlinks_before_opening_target() {

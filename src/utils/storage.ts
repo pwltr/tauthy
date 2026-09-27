@@ -213,6 +213,27 @@ export class Vault {
     if (!this.fileBackend) localStorage.setItem('isPasswordSet', String(!!password))
     this.setProtection(!!password)
   }
+
+  async importForeign(options: {
+    path: string
+    foreignPassword: string
+    currentPassword: string
+    password: string
+    recovery: boolean
+  }) {
+    await this.ready
+    if (!this.fileBackend) throw { code: 'vaultUnsupportedEnvelope' }
+    this.cachedRecord = undefined
+    await invoke('vault_import_foreign', {
+      ...options,
+      currentPassword: options.currentPassword || null,
+      password: options.password || null,
+      confirmed: true,
+      disconnectSync: true,
+    })
+    const status = await this.getStatus()
+    this.setProtection(status.protectionHint === 'password')
+  }
 }
 
 export const vault = await setupVault()
