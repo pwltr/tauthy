@@ -5423,7 +5423,7 @@ dependencies = [
 
 [[package]]
 name = "tauthy"
-version = "0.4.2"
+version = "0.5.0"
 dependencies = [
  "aes-gcm",
  "apple-native-keyring-store",

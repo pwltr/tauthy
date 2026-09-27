@@ -1,4 +1,4 @@
-## What's new
+## What's new in 0.5.0
 
 - Faster startup and unlock with new encrypted local storage. Existing accounts
   and sync settings migrate automatically; passwords remain optional.
