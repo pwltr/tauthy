@@ -67,6 +67,20 @@ fn adapter() -> PlatformCredentials<FakeBackend> {
 }
 
 #[test]
+#[cfg(feature = "migration-test")]
+fn migration_test_credentials_never_select_the_regular_namespaces() {
+  let mut keys = adapter();
+  let id = identity();
+  for development in [true, false] {
+    keys.development = development;
+    let selected = keys.selector(&id).unwrap();
+    assert!(selected.0.starts_with("tauthy-migration-test"));
+    assert_ne!(selected.0, id.credential_selector(true).unwrap().0);
+    assert_ne!(selected.0, id.credential_selector(false).unwrap().0);
+  }
+}
+
+#[test]
 fn adapter_round_trips_all_key_bytes_and_deletes_idempotently() {
   let mut keys = adapter();
   let id = identity();

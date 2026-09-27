@@ -146,6 +146,10 @@ pub(crate) fn error_code(error: &vault_runtime::Error) -> &'static str {
 struct LazyCredentials(Option<PlatformCredentials>);
 impl LazyCredentials {
   fn adapter(&mut self) -> Result<&mut PlatformCredentials, vault_transaction::Error> {
+    #[cfg(feature = "migration-test")]
+    if crate::migration_test::deny_credentials() {
+      return Err(vault_transaction::Error::CredentialAccessDenied);
+    }
     if self.0.is_none() {
       self.0 = Some(PlatformCredentials::new()?);
     }

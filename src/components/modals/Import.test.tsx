@@ -102,6 +102,27 @@ describe('import review', () => {
   })
 
   it.each([
+    ['Aegis', 'aegis'],
+    ['Authy', 'authy'],
+    ['Tauthy', 'tauthy'],
+  ])(
+    'handles %s selection when the native picker returns before React commits',
+    async (label, format) => {
+      renderImport()
+      fireEvent.click(screen.getByText('import.import'))
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      const file = new File(['backup'], 'accounts.json')
+      vi.spyOn(input, 'click').mockImplementation(() => {
+        fireEvent.change(input, { target: { files: [file] } })
+      })
+      fireEvent.click(screen.getByText(label))
+      expect(await screen.findByText('accounts.txt')).toBeInTheDocument()
+      expect(mocks.prepareImport).toHaveBeenCalledExactlyOnceWith(file, format)
+      expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([
     '2FAS',
     'Aegis',
     'andOTP',

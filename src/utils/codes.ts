@@ -6,6 +6,7 @@ import { writeTextFile } from '@tauri-apps/plugin-fs'
 import { vault } from '~/utils/storage'
 import { createTauthyBackup, mergeTauthyImport, parseTauthyBackup } from '~/utils/tauthyBackup'
 import { generateUUID } from '~/utils'
+import { traceImport } from '~/utils/importDiagnostics'
 import type {
   FormData,
   VaultEntry,
@@ -563,15 +564,26 @@ const parseImportFile = async (file: File, format: ImportFormat, password?: stri
 
   let json: unknown
   try {
-    json = JSON.parse(await file.text())
+    traceImport('fileReadStarted')
+    const text = await file.text()
+    traceImport('fileReadFinished')
+    traceImport('jsonParseStarted')
+    json = JSON.parse(text)
+    traceImport('jsonParseFinished')
   } catch (err) {
+    traceImport('fileReadOrParseFailed')
     console.error('error when trying to parse json:', err)
     throw Error('importFailed')
   }
 
   if (isEncryptedImport(json, format)) {
-    if (password === undefined) throw Error('importPasswordRequired')
+    if (password === undefined) {
+      traceImport('passwordRequired')
+      throw Error('importPasswordRequired')
+    }
+    traceImport('decryptStarted')
     json = await decryptImport(json, format, password)
+    traceImport('decryptFinished')
   }
 
   if (format === 'ente') {
@@ -579,7 +591,9 @@ const parseImportFile = async (file: File, format: ImportFormat, password?: stri
     return validateOtpAuthEntries(parseOtpAuthUriList(json))
   }
 
+  traceImport('entriesParseStarted')
   const entries = parseImportedEntries(json, format)
+  traceImport('entriesParseFinished')
   return format === 'bitwarden' || format === 'proton' || format === 'andotp'
     ? validateOtpAuthEntries(entries)
     : entries
@@ -591,8 +605,12 @@ export const prepareImport = async (
   password?: string,
 ): Promise<ImportPreview> => {
   const entries = await parseImportFile(file, format, password)
+  traceImport('vaultReadStarted')
   const currentVault = await vault.getVault()
+  traceImport('vaultReadFinished')
+  traceImport('mergePlanStarted')
   const { duplicateIndices } = planImport(currentVault, entries, format)
+  traceImport('previewReady')
   return {
     format,
     sourceName: file.name,

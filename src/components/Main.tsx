@@ -6,7 +6,6 @@ import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import { useTranslation } from 'react-i18next'
 
@@ -46,14 +45,16 @@ const Main = () => {
   const translate = useRef(t)
   translate.current = t
   const navigate = useNavigate()
+  // BrowserRouter's navigate function changes with the location. Navigation
+  // must not rerun startup and unmount child screens with unsaved state.
+  const navigateRef = useRef(navigate)
+  navigateRef.current = navigate
   const [showWelcome] = useLocalStorage('showWelcome', true)
   const isPasswordSet = useVaultProtection()
   const [shouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const [isLoading, setIsLoading] = useState(true)
   const [initializationError, setInitializationError] = useState('')
   const [backDisabled, setBackDisabled] = useState(false)
-  const [needsCreation, setNeedsCreation] = useState(false)
-  const [creationPassword, setCreationPassword] = useState('')
   const [openReset, setOpenReset] = useState(false)
   const [usingLegacy, setUsingLegacy] = useState(false)
   const [migrationPassword, setMigrationPassword] = useState('')
@@ -61,7 +62,7 @@ const Main = () => {
   const initializeVault = useCallback(
     async (reload = false) => {
       if (showWelcome) {
-        navigate('welcome')
+        navigateRef.current('/welcome')
         return
       }
 
@@ -70,19 +71,21 @@ const Main = () => {
 
       try {
         if (vault.fileBackend) {
-          const status = await vault.prepare(reload)
+          let status = await vault.prepare(reload)
           setUsingLegacy(status.usingLegacy ?? false)
           if (status.lifecycle === 'new' || status.lifecycle === 'deleted') {
-            setNeedsCreation(true)
-            return
+            // Only a backend-classified new/deleted lifecycle, never a missing-file
+            // error, permits a fresh vault after onboarding or deletion.
+            await vault.create()
+            status = await vault.prepare()
           }
           if (status.status === 'locked') {
-            navigate('/unlock')
+            navigateRef.current('/unlock')
             return
           }
         }
         if (isPasswordSet && !reload && !(await vault.isUnlocked())) {
-          navigate('unlock')
+          navigateRef.current('/unlock')
           return
         }
 
@@ -96,7 +99,7 @@ const Main = () => {
           if (vaultErrorCode(err) === 'vaultAuthenticationFailed') {
             console.info('found existing vault but password has been changed')
             await vault.lock()
-            navigate('unlock')
+            navigateRef.current('/unlock')
           } else if (vaultErrorCode(err) === 'vaultRecordMissing') {
             console.info('no vault found. initializing...')
             await vault.reset()
@@ -115,7 +118,7 @@ const Main = () => {
         setIsLoading(false)
       }
     },
-    [isPasswordSet, navigate, showWelcome],
+    [isPasswordSet, showWelcome],
   )
 
   useEffect(() => {
@@ -125,11 +128,11 @@ const Main = () => {
   // Folder clients copy remote edits independently of Tauthy. Keep checking
   // while the unlocked app is open, even if this device makes no local edits.
   useEffect(() => {
-    if (showWelcome || isLoading || initializationError || needsCreation) return
+    if (showWelcome || isLoading || initializationError) return
 
     const interval = window.setInterval(() => void syncInBackground(), BACKGROUND_SYNC_INTERVAL_MS)
     return () => window.clearInterval(interval)
-  }, [showWelcome, isLoading, initializationError, needsCreation])
+  }, [showWelcome, isLoading, initializationError])
 
   // Lock vault after idle
   useIdleTimer({
@@ -186,37 +189,6 @@ const Main = () => {
         {isLoading ? (
           <InitializationState>
             <CircularProgress size={28} />
-          </InitializationState>
-        ) : needsCreation ? (
-          <InitializationState>
-            <Stack spacing={2} sx={{ width: '100%', maxWidth: 360 }}>
-              <Typography variant="body2">{t('vaultUi.createHint')}</Typography>
-              <TextField
-                type="password"
-                label={t('vaultUi.optionalPassword')}
-                value={creationPassword}
-                onChange={(event) => setCreationPassword(event.target.value)}
-              />
-              <Button
-                variant="contained"
-                onClick={async () => {
-                  setIsLoading(true)
-                  try {
-                    await vault.create(creationPassword || undefined)
-                    setCreationPassword('')
-                    setNeedsCreation(false)
-                    await initializeVault()
-                  } catch (error) {
-                    setNeedsCreation(false)
-                    setInitializationError(vaultErrorMessage(error, t))
-                  } finally {
-                    setIsLoading(false)
-                  }
-                }}
-              >
-                {t('vaultUi.create')}
-              </Button>
-            </Stack>
           </InitializationState>
         ) : initializationError ? (
           <InitializationState>

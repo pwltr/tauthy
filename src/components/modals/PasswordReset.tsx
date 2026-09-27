@@ -4,7 +4,6 @@ import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Typography from '@mui/material/Typography'
 
 import { vault } from '~/utils/storage'
 import { vaultErrorMessage } from '~/utils/vaultErrors'
@@ -51,12 +50,13 @@ const PasswordResetModal = ({ open, onClose }: { open: boolean; onClose: () => v
           <TextField
             type="password"
             label={t('modals.currentPassword')}
+            variant="filled"
+            size="small"
             value={currentPassword}
             onChange={(event) => setCurrentPassword(event.target.value)}
             fullWidth
             margin="normal"
           />
-          <Typography variant="body2">{t('vaultUi.rotationWarning')}</Typography>
         </>
       )}
       <Buttons>

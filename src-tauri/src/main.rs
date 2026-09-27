@@ -8,6 +8,8 @@ mod commands;
 mod ente;
 #[cfg_attr(feature = "file-vault", allow(dead_code))]
 mod legacy_vault;
+#[cfg(feature = "migration-test")]
+mod migration_test;
 mod otp;
 mod proton;
 mod sync;
@@ -65,10 +67,15 @@ fn main() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_process::init())
-    .plugin(tauri_plugin_shell::init())
-    .plugin(tauri_plugin_updater::Builder::new().build());
+    .plugin(tauri_plugin_shell::init());
+
+  // A disposable test app must never install a production update over itself.
+  #[cfg(not(feature = "migration-test"))]
+  let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
   let builder = builder.invoke_handler(tauri::generate_handler![
+    #[cfg(feature = "migration-test")]
+    migration_test::import_diagnostic,
     aegis::decrypt_aegis_vault,
     ente::decrypt_ente_export,
     proton::decrypt_proton_export,
@@ -105,15 +112,31 @@ fn main() {
 
   let builder = builder
     .setup(|app| {
+      if cfg!(feature = "migration-test")
+        != (app.config().identifier == "com.pwltr.tauthy.migrationtest")
+      {
+        return Err(
+          std::io::Error::other(
+            "migration-test feature and isolated app configuration must be used together",
+          )
+          .into(),
+        );
+      }
       #[cfg(feature = "file-vault")]
       {
+        #[cfg(not(feature = "migration-test"))]
         let name = if cfg!(debug_assertions) {
           "tauthy-dev"
         } else {
           "tauthy"
         };
+        #[cfg(not(feature = "migration-test"))]
         let directory = app.path().data_dir()?.join(name);
+        #[cfg(feature = "migration-test")]
+        let directory = migration_test::prepare_directory(&app.path().data_dir()?)?;
         std::fs::create_dir_all(&directory)?;
+        #[cfg(feature = "migration-test")]
+        app.manage(migration_test::ImportDiagnostics::new(&directory)?);
         app.manage(vault_commands::FileVaultState::new(directory));
       }
       // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.

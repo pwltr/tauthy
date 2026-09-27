@@ -17,6 +17,7 @@ const idleTimer = vi.hoisted(() => ({
   onIdle: undefined as (() => Promise<void>) | undefined,
 }))
 const syncInBackground = vi.hoisted(() => vi.fn())
+const prepareImport = vi.hoisted(() => vi.fn())
 
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/hooks/useVaultProtection', () => ({
@@ -24,6 +25,12 @@ vi.mock('~/hooks/useVaultProtection', () => ({
 }))
 vi.mock('~/components/AppBar', () => ({ default: () => <div>Header</div> }))
 vi.mock('~/utils/sync', () => ({ syncInBackground }))
+vi.mock('~/utils', () => ({ prepareImport, exportCodes: vi.fn(), commitPreparedImport: vi.fn() }))
+vi.mock('~/components/Modal', () => ({
+  default: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+    open ? <div>{children}</div> : null,
+  Buttons: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
 vi.mock('react-idle-timer', () => ({
   useIdleTimer: vi.fn(({ onIdle }: { onIdle: () => Promise<void> }) => {
     idleTimer.onIdle = onIdle
@@ -31,6 +38,9 @@ vi.mock('react-idle-timer', () => ({
 }))
 
 import Main from '~/components/Main'
+import Welcome from '~/components/Welcome'
+import Import from '~/components/Import'
+import ImportReview from '~/components/ImportReview'
 
 const flushPromises = () =>
   act(async () => {
@@ -68,6 +78,7 @@ describe('vault initialization', () => {
     vault.reset.mockResolvedValue(undefined)
     vault.unlock.mockResolvedValue(undefined)
     syncInBackground.mockReset()
+    prepareImport.mockReset()
   })
 
   it('sends a new user to onboarding without reading the vault', async () => {
@@ -77,6 +88,86 @@ describe('vault initialization', () => {
 
     expect(screen.getByText('Welcome')).toBeInTheDocument()
     expect(vault.checkVault).not.toHaveBeenCalled()
+  })
+
+  it.each([false, true])(
+    'retains the import preview across shell navigation (file backend: %s)',
+    async (fileBackend) => {
+      vault.fileBackend = fileBackend
+      vault.prepare.mockResolvedValue({ lifecycle: 'active', status: 'unlocked' })
+      // Real IPC spans event-loop turns; an immediately resolved mock can batch
+      // away the loading render that unmounts the import route.
+      vault.checkVault.mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        return '[]'
+      })
+      prepareImport.mockResolvedValue({
+        format: 'tauthy',
+        sourceName: 'sample.json',
+        entries: [
+          { uuid: 'sample', name: 'Dropbox', issuer: 'Dropbox', secret: 'JBSWY3DPEHPK3PXP' },
+        ],
+        newCount: 1,
+        duplicateCount: 0,
+        duplicateIndices: [],
+      })
+      render(
+        <MemoryRouter initialEntries={['/import']}>
+          <Routes>
+            <Route path="/" element={<Main />}>
+              <Route path="import" element={<Import />}>
+                <Route path="review" element={<ImportReview />} />
+              </Route>
+            </Route>
+          </Routes>
+        </MemoryRouter>,
+      )
+      await screen.findByText('import.import')
+      fireEvent.click(screen.getByText('import.import'))
+      fireEvent.click(screen.getByText('Tauthy'))
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      fireEvent.change(input, { target: { files: [new File(['backup'], 'sample.json')] } })
+      expect(await screen.findByText('sample.json')).toBeInTheDocument()
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+      })
+      expect(screen.getAllByText('Dropbox')).toHaveLength(2)
+      expect(screen.getByText('sample.json')).toBeInTheDocument()
+      expect(vault.checkVault).toHaveBeenCalledOnce()
+      if (fileBackend) expect(vault.prepare).toHaveBeenCalledOnce()
+    },
+  )
+
+  it('goes directly from onboarding to accounts with passwordless file storage', async () => {
+    localStorage.setItem('showWelcome', 'true')
+    vault.fileBackend = true
+    let created = false
+    vault.prepare.mockImplementation(async () => ({
+      lifecycle: created ? 'active' : 'new',
+      status: created ? 'unlocked' : 'locked',
+    }))
+    vault.create.mockImplementation(async () => {
+      created = true
+    })
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/" element={<Main />}>
+            <Route index element={<div>Accounts</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+    await flushPromises()
+    expect(vault.create).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: 'accept' }))
+    await flushPromises()
+    expect(screen.getByText('Accounts')).toBeInTheDocument()
+    expect(vault.create).toHaveBeenCalledExactlyOnceWith()
+    expect(screen.queryByRole('button', { name: 'vaultUi.create' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('vaultUi.optionalPassword')).not.toBeInTheDocument()
   })
 
   it('opens the account screen when the existing vault can be read', async () => {
@@ -155,21 +246,22 @@ describe('vault initialization', () => {
     expect(screen.getByText('Unlock')).toBeInTheDocument()
   })
 
-  it('requires explicit creation for a new file vault, ignoring a stale password flag', async () => {
-    vault.fileBackend = true
-    localStorage.setItem('isPasswordSet', 'false')
-    vault.prepare
-      .mockResolvedValueOnce({ lifecycle: 'new', status: 'locked' })
-      .mockResolvedValue({ lifecycle: 'active', status: 'unlocked' })
-    renderMain()
-    await flushPromises()
-    expect(vault.create).not.toHaveBeenCalled()
-    expect(vault.checkVault).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'vaultUi.create' }))
-    await flushPromises()
-    expect(vault.create).toHaveBeenCalledWith(undefined)
-    expect(screen.getByText('Accounts')).toBeInTheDocument()
-  })
+  it.each(['new', 'deleted'])(
+    'opens an empty %s vault without an extra creation step',
+    async (lifecycle) => {
+      vault.fileBackend = true
+      localStorage.setItem('isPasswordSet', 'false')
+      vault.prepare
+        .mockResolvedValueOnce({ lifecycle, status: 'locked' })
+        .mockResolvedValue({ lifecycle: 'active', status: 'unlocked' })
+      renderMain()
+      await flushPromises()
+      expect(screen.queryByLabelText('vaultUi.optionalPassword')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'vaultUi.create' })).not.toBeInTheDocument()
+      expect(vault.create).toHaveBeenCalledExactlyOnceWith()
+      expect(screen.getByText('Accounts')).toBeInTheDocument()
+    },
+  )
 
   it('routes a locked file vault to unlock even when the legacy password flag is false', async () => {
     vault.fileBackend = true

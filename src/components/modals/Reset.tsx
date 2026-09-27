@@ -17,7 +17,10 @@ const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =
       await vault.destroy()
       // destroy unloads the Stronghold client; open a fresh passwordless vault
       // before writing its empty record so this session stays usable.
-      if (!vault.fileBackend) {
+      if (vault.fileBackend) {
+        // The confirmed, journaled deletion must finish before new creation.
+        await vault.create()
+      } else {
         await vault.unlock('')
         await vault.reset()
       }

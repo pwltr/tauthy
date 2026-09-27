@@ -109,3 +109,13 @@ fn production_guard_refuses_before_even_probing_the_directory() {
   );
   assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 0);
 }
+
+#[cfg(windows)]
+#[test]
+fn packaged_windows_effects_require_the_isolated_test_feature() {
+  assert_eq!(
+    windows_effects_enabled(false),
+    cfg!(feature = "migration-test")
+  );
+  assert!(windows_effects_enabled(true));
+}

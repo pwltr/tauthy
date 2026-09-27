@@ -1,0 +1,70 @@
+# Isolated migration test
+
+This test app uses dummy accounts, separate settings, a separate credential
+namespace and separate local vaults. It does not update or migrate your installed
+Tauthy. It requires a fixed NTFS system/data drive on Windows, not ReFS/Dev Drive
+or a network drive. Leave your installed app alone.
+
+Extract the whole Windows download and double-click **Run Migration Tests.cmd**.
+Windows may warn about this unsigned test download; only run the artifact from
+the project's test workflow if you trust it. The launcher bypasses PowerShell
+execution policy for this script invocation only, without changing system policy.
+WebView2 must be installed (an existing working Tauthy installation already uses it).
+
+The launcher offers:
+
+- **1:** new passwordless migration.
+- **2:** new protected migration; password `test-password`.
+- **3:** new passwordless migration with simulated credential denial.
+- **4:** reopen the last run with credentials allowed, retaining edits and sync.
+
+Quit the test app before using the launcher again. Options 1–3 create a different
+run; option 4 is for restart/persistence checks. The two fixture accounts are
+Dropbox and GitHub. A normal passwordless test uses the real Windows Credential
+Manager, but only for test keys. Delete Vault performs tracked credential cleanup.
+Do not delete vault files by hand.
+
+## Windows checks
+
+1. Passwordless: both accounts appear with codes; edit/add/delete an account and
+   reopen with option 4. Changes persist, including deletion.
+2. Protected: choose option 2; a wrong password gives an error and permits retry;
+   `test-password` opens the accounts. Lock and restart require the password.
+3. Change the password to `test-password-2`, restart, remove protection, restart,
+   add protection and restart. Each restart follows the latest setting.
+4. Export an encrypted Tauthy backup, Delete Vault and import it. Deletion returns
+   immediately to an empty usable app. Wrong backup password permits retry.
+   Restart after deleting must not restore old accounts.
+5. Choose option 3, edit an account while storage setup is deferred, then quit
+   and reopen with option 4. Press Try again. The edit survives completed migration.
+6. If you use the tray, verify entries disappear when locked and return on unlock.
+
+## macOS + Windows folder sync
+
+Use only test apps and a **new, separate Nextcloud folder**, never your real
+Tauthy Sync folder. Start with launcher option **1 on both devices** so the dummy
+accounts match; do not use a locally edited migration run for the initial join.
+After connecting, keep the same run on each device throughout this test.
+
+1. On macOS: Settings → Sync → Create sync folder. Select the new Nextcloud
+   test location and use recovery password `sync-test-password`.
+2. Wait for Nextcloud to finish transferring. On Windows: Settings → Sync →
+   Join existing sync. Select the **Tauthy Sync** folder created inside that
+   location. Enter `sync-test-password`.
+3. Add an account on macOS and another on Windows. Let Nextcloud finish, then
+   press Sync now on each app (repeat after transfer if necessary). Both appear
+   on both devices.
+4. Edit an account and delete another. Sync both, restart with option 4 on both,
+   and sync again. The edit remains and the deleted account stays deleted.
+5. Keep both apps open; edit different accounts on the two devices before Nextcloud finishes transfer.
+   After transfer and sync, neither change is lost and no conflict copies appear.
+6. Disconnect sync on Windows. Local accounts remain; the macOS connection and
+   remote files remain intact. Rejoining the same folder succeeds.
+
+These checks verify two already-migrated devices. They do **not** prove preservation
+of a pre-existing sync configuration through migration, mixed-version sync or the
+released-app updater path; those require separately prepared older-version fixtures.
+
+Import diagnostics are stage names/timings only, in timestamped
+`import-diagnostics-*.log` files beneath the selected test run's data directory.
+No account data, passwords, file contents or selected filenames are logged.

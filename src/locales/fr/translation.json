@@ -1,7 +1,7 @@
 {
   "vaultUi": {
-    "deferred": "La mise à jour du stockage est différée. Vos comptes utilisent toujours Stronghold et restent accessibles. Réessayez lorsque le stockage de l'appareil sera disponible.",
-    "retryMigration": "Réessayer la mise à jour du stockage",
+    "deferred": "Tauthy n’a pas pu terminer la configuration du stockage sécurisé. Vos comptes fonctionnent toujours. Réessayez et autorisez l’accès si le système vous le demande.",
+    "retryMigration": "Réessayer",
     "replaceTitle": "Remplacer le coffre depuis un fichier",
     "replaceExplanation": "Pour récupérer un fichier vault.tauthy protégé par mot de passe uniquement. Pour ajouter des comptes depuis une sauvegarde, utilisez Importer. Les fichiers protégés par un appareil ne sont pas des sauvegardes portables.",
     "replaceWarning": "Tous les comptes locaux seront remplacés et la synchronisation déconnectée. Les fichiers cloud ne seront pas supprimés. Conservez d'abord un export indépendant, puis reconnectez la synchronisation.",
@@ -13,8 +13,7 @@
     "retry": "Réessayer",
     "openFailed": "Impossible d'ouvrir le coffre :",
     "optionalPassword": "Mot de passe (facultatif)",
-    "createHint": "Sans mot de passe, la clé du coffre est protégée par le gestionnaire d'identifiants de cet appareil.",
-    "rotationWarning": "Conservez un export chiffré indépendant. Changer la protection invalide les anciennes copies du coffre liées à la clé de l'appareil. Un mot de passe actuel incorrect verrouille le coffre."
+    "createHint": "Choisissez un mot de passe ou laissez le champ vide pour ouvrir Tauthy sans mot de passe."
   },
   "vaultErrors": {
     "migrationRequired": "Terminez la mise à jour du stockage avant de changer la protection ou de remplacer le coffre.",

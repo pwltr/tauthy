@@ -13,6 +13,7 @@ import ListSection from '~/components/ListSection'
 import ListItem from '~/components/ListItem'
 import ImportModal from '~/components/modals/Import'
 import ExportPasswordModal from '~/components/modals/ExportPassword'
+import { traceImport } from '~/utils/importDiagnostics'
 
 const Import = () => {
   const { t } = useTranslation()
@@ -96,6 +97,7 @@ const Import = () => {
   }, [location.pathname])
 
   const reviewImport = (next: ImportPreview) => {
+    traceImport('reviewNavigation')
     setPreview(next)
     setIsImportModalOpen(false)
     navigate('/import/review')
