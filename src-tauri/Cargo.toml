@@ -52,8 +52,9 @@ dbus-secret-service = { version = "4.1.0", default-features = false, features = 
 tauri-plugin-single-instance = "2.4.4"
 
 [features]
-# Opt-in integration/testing only. Not enabled in release workflows; platform
-# durability guards remain in force independently of this feature.
+# Default application backend; --no-default-features retains the legacy build
+# for compatibility checks. Filesystem support guards remain in force.
+default = ["file-vault"]
 file-vault = []
 # Disposable packaged migration testing only; never enable in release workflows.
 migration-test = ["file-vault"]

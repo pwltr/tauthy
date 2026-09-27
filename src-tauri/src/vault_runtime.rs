@@ -1,5 +1,4 @@
-//! Authenticated file-vault session and atomic ordinary saves. Not connected to
-//! normal builds; Tauri wiring is opt-in. A single managed
+//! Authenticated file-vault session and atomic ordinary saves. A single managed
 //! instance must own a directory (plus app single-instance protection).
 //! The mutex spans inspection, authentication, coordinator effects and saves.
 use std::{

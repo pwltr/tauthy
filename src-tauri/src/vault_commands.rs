@@ -1,4 +1,4 @@
-//! Opt-in file-vault IPC. No automatic creation, migration, fallback or native
+//! File-vault IPC. No automatic creation, migration, fallback or native
 //! key lookup at startup. Never expose raw records, selectors, passwords or DEKs.
 //! The frontend dispatcher calls `vault_initialize` once at startup, before
 //! issuing any other file-vault command.

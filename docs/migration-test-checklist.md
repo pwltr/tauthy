@@ -72,9 +72,8 @@ No account data, passwords, file contents or selected filenames are logged.
 ## Building the test harness
 
 The **Build isolated migration test** workflow is manual-only and produces the
-Windows download without publishing a release. Production builds still use
-Stronghold; `file-vault` is opt-in, and Windows file-vault writes are enabled only
-in unit tests or the isolated `migration-test` app on supported fixed NTFS disks.
+Windows download without publishing a release. Production builds use the
+file-vault backend; Windows writes require supported fixed local NTFS disks.
 Never enable `migration-test` in release workflows.
 
 For a local macOS test app, after installing the normal build dependencies:
@@ -95,11 +94,11 @@ For diagnostic builds on macOS, prefix the build command with
 `VITE_IMPORT_DIAGNOSTICS=1`. Normal builds emit no diagnostic IPC, and the logging
 command exists only in `migration-test` builds.
 
-Check the opt-in backend without launching an app:
+Check the default backend and retained legacy build without launching an app:
 
 ```sh
-cargo check --manifest-path src-tauri/Cargo.toml --locked --features file-vault
-cargo test --manifest-path src-tauri/Cargo.toml --locked --features file-vault vault_
+cargo test --manifest-path src-tauri/Cargo.toml --locked
+cargo check --manifest-path src-tauri/Cargo.toml --locked --no-default-features --tests
 ```
 
 Windows vault tests require an NTFS temporary directory. If `TEMP` points to ReFS,

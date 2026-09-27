@@ -19,8 +19,8 @@ mod twofas;
 mod vault_access;
 #[allow(dead_code)]
 mod vault_commands;
-// File storage is connected only by the opt-in integration feature. Release
-// workflows remain on Stronghold until frontend/platform verification completes.
+// File storage is the default. Legacy commands remain available only in builds
+// using --no-default-features; the legacy reader is still used for migration.
 #[allow(dead_code)]
 mod vault_credentials;
 #[allow(dead_code)]

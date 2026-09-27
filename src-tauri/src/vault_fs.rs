@@ -1,7 +1,7 @@
 //! Platform file effects for journaled vault transactions.
-//! Unix retains file + directory fsync. The Windows candidate is TEST-ONLY:
-//! unit tests and the isolated migration-test app may exercise fixed NTFS disks.
-//! Production/file-vault builds still refuse all Windows effects.
+//! Unix retains file + directory fsync. Windows supports fixed local NTFS disks
+//! with write-through handles and flushed file effects. Unsupported volumes
+//! still fail closed, including in production.
 //! No administrator/volume flush, network share, cross-volume move or fallback.
 use std::{
   fs::{self, File},
@@ -63,18 +63,13 @@ pub(crate) fn require_supported(directory: &Path) -> io::Result<()> {
   }
   #[cfg(windows)]
   {
-    windows::require_candidate(directory, windows_effects_enabled(cfg!(test)))
+    windows::require_ntfs(directory)
   }
   #[cfg(not(any(unix, windows)))]
   {
     let _ = directory;
     Err(io::ErrorKind::Unsupported.into())
   }
-}
-
-#[cfg(windows)]
-fn windows_effects_enabled(unit_test: bool) -> bool {
-  unit_test || cfg!(feature = "migration-test")
 }
 
 pub(crate) fn temporary(directory: &Path) -> io::Result<NamedTempFile> {
@@ -242,13 +237,6 @@ mod windows {
     }
     value.push(0);
     Ok(value)
-  }
-
-  pub(super) fn require_candidate(directory: &Path, enabled: bool) -> io::Result<()> {
-    if !enabled {
-      return Err(io::ErrorKind::Unsupported.into());
-    }
-    require_ntfs(directory)
   }
 
   pub(super) fn require_ntfs(directory: &Path) -> io::Result<()> {
