@@ -2,8 +2,6 @@
 
 - Faster startup and unlock with new encrypted local storage. Existing accounts
   and sync settings migrate automatically; passwords remain optional.
-- Passwordless vaults use the operating system's credential store. Use Tauthy's
-  export feature for portable backups rather than copying the local vault file.
 - Improved Windows export dialog and removed the artificial unlock delay.
 
 ### Windows upgrade notice
