@@ -497,6 +497,50 @@ fn deferred_batches_discard_failed_callbacks_and_refuse_external_source_changes(
 }
 
 #[test]
+fn automatic_empty_password_attempt_resumes_protected_legacy_on_normal_unlock() {
+  let directory = tempfile::tempdir().unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "short".into()).unwrap();
+  crate::legacy_vault::vault_save_at(&legacy, "accounts".into()).unwrap();
+  drop(legacy);
+  let before = fs::read(&source).unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys {
+    unavailable: true,
+    ..Keys::default()
+  };
+  assert_eq!(
+    runtime.migrate_legacy("", &mut keys),
+    Err(TxError::Envelope(crate::vault_file::Error::Authentication).into())
+  );
+  assert_eq!(fs::read(&source).unwrap(), before);
+  assert!(keys.entries.is_empty());
+  runtime
+    .unlock_current(Some("short"), None, &mut keys)
+    .unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"accounts".to_vec()));
+  assert_eq!(
+    runtime.status().unwrap().metadata.lifecycle,
+    Lifecycle::Active
+  );
+  assert!(
+    !runtime
+      .status()
+      .unwrap()
+      .metadata
+      .identity_hint
+      .unwrap()
+      .credential
+  );
+  assert!(keys.entries.is_empty());
+  assert_eq!(
+    fs::read(directory.path().join("vault.stronghold.retired")).unwrap(),
+    before
+  );
+}
+
+#[test]
 fn incorrect_first_password_for_passwordless_legacy_is_retryable_without_deletion() {
   let directory = tempfile::tempdir().unwrap();
   let source = directory.path().join("vault.stronghold");

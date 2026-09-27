@@ -9,7 +9,6 @@
     "replaceConfirm": "Meinen lokalen Tresor ersetzen und kopierte Synchronisierungseinstellungen trennen.",
     "chooseFile": "Tresordatei auswählen",
     "filePassword": "Passwort der ausgewählten Datei",
-    "migration": "Aktualisiere den Tresorspeicher mit deinem bisherigen Passwort oder lasse das Feld leer, wenn keines gesetzt ist. Konten und Synchronisierung bleiben erhalten. Ohne Passwort wird der Schlüssel im Anmeldedatenspeicher dieses Geräts gespeichert: Bewahre einen unabhängigen Export auf, da eine Kopie der Tresordatei allein keine portable Sicherung mehr ist.",
     "create": "Tresor erstellen",
     "retry": "Erneut versuchen",
     "openFailed": "Tresor konnte nicht geöffnet werden:",

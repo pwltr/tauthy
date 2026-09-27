@@ -9,7 +9,6 @@
     "replaceConfirm": "Remplacer mon coffre local et déconnecter les paramètres de synchronisation copiés.",
     "chooseFile": "Choisir un fichier de coffre",
     "filePassword": "Mot de passe du fichier sélectionné",
-    "migration": "Mettez à jour le stockage avec votre mot de passe actuel, ou laissez le champ vide si aucun n'est défini. Les comptes et la synchronisation sont conservés. Sans mot de passe, la clé passe au gestionnaire d'identifiants de cet appareil : conservez un export indépendant, car copier le fichier seul ne constitue plus une sauvegarde portable.",
     "create": "Créer un coffre",
     "retry": "Réessayer",
     "openFailed": "Impossible d'ouvrir le coffre :",

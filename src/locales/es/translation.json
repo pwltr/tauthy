@@ -9,7 +9,6 @@
     "replaceConfirm": "Reemplazar mi bóveda local y desconectar los ajustes de sincronización copiados.",
     "chooseFile": "Elegir archivo de bóveda",
     "filePassword": "Contraseña del archivo seleccionado",
-    "migration": "Actualiza el almacenamiento con tu contraseña actual o deja el campo vacío si no tienes una. Se conservan las cuentas y la sincronización. Sin contraseña, la clave pasa al almacén de credenciales de este dispositivo: conserva una exportación independiente, ya que copiar solo el archivo deja de ser una copia portátil.",
     "create": "Crear bóveda",
     "retry": "Reintentar",
     "openFailed": "No se pudo abrir la bóveda:",
