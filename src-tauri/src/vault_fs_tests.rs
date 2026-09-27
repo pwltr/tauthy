@@ -99,23 +99,17 @@ fn unicode_paths_are_supported() {
 
 #[cfg(windows)]
 #[test]
-fn production_guard_refuses_before_even_probing_the_directory() {
+fn windows_support_probe_accepts_fixed_ntfs_without_writing() {
   let directory = tempfile::tempdir().unwrap();
-  assert_eq!(
-    windows::require_candidate(directory.path(), false)
-      .unwrap_err()
-      .kind(),
-    io::ErrorKind::Unsupported
-  );
+  require_supported(directory.path()).unwrap();
   assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 0);
 }
 
 #[cfg(windows)]
 #[test]
-fn packaged_windows_effects_require_the_isolated_test_feature() {
-  assert_eq!(
-    windows_effects_enabled(false),
-    cfg!(feature = "migration-test")
-  );
-  assert!(windows_effects_enabled(true));
+fn windows_support_probe_never_creates_missing_directories() {
+  let directory = tempfile::tempdir().unwrap();
+  let missing = directory.path().join("missing");
+  assert!(require_supported(&missing).is_err());
+  assert!(!missing.exists());
 }

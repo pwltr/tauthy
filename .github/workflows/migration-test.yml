@@ -35,11 +35,11 @@ jobs:
       - name: Install frontend dependencies
         run: yarn install --immutable
 
-      - name: Check unchanged production gate
-        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --features file-vault
+      - name: Check default production backend
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml
 
-      - name: Verify packaged production effects remain disabled
-        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --features file-vault packaged_windows_effects_require_the_isolated_test_feature
+      - name: Verify Windows filesystem support checks
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml windows_support_probe
 
       - name: Test isolated Windows vault integration
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml --features migration-test
