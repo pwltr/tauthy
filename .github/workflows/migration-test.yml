@@ -49,7 +49,7 @@ jobs:
       - name: Build isolated portable test app
         env:
           VITE_IMPORT_DIAGNOSTICS: '1'
-        run: yarn tauri build --features migration-test --config src-tauri/tauri.migration-test.conf.json --no-bundle -- --locked
+        run: yarn exec tauri build --features migration-test --config src-tauri/tauri.migration-test.conf.json --no-bundle -- --locked
 
       - name: Prepare test launcher
         shell: pwsh
