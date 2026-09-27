@@ -11,7 +11,7 @@ use tauri::{
 };
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
-use crate::{commands, legacy_vault};
+use crate::{commands, vault_access};
 
 const TRAY_ID: &str = "tauthy-tray";
 const ACCOUNT_ID_PREFIX: &str = "tauthy-tray:account:";
@@ -110,8 +110,8 @@ fn menu_text(text: &str) -> String {
 }
 
 fn entries(app: &AppHandle) -> Result<Option<Vec<TrayEntry>>, String> {
-  let state = app.state::<legacy_vault::VaultState>();
-  let Some(record) = legacy_vault::vault_record_at(&state)? else {
+  let state = app.state::<vault_access::ApplicationVault>();
+  let Some(record) = vault_access::account_record(state.inner())? else {
     return Ok(None);
   };
 

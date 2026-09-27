@@ -63,11 +63,17 @@ jobs:
       - name: Check production build with Windows migration disabled
         run: cargo check --locked --manifest-path src-tauri/Cargo.toml
 
+      - name: Check opt-in file vault commands with Windows writes still disabled
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --features file-vault
+
       # The Windows candidate is enabled only in the test binary. These tests
       # use temporary NTFS directories and fake credentials; native credential
       # store tests remain ignored and explicitly opt-in.
       - name: Test vault filesystem and crash recovery on Windows
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml vault_ -- --nocapture
+
+      - name: Test opt-in file vault integration on Windows
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --features file-vault vault_ -- --nocapture
 
       # Explicit opt-in on a disposable hosted runner only. The test creates a
       # random development-namespace credential and cleans up its own entry.
@@ -104,6 +110,12 @@ jobs:
 
       - name: Run Rust tests
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+
+      - name: Check opt-in file vault command registration
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --features file-vault
+
+      - name: Test opt-in file vault integration
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --features file-vault vault_
 
       - name: Audit Rust dependencies
         uses: rustsec/audit-check@858dc40f52ca2b8570b7a997c1c4e35c6fc9a432 # Node 24

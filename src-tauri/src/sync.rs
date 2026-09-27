@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 use zeroize::{Zeroize, Zeroizing};
 
-use crate::legacy_vault::{UnlockedVault, VaultState};
+use crate::vault_access::{ApplicationVault, RecordAccess, VaultAccess};
 
 pub(crate) const SYNC_STORE_NAME: &[u8] = b"sync-config-v1";
 const VAULT_STORE_NAME: &[u8] = b"vault";
@@ -726,7 +726,7 @@ fn publish_device_payload(
   write_envelope(&path, &envelope(payload, key, config.wrapped_key.clone())?)
 }
 
-fn load_config(vault: &UnlockedVault) -> Result<SyncConfig, String> {
+fn load_config(vault: &dyn RecordAccess) -> Result<SyncConfig, String> {
   let bytes = vault
     .get_record(SYNC_STORE_NAME)?
     .ok_or_else(|| ERR_NOT_CONFIGURED.to_string())?;
@@ -740,22 +740,23 @@ fn load_config(vault: &UnlockedVault) -> Result<SyncConfig, String> {
 }
 
 fn save_local(
-  vault: &UnlockedVault,
+  vault: &dyn RecordAccess,
   entries: &[VaultEntry],
   config: &SyncConfig,
 ) -> Result<(), String> {
-  vault.put_record(
-    VAULT_STORE_NAME,
-    serde_json::to_vec(entries).map_err(|_| ERR_CORRUPT.to_string())?,
-  )?;
-  vault.put_record(
-    SYNC_STORE_NAME,
-    serde_json::to_vec(config).map_err(|_| ERR_CORRUPT.to_string())?,
-  )?;
-  vault.commit()
+  vault.save_records(vec![
+    (
+      VAULT_STORE_NAME,
+      Some(serde_json::to_vec(entries).map_err(|_| ERR_CORRUPT.to_string())?),
+    ),
+    (
+      SYNC_STORE_NAME,
+      Some(serde_json::to_vec(config).map_err(|_| ERR_CORRUPT.to_string())?),
+    ),
+  ])
 }
 
-fn current_entries(vault: &UnlockedVault) -> Result<Vec<VaultEntry>, String> {
+fn current_entries(vault: &dyn RecordAccess) -> Result<Vec<VaultEntry>, String> {
   let record = vault
     .get_record(VAULT_STORE_NAME)?
     .ok_or_else(|| ERR_CORRUPT.to_string())?;
@@ -771,8 +772,12 @@ fn status_for(config: Option<&SyncConfig>) -> SyncStatus {
   }
 }
 
-fn create_at(state: &VaultState, path: String, mut password: String) -> Result<SyncStatus, String> {
-  let result = state.with_unlocked(|vault| {
+fn create_at(
+  state: &impl VaultAccess,
+  path: String,
+  mut password: String,
+) -> Result<SyncStatus, String> {
+  let result = state.with_records(|vault| {
     let parent = Path::new(&path);
     if !parent.is_dir() {
       return Err(ERR_UNAVAILABLE.into());
@@ -814,8 +819,12 @@ fn create_at(state: &VaultState, path: String, mut password: String) -> Result<S
   result
 }
 
-fn join_at(state: &VaultState, path: String, mut password: String) -> Result<SyncStatus, String> {
-  let result = state.with_unlocked(|vault| {
+fn join_at(
+  state: &impl VaultAccess,
+  path: String,
+  mut password: String,
+) -> Result<SyncStatus, String> {
+  let result = state.with_records(|vault| {
     let selected = join_path(Path::new(&path))?;
     let remote = read_envelope(&anchor_path(&selected))?;
     let sync_key = unwrap_key(&remote.key, password.as_bytes())?;
@@ -847,15 +856,15 @@ fn join_at(state: &VaultState, path: String, mut password: String) -> Result<Syn
   result
 }
 
-fn sync_at(state: &VaultState) -> Result<SyncStatus, String> {
+fn sync_at(state: &impl VaultAccess) -> Result<SyncStatus, String> {
   sync_at_with_import(state, None)
 }
 
 fn sync_at_with_import(
-  state: &VaultState,
+  state: &impl VaultAccess,
   import_path: Option<&Path>,
 ) -> Result<SyncStatus, String> {
-  state.with_unlocked(|vault| {
+  state.with_records(|vault| {
     let mut config = load_config(vault)?;
     let previous_payload = config.payload.clone();
     let local_entries = current_entries(vault)?;
@@ -897,7 +906,7 @@ fn sync_at_with_import(
 #[tauri::command]
 pub async fn sync_merge_conflicted_copy(
   app: AppHandle,
-  state: State<'_, VaultState>,
+  state: State<'_, ApplicationVault>,
   path: String,
 ) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
@@ -905,54 +914,60 @@ pub async fn sync_merge_conflicted_copy(
     sync_at_with_import(&state, Some(Path::new(&path)))
   })
   .await
-  .map_err(|_| ERR_CORRUPT.to_string())??;
+  .map_err(|_| ERR_CORRUPT.to_string())
+  .and_then(|result| result);
   let _ = crate::tray::refresh_menu(&app);
-  Ok(status)
+  status
 }
 
 #[tauri::command]
 pub async fn sync_create(
   app: AppHandle,
-  state: State<'_, VaultState>,
+  state: State<'_, ApplicationVault>,
   path: String,
   password: String,
 ) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
   let status = tauri::async_runtime::spawn_blocking(move || create_at(&state, path, password))
     .await
-    .map_err(|_| ERR_CORRUPT.to_string())??;
+    .map_err(|_| ERR_CORRUPT.to_string())
+    .and_then(|result| result);
   let _ = crate::tray::refresh_menu(&app);
-  Ok(status)
+  status
 }
 
 #[tauri::command]
 pub async fn sync_join(
   app: AppHandle,
-  state: State<'_, VaultState>,
+  state: State<'_, ApplicationVault>,
   path: String,
   password: String,
 ) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
   let status = tauri::async_runtime::spawn_blocking(move || join_at(&state, path, password))
     .await
-    .map_err(|_| ERR_CORRUPT.to_string())??;
+    .map_err(|_| ERR_CORRUPT.to_string())
+    .and_then(|result| result);
   let _ = crate::tray::refresh_menu(&app);
-  Ok(status)
+  status
 }
 
 #[tauri::command]
-pub async fn sync_now(app: AppHandle, state: State<'_, VaultState>) -> Result<SyncStatus, String> {
+pub async fn sync_now(
+  app: AppHandle,
+  state: State<'_, ApplicationVault>,
+) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
   let status = tauri::async_runtime::spawn_blocking(move || sync_at(&state))
     .await
-    .map_err(|_| ERR_CORRUPT.to_string())??;
+    .map_err(|_| ERR_CORRUPT.to_string())
+    .and_then(|result| result);
   let _ = crate::tray::refresh_menu(&app);
-  Ok(status)
+  status
 }
 
-#[tauri::command]
-pub async fn sync_status(state: State<'_, VaultState>) -> Result<SyncStatus, String> {
-  state.with_unlocked(|vault| match vault.get_record(SYNC_STORE_NAME)? {
+fn status_at(state: &impl VaultAccess) -> Result<SyncStatus, String> {
+  state.with_records(|vault| match vault.get_record(SYNC_STORE_NAME)? {
     None => Ok(status_for(None)),
     Some(bytes) => {
       let config: SyncConfig =
@@ -962,20 +977,40 @@ pub async fn sync_status(state: State<'_, VaultState>) -> Result<SyncStatus, Str
   })
 }
 
-#[tauri::command]
-pub async fn sync_disconnect(state: State<'_, VaultState>) -> Result<SyncStatus, String> {
-  state.with_unlocked(|vault| {
-    vault.delete_record(SYNC_STORE_NAME)?;
-    vault.commit()?;
+fn disconnect_at(state: &impl VaultAccess) -> Result<SyncStatus, String> {
+  state.with_records(|vault| {
+    vault.save_records(vec![(SYNC_STORE_NAME, None)])?;
     Ok(status_for(None))
   })
+}
+
+#[tauri::command]
+pub async fn sync_status(state: State<'_, ApplicationVault>) -> Result<SyncStatus, String> {
+  let state = state.inner().clone();
+  tauri::async_runtime::spawn_blocking(move || status_at(&state))
+    .await
+    .map_err(|_| ERR_CORRUPT.to_string())?
+}
+
+#[tauri::command]
+pub async fn sync_disconnect(
+  app: AppHandle,
+  state: State<'_, ApplicationVault>,
+) -> Result<SyncStatus, String> {
+  let state = state.inner().clone();
+  let status = tauri::async_runtime::spawn_blocking(move || disconnect_at(&state))
+    .await
+    .map_err(|_| ERR_CORRUPT.to_string())
+    .and_then(|result| result);
+  let _ = crate::tray::refresh_menu(&app);
+  status
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::legacy_vault::{
-    vault_change_password_at, vault_load_at, vault_record_at, vault_save_at,
+    vault_change_password_at, vault_load_at, vault_record_at, vault_save_at, VaultState,
   };
   use std::path::PathBuf;
 
@@ -1110,7 +1145,111 @@ mod tests {
   }
 
   fn config_for(state: &VaultState) -> SyncConfig {
-    state.with_unlocked(load_config).unwrap()
+    state.with_records(load_config).unwrap()
+  }
+
+  #[test]
+  fn vault_file_backend_two_vaults_sync_deletion_noop_restart_and_disconnect() {
+    use crate::{
+      vault_journal::Identity,
+      vault_runtime::Runtime,
+      vault_transaction::{Credentials, Error as TxError},
+    };
+    struct NoNative;
+    impl Credentials for NoNative {
+      fn get(&mut self, _: &Identity) -> Result<Option<Zeroizing<[u8; 32]>>, TxError> {
+        panic!("native key lookup in password fixture")
+      }
+      fn set(&mut self, _: &Identity, _: &[u8; 32]) -> Result<(), TxError> {
+        panic!("native key write in password fixture")
+      }
+      fn remove(&mut self, _: &Identity) -> Result<(), TxError> {
+        panic!("native key removal in password fixture")
+      }
+    }
+    let root = tempfile::tempdir().unwrap();
+    let mut runtimes = Vec::new();
+    for (name, account) in [("a", entry("a", "Alpha")), ("b", entry("b", "Beta"))] {
+      let directory = root.path().join(name);
+      fs::create_dir(&directory).unwrap();
+      let runtime = Runtime::new(directory);
+      runtime.create(Some("local"), &mut NoNative).unwrap();
+      runtime
+        .with_records(|vault| {
+          vault.save_records(vec![
+            (
+              VAULT_STORE_NAME,
+              Some(serde_json::to_vec(&vec![account]).unwrap()),
+            ),
+            (b"opaque", Some(vec![0, 255])),
+          ])
+        })
+        .unwrap();
+      runtimes.push(runtime);
+    }
+    let a = &runtimes[0];
+    let b = &runtimes[1];
+    create_at(
+      a,
+      root.path().to_string_lossy().into_owned(),
+      "sync-password".into(),
+    )
+    .unwrap();
+    join_at(
+      b,
+      root
+        .path()
+        .join(SYNC_FOLDER_NAME)
+        .to_string_lossy()
+        .into_owned(),
+      "sync-password".into(),
+    )
+    .unwrap();
+    assert!(sync_at(a).unwrap().vault_changed);
+    assert_eq!(a.with_records(current_entries).unwrap().len(), 2);
+    a.with_records(|vault| {
+      vault.save_records(vec![(
+        VAULT_STORE_NAME,
+        Some(serde_json::to_vec(&vec![entry("b", "Beta")]).unwrap()),
+      )])
+    })
+    .unwrap();
+    sync_at(a).unwrap();
+    assert!(sync_at(b).unwrap().vault_changed);
+    assert_eq!(
+      b.with_records(current_entries).unwrap(),
+      vec![entry("b", "Beta")]
+    );
+    let file = root.path().join("a/vault.tauthy");
+    let before = fs::read(&file).unwrap();
+    assert!(!sync_at(a).unwrap().vault_changed);
+    assert_eq!(fs::read(&file).unwrap(), before);
+    a.lock().unwrap();
+    assert_eq!(sync_at(a).err(), Some("vault is locked".into()));
+    a.unlock_current(Some("local"), None, &mut NoNative)
+      .unwrap();
+    assert!(status_at(a).unwrap().enabled);
+    assert_eq!(
+      a.with_records(|vault| vault.get_record(b"opaque")).unwrap(),
+      Some(vec![0, 255])
+    );
+    disconnect_at(a).unwrap();
+    assert!(!status_at(a).unwrap().enabled);
+    assert_eq!(
+      a.with_records(current_entries).unwrap(),
+      vec![entry("b", "Beta")]
+    );
+    assert!(root
+      .path()
+      .join(SYNC_FOLDER_NAME)
+      .join(FOLDER_ANCHOR_NAME)
+      .exists());
+    a.delete(true, &mut NoNative).unwrap();
+    assert!(root
+      .path()
+      .join(SYNC_FOLDER_NAME)
+      .join(FOLDER_ANCHOR_NAME)
+      .exists());
   }
 
   #[test]

@@ -52,6 +52,9 @@ dbus-secret-service = { version = "4.1.0", default-features = false, features = 
 tauri-plugin-single-instance = "2.4.4"
 
 [features]
+# Opt-in integration/testing only. Not enabled in release workflows; platform
+# durability guards remain in force independently of this feature.
+file-vault = []
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]

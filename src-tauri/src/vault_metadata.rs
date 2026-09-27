@@ -1,4 +1,4 @@
-//! Read-only startup classification, deliberately not connected to IPC yet.
+//! Read-only startup classification; opt-in IPC exposes only prompt hints.
 //! No credentials, KDF, decryption, file writes, or automatic reconciliation.
 //! Header/journal identity is untrusted: these results guide prompts only.
 //! The coordinator must authenticate and complete a transaction before edits.
@@ -27,14 +27,16 @@ pub(crate) enum Error {
   UnsupportedLegacy,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) enum Backend {
   StrongholdV2,
   StrongholdV3,
   FileV1,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) enum Lifecycle {
   /// Only explicit creation may proceed. Never inferred from missing active data.
   New,
