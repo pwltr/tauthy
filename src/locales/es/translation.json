@@ -20,7 +20,7 @@
     "authentication": "Contraseña incorrecta.",
     "corrupt": "No se puede leer la bóveda. Restaura una copia independiente sin borrar el original.",
     "unsupported": "Este formato de bóveda no es compatible.",
-    "platform": "El nuevo almacenamiento aún no está activado en esta plataforma. La bóveda existente no se ha reemplazado.",
+    "platform": "Esta ubicación de almacenamiento no es compatible. En Windows, Tauthy requiere una unidad local fija con formato NTFS.",
     "identity": "Este archivo pertenece a otra bóveda y requiere una importación confirmada explícitamente.",
     "missing": "Falta el archivo esperado de la bóveda. Restáuralo o elimina explícitamente la bóveda para empezar de nuevo.",
     "credentialMissing": "Falta la clave del dispositivo. Restaura una exportación independiente o una copia sincronizada.",
