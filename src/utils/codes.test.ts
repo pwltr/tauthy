@@ -372,12 +372,46 @@ describe('Aegis imports', () => {
 
 describe('Tauthy import and export', () => {
   beforeEach(() => {
+    localStorage.clear()
     invoke.mockReset()
     mockVault.getVault.mockReset()
     mockVault.save.mockReset()
     saveFile.mockReset()
     writeTextFile.mockReset()
     vi.useRealTimers()
+  })
+
+  it('records an export only after its file is written, using the exported snapshot', async () => {
+    const entries = [{ uuid: 'entry', name: 'Dropbox', secret: 'ABC234' }]
+    mockVault.getVault.mockResolvedValue(entries)
+    saveFile.mockResolvedValue('/tmp/backup.json')
+    let finish: () => void = () => {}
+    writeTextFile.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    const exporting = exportCodes()
+    for (let i = 0; i < 5; i++) await Promise.resolve()
+    expect(localStorage.getItem('backupStatusV1')).toBeNull()
+    finish()
+    await exporting
+    const { getBackupStatus } = await import('./backupStatus')
+    expect((await getBackupStatus(entries)).state).toBe('current')
+    expect((await getBackupStatus([{ ...entries[0], name: 'Edited during export' }])).state).toBe(
+      'changed',
+    )
+  })
+
+  it.each(['cancelled', 'failed'])('does not record a %s export', async (mode) => {
+    mockVault.getVault.mockResolvedValue([{ uuid: 'entry', name: 'Dropbox', secret: 'ABC234' }])
+    saveFile.mockResolvedValue(mode === 'cancelled' ? null : '/tmp/backup.json')
+    writeTextFile.mockRejectedValue(Error('write failed'))
+    await expect(exportCodes()).rejects.toThrow(
+      mode === 'cancelled' ? 'exportCancelled' : 'exportFailed',
+    )
+    expect(localStorage.getItem('backupStatusV1')).toBeNull()
   })
 
   it('exports the versioned v1 format with an unambiguous filename', async () => {

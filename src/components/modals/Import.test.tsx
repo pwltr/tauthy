@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+vi.mock('~/hooks/useBackupStatus', () => ({ useBackupStatus: () => undefined }))
 import { AppBarBackContext } from '~/context'
 
 const mocks = vi.hoisted(() => ({

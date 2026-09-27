@@ -1,4 +1,18 @@
 {
+  "developer": {
+    "pageTitle": "Ajustes de desarrollador",
+    "previewBackup": "Mostrar recordatorio de copia de seguridad",
+    "backupDescription": "Restablece el estado de copia de seguridad de este dispositivo y abre el inicio. Añade al menos una cuenta para ver el recordatorio. Las cuentas y los archivos de copia de seguridad no se modifican.",
+    "previewFailed": "No se pudo restablecer el estado de copia de seguridad."
+  },
+  "backup": {
+    "never": "No hay exportaciones registradas en este dispositivo",
+    "changed": "Las cuentas cambiaron desde la última exportación",
+    "current": "Las cuentas coinciden con la última exportación",
+    "reminder": "Guarda una copia de tus cuentas. La sincronización no es una copia de seguridad independiente.",
+    "export": "Exportar copia",
+    "later": "Más tarde"
+  },
   "vaultUi": {
     "deferred": "Tauthy no pudo terminar de configurar el almacenamiento seguro. Tus cuentas siguen funcionando. Inténtalo de nuevo y permite el acceso si se te solicita.",
     "retryMigration": "Intentar de nuevo",

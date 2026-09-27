@@ -1,4 +1,18 @@
 {
+  "developer": {
+    "pageTitle": "Paramètres développeur",
+    "previewBackup": "Afficher le rappel de sauvegarde",
+    "backupDescription": "Réinitialise le statut de sauvegarde de cet appareil et ouvre l’accueil. Ajoutez au moins un compte pour voir le rappel. Les comptes et fichiers de sauvegarde ne sont pas modifiés.",
+    "previewFailed": "Impossible de réinitialiser le statut de sauvegarde."
+  },
+  "backup": {
+    "never": "Aucun export enregistré sur cet appareil",
+    "changed": "Comptes modifiés depuis le dernier export",
+    "current": "Les comptes correspondent au dernier export",
+    "reminder": "Conservez une sauvegarde de vos comptes. La synchronisation n'est pas une sauvegarde indépendante.",
+    "export": "Exporter",
+    "later": "Plus tard"
+  },
   "vaultUi": {
     "deferred": "Tauthy n’a pas pu terminer la configuration du stockage sécurisé. Vos comptes fonctionnent toujours. Réessayez et autorisez l’accès si le système vous le demande.",
     "retryMigration": "Réessayer",

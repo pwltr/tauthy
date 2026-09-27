@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import List from '@mui/material/List'
@@ -10,6 +10,8 @@ import SecurityIcon from '@mui/icons-material/Security'
 import BackupIcon from '@mui/icons-material/Backup'
 import InfoIcon from '@mui/icons-material/Info'
 import SyncIcon from '@mui/icons-material/Sync'
+import BugReportIcon from '@mui/icons-material/BugReport'
+import { developerSettingsEnabled, subscribeDeveloperSettings } from '~/utils/developerSettings'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
@@ -18,6 +20,10 @@ const Settings = () => {
   const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const navigate = useNavigate()
+  const showDeveloperSettings = useSyncExternalStore(
+    subscribeDeveloperSettings,
+    developerSettingsEnabled,
+  )
 
   useEffect(() => {
     setAppBarTitle(t('settings.pageTitle'))
@@ -69,6 +75,17 @@ const Settings = () => {
           <ListItemText primary={t('settings.sync')} secondary={t('settings.syncDescription')} />
         </ListItemButton>
       </ListItem>
+
+      {showDeveloperSettings && (
+        <ListItem disablePadding onClick={() => navigate('/developer')}>
+          <ListItemButton>
+            <ListItemIcon>
+              <BugReportIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText primary={t('developer.pageTitle')} />
+          </ListItemButton>
+        </ListItem>
+      )}
 
       <ListItem disablePadding onClick={() => navigate('/about')}>
         <ListItemButton>

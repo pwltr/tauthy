@@ -1,4 +1,18 @@
 {
+  "developer": {
+    "pageTitle": "Developer settings",
+    "previewBackup": "Preview backup reminder",
+    "backupDescription": "Resets this device’s backup status and opens the home screen. Add at least one account to see the reminder. Accounts and backup files are not changed.",
+    "previewFailed": "Could not reset backup status."
+  },
+  "backup": {
+    "never": "No export recorded on this device",
+    "changed": "Accounts changed since the last export",
+    "current": "Accounts match the last export",
+    "reminder": "Keep a backup of your accounts. Sync is not an independent backup.",
+    "export": "Export backup",
+    "later": "Later"
+  },
   "vaultUi": {
     "deferred": "Tauthy couldn’t finish setting up secure storage. Your accounts still work. Try again and allow access if prompted.",
     "retryMigration": "Try again",

@@ -1,4 +1,18 @@
 {
+  "developer": {
+    "pageTitle": "Entwicklereinstellungen",
+    "previewBackup": "Sicherungserinnerung anzeigen",
+    "backupDescription": "Setzt den Sicherungsstatus dieses Geräts zurück und öffnet die Startseite. Mindestens ein Konto ist erforderlich, um die Erinnerung zu sehen. Konten und Sicherungsdateien werden nicht verändert.",
+    "previewFailed": "Sicherungsstatus konnte nicht zurückgesetzt werden."
+  },
+  "backup": {
+    "never": "Kein Export auf diesem Gerät vermerkt",
+    "changed": "Konten seit dem letzten Export geändert",
+    "current": "Konten entsprechen dem letzten Export",
+    "reminder": "Sichere deine Konten. Synchronisierung ist keine unabhängige Sicherung.",
+    "export": "Backup exportieren",
+    "later": "Später"
+  },
   "vaultUi": {
     "deferred": "Tauthy konnte den sicheren Speicher nicht vollständig einrichten. Deine Konten funktionieren weiterhin. Versuche es erneut und erlaube den Zugriff, falls du dazu aufgefordert wirst.",
     "retryMigration": "Erneut versuchen",

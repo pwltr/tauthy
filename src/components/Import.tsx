@@ -15,12 +15,14 @@ import ListItem from '~/components/ListItem'
 import ImportModal from '~/components/modals/Import'
 import ExportPasswordModal from '~/components/modals/ExportPassword'
 import { traceImport } from '~/utils/importDiagnostics'
+import { useBackupStatus } from '~/hooks/useBackupStatus'
 
 const Import = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const location = useLocation()
   const navigate = useNavigate()
+  const backupStatus = useBackupStatus()
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [preview, setPreview] = useState<ImportPreview>()
   const [isExportPasswordModalOpen, setIsExportPasswordModalOpen] = useState(false)
@@ -99,6 +101,13 @@ const Import = () => {
     if (location.pathname === '/import') setPreview(undefined)
   }, [location.pathname])
 
+  useEffect(() => {
+    if (location.state?.encryptedExport) {
+      setIsExportPasswordModalOpen(true)
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.state, location.pathname, navigate])
+
   const reviewImport = (next: ImportPreview) => {
     traceImport('reviewNavigation')
     setPreview(next)
@@ -126,7 +135,17 @@ const Import = () => {
               <ListItemButton onClick={handleChooseExport} disabled={isChoosingExport}>
                 <ListItemText
                   primary={t('import.export')}
-                  secondary={t('import.exportDescription')}
+                  secondary={
+                    backupStatus
+                      ? `${t(`backup.${backupStatus.state}`)}${
+                          backupStatus.exportedAt !== undefined
+                            ? ` · ${new Date(backupStatus.exportedAt).toLocaleString(
+                                i18n?.language,
+                              )}`
+                            : ''
+                        }`
+                      : t('import.exportDescription')
+                  }
                 />
               </ListItemButton>
             </ListItem>
