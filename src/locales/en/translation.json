@@ -1,4 +1,35 @@
 {
+  "vaultUi": {
+    "migration": "Upgrade this vault's storage using your existing password, or leave it empty if none is set. Accounts and sync settings are preserved. Without a password, the key moves to this device's credential store: keep an independent export, as copying the vault file alone will no longer be a portable backup.",
+    "create": "Create vault",
+    "retry": "Retry",
+    "openFailed": "Unable to open the vault:",
+    "optionalPassword": "Password (optional)",
+    "createHint": "Without a password, your vault key is protected by this device's credential store.",
+    "rotationWarning": "Keep an independent encrypted export. Changing protection invalidates older device-key vault file copies. An incorrect current password locks the vault."
+  },
+  "vaultErrors": {
+    "authentication": "Incorrect password.",
+    "corrupt": "The vault cannot be read. Restore an independent backup; do not delete the original.",
+    "unsupported": "This vault format is not supported.",
+    "platform": "The new storage is not enabled for this platform yet. Your existing vault has not been replaced.",
+    "identity": "This file belongs to a different vault. It requires an explicitly confirmed import.",
+    "missing": "The expected vault file is missing. Restore it or use explicit vault deletion to start over.",
+    "credentialMissing": "This device's vault key is missing. Restore an independent export or sync copy.",
+    "credentialUnavailable": "The device credential store is unavailable. Migration cannot continue yet.",
+    "credentialDenied": "Access to the device credential store was denied. Allow access and retry.",
+    "credentialMalformed": "The stored device key cannot be read. It has not been overwritten.",
+    "reconciliation": "Vault files do not match the saved transaction. Keep the files and recover from a backup.",
+    "stagedCleanup": "The active vault is readable, but vault.pending.tauthy could not be safely cleaned up. Keep the files for recovery.",
+    "copyCleanup": "A legacy migration working copy could not be safely cleaned up. Keep the files for recovery.",
+    "preparation": "An interrupted protection change or import needs its original passwords and confirmation to resume.",
+    "tooLarge": "The vault exceeds the supported size limit.",
+    "emptyPassword": "Choose a nonempty password or device protection.",
+    "locked": "Unlock the vault before continuing.",
+    "io": "Unable to access vault files. Check permissions and available disk space.",
+    "foreignCredential": "A device-protected vault file cannot be imported on another device. Use an encrypted export or sync instead.",
+    "generic": "The vault operation failed. Please try again."
+  },
   "welcome": {
     "intro": "Welcome to Tauthy—your private authenticator.",
     "backup": "I'll make sure to keep backups of my data.",

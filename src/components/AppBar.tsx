@@ -15,7 +15,7 @@ import LockIcon from '@mui/icons-material/Lock'
 import MoreIcon from '@mui/icons-material/MoreVert'
 
 import { vault } from '~/utils/storage'
-import { useLocalStorage } from '~/hooks'
+import { useVaultProtection } from '~/hooks/useVaultProtection'
 import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 
 const Toolbar = styled(MuiToolbar)`
@@ -34,7 +34,7 @@ const AppBar = () => {
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
-  const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
+  const isPasswordSet = useVaultProtection()
   const { appBarTitle } = useContext(AppBarTitleContext)
   const { backDisabled } = useContext(AppBarBackContext)
   const { searchTerm, setSearch } = useContext(SearchContext)

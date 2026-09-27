@@ -1,4 +1,35 @@
 {
+  "vaultUi": {
+    "migration": "Mettez à jour le stockage avec votre mot de passe actuel, ou laissez le champ vide si aucun n'est défini. Les comptes et la synchronisation sont conservés. Sans mot de passe, la clé passe au gestionnaire d'identifiants de cet appareil : conservez un export indépendant, car copier le fichier seul ne constitue plus une sauvegarde portable.",
+    "create": "Créer un coffre",
+    "retry": "Réessayer",
+    "openFailed": "Impossible d'ouvrir le coffre :",
+    "optionalPassword": "Mot de passe (facultatif)",
+    "createHint": "Sans mot de passe, la clé du coffre est protégée par le gestionnaire d'identifiants de cet appareil.",
+    "rotationWarning": "Conservez un export chiffré indépendant. Changer la protection invalide les anciennes copies du coffre liées à la clé de l'appareil. Un mot de passe actuel incorrect verrouille le coffre."
+  },
+  "vaultErrors": {
+    "authentication": "Mot de passe incorrect.",
+    "corrupt": "Le coffre est illisible. Restaurez une sauvegarde indépendante sans supprimer l'original.",
+    "unsupported": "Ce format de coffre n'est pas pris en charge.",
+    "platform": "Le nouveau stockage n'est pas encore activé sur cette plateforme. Le coffre existant n'a pas été remplacé.",
+    "identity": "Ce fichier appartient à un autre coffre et nécessite un import explicitement confirmé.",
+    "missing": "Le fichier du coffre attendu est absent. Restaurez-le ou supprimez explicitement le coffre pour recommencer.",
+    "credentialMissing": "La clé de cet appareil est absente. Restaurez un export indépendant ou une copie synchronisée.",
+    "credentialUnavailable": "Le gestionnaire d'identifiants est indisponible. La migration ne peut pas continuer.",
+    "credentialDenied": "L'accès au gestionnaire d'identifiants a été refusé. Autorisez l'accès et réessayez.",
+    "credentialMalformed": "La clé enregistrée est illisible. Elle n'a pas été remplacée.",
+    "reconciliation": "Les fichiers du coffre ne correspondent pas à la transaction enregistrée. Conservez-les et restaurez une sauvegarde.",
+    "stagedCleanup": "Le coffre actif est lisible, mais vault.pending.tauthy n'a pas pu être nettoyé en toute sécurité. Conservez les fichiers pour la récupération.",
+    "copyCleanup": "Une copie de travail de migration n'a pas pu être nettoyée en toute sécurité. Conservez les fichiers pour la récupération.",
+    "preparation": "Une modification de protection ou un import interrompu nécessite les mots de passe d'origine et une confirmation.",
+    "tooLarge": "Le coffre dépasse la taille prise en charge.",
+    "emptyPassword": "Choisissez un mot de passe non vide ou la protection de l'appareil.",
+    "locked": "Déverrouillez le coffre pour continuer.",
+    "io": "Impossible d'accéder aux fichiers du coffre. Vérifiez les permissions et l'espace disque.",
+    "foreignCredential": "Un coffre protégé par un appareil ne peut pas être importé sur un autre. Utilisez un export chiffré ou la synchronisation.",
+    "generic": "L'opération a échoué. Veuillez réessayer."
+  },
   "welcome": {
     "intro": "Bienvenue dans Tauthy, votre application d’authentification privée.",
     "backup": "Je vais m'assurer de sauvegarder mes données.",

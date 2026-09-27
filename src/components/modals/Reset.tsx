@@ -5,28 +5,28 @@ import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 
 import { vault } from '~/utils/storage'
-import { useLocalStorage } from '~/hooks'
+import { vaultErrorMessage } from '~/utils/vaultErrors'
 import Modal, { Buttons } from '~/components/Modal'
 
 const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [, setIsPasswordSet] = useLocalStorage('isPasswordSet', false)
 
   const handleResetVault = async () => {
     try {
       await vault.destroy()
       // destroy unloads the Stronghold client; open a fresh passwordless vault
       // before writing its empty record so this session stays usable.
-      await vault.unlock('')
-      await vault.reset()
-      setIsPasswordSet(false)
+      if (!vault.fileBackend) {
+        await vault.unlock('')
+        await vault.reset()
+      }
       toast.success(t('toasts.reset'))
       onClose()
       navigate('/')
     } catch (err) {
       console.error(err)
-      toast.error(t('toasts.error'))
+      toast.error(vaultErrorMessage(err, t))
     }
   }
 

@@ -29,6 +29,7 @@ describe('vault deletion', () => {
     let unlocked = true
     mocks.destroy.mockImplementation(async () => {
       unlocked = false
+      localStorage.setItem('isPasswordSet', 'false')
     })
     mocks.unlock.mockImplementation(async (password: string) => {
       if (password !== '') throw new Error('Unexpected password')

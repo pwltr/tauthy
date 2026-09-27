@@ -7,6 +7,18 @@ use crate::{
 use std::fs;
 
 #[test]
+fn backend_negotiation_matches_only_the_compile_time_feature() {
+  assert_eq!(
+    vault_backend(),
+    if cfg!(feature = "file-vault") {
+      "fileV1"
+    } else {
+      "stronghold"
+    }
+  );
+}
+
+#[test]
 fn typed_errors_do_not_confuse_authentication_foreign_identity_or_cleanup() {
   let cases = [
     (RuntimeError::Locked, "vaultLocked"),

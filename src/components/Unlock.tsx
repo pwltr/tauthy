@@ -5,9 +5,12 @@ import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import MuiButton from '@mui/material/Button'
+import Alert from '@mui/material/Alert'
+import ResetModal from '~/components/modals/Reset'
 
 import { vault } from '~/utils/storage'
 import { syncInBackground } from '~/utils/sync'
+import { vaultErrorCode, vaultErrorMessage } from '~/utils/vaultErrors'
 
 const Container = styled('div')`
   display: flex;
@@ -33,6 +36,11 @@ const Unlock = () => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [migration, setMigration] = useState(false)
+  const [rotation, setRotation] = useState(false)
+  const [targetPassword, setTargetPassword] = useState('')
+  const [openReset, setOpenReset] = useState(false)
   const [isDisabled, setIsDisabled] = useState(true)
 
   const onSubmit = async (
@@ -44,18 +52,30 @@ const Unlock = () => {
     setError(false)
 
     try {
-      await vault.unlock(password)
+      await vault.unlock(password, rotation ? targetPassword || undefined : undefined)
       // try to read to check if password is valid
-      await vault.checkVault()
+      try {
+        await vault.checkVault()
+      } catch (readError) {
+        if (vaultErrorCode(readError) !== 'vaultRecordMissing') throw readError
+        await vault.reset()
+      }
       void syncInBackground()
       setIsDisabled(false)
       setError(false)
+      setPassword('')
+      setTargetPassword('')
       navigate('/')
     } catch (err) {
       console.error(err)
 
       // lock it again in case of wrong status
-      await vault.lock()
+      await vault.lock().catch(() => undefined)
+      setErrorMessage(
+        vaultErrorCode(err) === 'vaultAuthenticationFailed'
+          ? t('unlock.invalid')
+          : vaultErrorMessage(err, t),
+      )
 
       // FIX: too many wrong attempts in short amount
       // of time lead to corrupted stronghold
@@ -67,6 +87,20 @@ const Unlock = () => {
   }
 
   useEffect(() => {
+    if (vault.fileBackend) {
+      void vault
+        .getStatus()
+        .then((status) => {
+          setMigration(
+            status.lifecycle === 'legacy' || status.lifecycle === 'legacyMigrationPending',
+          )
+          setRotation(status.lifecycle === 'transactionPending' && status.operation === 'rotate')
+        })
+        .catch((error) => {
+          setError(true)
+          setErrorMessage(vaultErrorMessage(error, t))
+        })
+    }
     // FIX: too many wrong attempts in short amount
     // of time lead to corrupted stronghold
     setTimeout(() => setIsDisabled(false), 2000)
@@ -92,6 +126,17 @@ const Unlock = () => {
         {t('unlock.subtitle')}
       </Subtitle>
 
+      {migration && (
+        <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
+          {t('vaultUi.migration')}
+        </Alert>
+      )}
+      {rotation && (
+        <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
+          {t('vaultErrors.preparation')}
+        </Alert>
+      )}
+
       <form onSubmit={onSubmit}>
         <TextField
           inputRef={inputRef}
@@ -101,12 +146,23 @@ const Unlock = () => {
           size="small"
           margin="normal"
           autoComplete="off"
-          helperText={error ? t('unlock.invalid') : ' '}
+          helperText={error ? errorMessage : ' '}
           error={error}
           fullWidth
           autoFocus
+          value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
+        {rotation && (
+          <TextField
+            type="password"
+            label={t('modals.newPassword')}
+            value={targetPassword}
+            onChange={(event) => setTargetPassword(event.target.value)}
+            fullWidth
+            margin="normal"
+          />
+        )}
 
         <Button
           aria-label={t('unlock.unlock')}
@@ -118,6 +174,12 @@ const Unlock = () => {
           {t('unlock.unlock')}
         </Button>
       </form>
+      {vault.fileBackend && error && (
+        <Button color="error" onClick={() => setOpenReset(true)}>
+          {t('security.deleteVault')}
+        </Button>
+      )}
+      <ResetModal open={openReset} onClose={() => setOpenReset(false)} />
     </Container>
   )
 }

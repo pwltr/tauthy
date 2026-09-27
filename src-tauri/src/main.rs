@@ -89,6 +89,7 @@ fn main() {
     application_commands::vault_get,
     application_commands::vault_save,
     application_commands::vault_unload,
+    vault_commands::vault_backend,
     application_commands::vault_status,
     sync::sync_create,
     sync::sync_disconnect,
