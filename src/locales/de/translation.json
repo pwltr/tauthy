@@ -1,5 +1,7 @@
 {
   "vaultUi": {
+    "deferred": "Die Speicheraktualisierung wurde verschoben. Deine Konten verwenden weiterhin Stronghold und bleiben nutzbar. Versuche es erneut, wenn der Gerätespeicher verfügbar ist.",
+    "retryMigration": "Speicheraktualisierung erneut versuchen",
     "replaceTitle": "Tresor aus Datei ersetzen",
     "replaceExplanation": "Nur zur Wiederherstellung aus einer passwortgeschützten vault.tauthy-Datei. Verwende Importieren, um Konten aus einer Sicherung hinzuzufügen. Gerätegeschützte Dateien sind keine portablen Sicherungen.",
     "replaceWarning": "Alle lokalen Konten werden ersetzt und die Synchronisierung getrennt. Cloud-Dateien werden nicht gelöscht. Erstelle zuerst einen unabhängigen Export und verbinde die Synchronisierung danach neu.",
@@ -16,6 +18,7 @@
     "rotationWarning": "Bewahre einen unabhängigen verschlüsselten Export auf. Eine Schutzänderung macht ältere Tresordateikopien mit Geräteschlüssel unbrauchbar. Ein falsches aktuelles Passwort sperrt den Tresor."
   },
   "vaultErrors": {
+    "migrationRequired": "Schließe die Speicheraktualisierung ab, bevor du den Schutz änderst oder den Tresor ersetzt.",
     "authentication": "Falsches Passwort.",
     "corrupt": "Der Tresor ist nicht lesbar. Stelle eine unabhängige Sicherung wieder her; lösche das Original nicht.",
     "unsupported": "Dieses Tresorformat wird nicht unterstützt.",

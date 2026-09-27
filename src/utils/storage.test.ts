@@ -116,6 +116,41 @@ describe('file-vault frontend dispatcher', () => {
     expect(mocks.invoke).not.toHaveBeenCalledWith('vault_migrate', expect.anything())
   })
 
+  it('uses an explicit migration command for retry even after opening a deferred legacy session', async () => {
+    const { vault } = await import('./storage')
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === 'vault_status')
+        return {
+          status: 'unlocked',
+          lifecycle: 'legacyMigrationPending',
+          usingLegacy: true,
+          protectionHint: 'none',
+        }
+    })
+    expect((await vault.prepare()).usingLegacy).toBe(true)
+    expect(vault.hasPassword()).toBe(false)
+    await vault.retryMigration('')
+    expect(mocks.invoke).toHaveBeenCalledWith('vault_migrate', { password: '' })
+  })
+
+  it('reopens passwordless deferred legacy on startup without retrying migration', async () => {
+    const { vault } = await import('./storage')
+    let unlocked = false
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === 'vault_status')
+        return {
+          status: unlocked ? 'unlocked' : 'locked',
+          lifecycle: 'legacyMigrationPending',
+          phase: 'migrationDeferred',
+          usingLegacy: unlocked,
+        }
+      if (command === 'vault_load') unlocked = true
+    })
+    expect((await vault.prepare()).status).toBe('unlocked')
+    expect(mocks.invoke).toHaveBeenCalledWith('vault_load', { password: '' })
+    expect(mocks.invoke).not.toHaveBeenCalledWith('vault_migrate', expect.anything())
+  })
+
   it('discards cached records when a failed save revokes the backend session', async () => {
     const { vault } = await import('./storage')
     expect(await vault.checkVault()).toBe('[]')

@@ -182,6 +182,7 @@ pub(crate) struct VaultStatus {
   operation: Option<vault_journal::Operation>,
   phase: Option<vault_journal::Phase>,
   migration_deferred: Option<vault_runtime::Deferred>,
+  using_legacy: bool,
 }
 fn status_at(runtime: &Runtime) -> Result<VaultStatus, CommandError> {
   let status = runtime.status()?;
@@ -189,13 +190,19 @@ fn status_at(runtime: &Runtime) -> Result<VaultStatus, CommandError> {
     status: if status.locked { "locked" } else { "unlocked" },
     lifecycle: status.metadata.lifecycle,
     backend: status.metadata.backend,
-    protection_hint: status.metadata.identity_hint.map(|id| {
-      if id.credential {
-        "deviceCredential"
-      } else {
-        "password"
-      }
-    }),
+    using_legacy: status.legacy_password.is_some(),
+    protection_hint: status
+      .legacy_password
+      .map(|password| if password { "password" } else { "none" })
+      .or_else(|| {
+        status.metadata.identity_hint.map(|id| {
+          if id.credential {
+            "deviceCredential"
+          } else {
+            "password"
+          }
+        })
+      }),
     operation: status.metadata.operation,
     phase: status.metadata.phase,
     migration_deferred: status.migration_deferred,
@@ -214,10 +221,17 @@ pub(crate) async fn vault_status(
 #[cfg_attr(feature = "file-vault", tauri::command)]
 pub(crate) async fn vault_initialize(state: State<'_, FileVaultState>) -> Result<(), CommandError> {
   let runtime = state.0.clone();
-  tauri::async_runtime::spawn_blocking(move || {
-    runtime
-      .cleanup_temporary_files()
-      .map_err(CommandError::from)
+  tauri::async_runtime::spawn_blocking(move || match runtime.cleanup_temporary_files() {
+    Err(vault_runtime::Error::Transaction(vault_transaction::Error::Journal(
+      vault_journal::Error::Unsupported,
+    )))
+      if runtime
+        .status()
+        .is_ok_and(|status| status.metadata.lifecycle == vault_metadata::Lifecycle::Legacy) =>
+    {
+      Ok(())
+    }
+    result => result.map_err(CommandError::from),
   })
   .await
   .map_err(task_failed)?

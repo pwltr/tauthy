@@ -84,6 +84,21 @@ pub(crate) fn migration_records(
   source: &Path,
   password: &str,
 ) -> Result<crate::vault_file::Records, crate::vault_transaction::Error> {
+  let state = migration_session(source, password)?;
+  let records = state
+    .with_unlocked(|vault| vault.raw_records())
+    .map_err(|_| crate::vault_transaction::Error::ReconciliationFailed);
+  vault_unload_at(&state).map_err(|_| crate::vault_transaction::Error::ReconciliationFailed)?;
+  records
+}
+
+/// Returns an authenticated legacy session retargeted to its canonical source.
+/// V2 conversion occurs only on the disposable copy; canonical bytes change
+/// only after an actual legacy edit is committed.
+pub(crate) fn migration_session(
+  source: &Path,
+  password: &str,
+) -> Result<VaultState, crate::vault_transaction::Error> {
   use crate::{
     vault_journal,
     vault_transaction::{self, Error},
@@ -99,9 +114,13 @@ pub(crate) fn migration_records(
   if journal.operation != vault_journal::Operation::Migrate {
     return Err(Error::ReconciliationFailed);
   }
-  let expected = journal
-    .source_fingerprint
-    .ok_or(Error::ReconciliationFailed)?;
+  let expected = if journal.phase == vault_journal::Phase::MigrationDeferred {
+    vault_transaction::fingerprint(source)?
+  } else {
+    journal
+      .source_fingerprint
+      .ok_or(Error::ReconciliationFailed)?
+  };
   if vault_transaction::fingerprint(source)? != expected {
     return Err(Error::SourceChanged);
   }
@@ -130,14 +149,17 @@ pub(crate) fn migration_records(
         Error::ReconciliationFailed
       }
     })?;
-    let records = state
-      .with_unlocked(|vault| vault.raw_records())
-      .map_err(|_| Error::ReconciliationFailed);
-    vault_unload_at(&state).map_err(|_| Error::ReconciliationFailed)?;
     if vault_transaction::fingerprint(source)? != expected {
       return Err(Error::SourceChanged);
     }
-    records
+    state
+      .0
+      .lock()
+      .map_err(|_| Error::ReconciliationFailed)?
+      .as_mut()
+      .ok_or(Error::ReconciliationFailed)?
+      .snapshot_path = source.to_path_buf();
+    Ok(state)
   })();
   // Cleanup failures are about the disposable copy, not active-vault corruption.
   cleanup_migration_copy(directory)?;

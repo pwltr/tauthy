@@ -34,6 +34,7 @@ pub(crate) enum Operation {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) enum Phase {
+  MigrationDeferred,
   Prepared,
   CredentialStageIntent,
   CredentialVerified,
@@ -100,6 +101,7 @@ impl Journal {
   pub(crate) fn advance(&mut self, next: Phase) -> Result<(), Error> {
     self.validate()?;
     let expected = match self.phase {
+      Phase::MigrationDeferred => return Err(Error::ReconciliationFailed),
       Phase::Prepared if self.target.as_ref().is_some_and(|id| id.credential) => {
         Phase::CredentialStageIntent
       }
@@ -130,6 +132,12 @@ impl Journal {
   }
 
   pub(crate) fn validate(&self) -> Result<(), Error> {
+    if self.phase == Phase::MigrationDeferred
+      && (self.operation != Operation::Migrate
+        || !self.target.as_ref().is_some_and(|id| id.credential))
+    {
+      return Err(Error::Corrupt);
+    }
     if self.version != 1 {
       return Err(Error::Unsupported);
     }
@@ -210,7 +218,8 @@ impl Journal {
       ),
       Operation::Migrate => matches!(
         self.phase,
-        Phase::Prepared
+        Phase::MigrationDeferred
+          | Phase::Prepared
           | Phase::CredentialStageIntent
           | Phase::CredentialVerified
           | Phase::FilePrepareIntent
@@ -365,6 +374,20 @@ mod tests {
       target_fingerprint: None,
       cleanup_identities: Vec::new(),
     }
+  }
+
+  #[test]
+  fn deferred_phase_is_credential_migration_only_and_cannot_advance_generically() {
+    let mut j = journal(true);
+    j.phase = Phase::MigrationDeferred;
+    assert_eq!(j.validate(), Ok(()));
+    assert_eq!(j.advance(Phase::Prepared), Err(Error::ReconciliationFailed));
+    j.target.as_mut().unwrap().credential = false;
+    assert_eq!(j.validate(), Err(Error::Corrupt));
+    j.target.as_mut().unwrap().credential = true;
+    j.operation = Operation::Create;
+    j.source_fingerprint = None;
+    assert_eq!(j.validate(), Err(Error::Corrupt));
   }
 
   #[test]

@@ -59,6 +59,173 @@ fn no_failure(_: &'static str) -> Result<(), Error> {
   Ok(())
 }
 
+fn deferred_source(path: &Path, _: &str) -> Result<Records, Error> {
+  let mut records = records();
+  records.insert(b"current".to_vec(), fs::read(path).map_err(|_| Error::Io)?);
+  Ok(records)
+}
+
+fn setup_deferred(directory: &Path, keys: &mut Keys) {
+  fs::write(directory.join(LEGACY), b"old source").unwrap();
+  keys.denied = true;
+  let mut hook = no_failure;
+  let mut coordinator = Coordinator::new(directory, keys, &mut hook);
+  assert!(matches!(
+    coordinator.begin_migration("", &mut deferred_source),
+    Err(Error::CredentialUnavailable)
+  ));
+  coordinator.defer_migration().unwrap();
+  fs::write(directory.join(LEGACY), b"latest edited source").unwrap();
+}
+
+#[test]
+fn deferred_retry_fault_matrix_never_installs_old_records_or_loses_selectors() {
+  let baseline = tempfile::tempdir().unwrap();
+  let mut keys = Keys::default();
+  setup_deferred(baseline.path(), &mut keys);
+  keys.denied = false;
+  let mut points = Vec::new();
+  {
+    let mut hook = |point| {
+      points.push(point);
+      Ok(())
+    };
+    let mut coordinator = Coordinator::new(baseline.path(), &mut keys, &mut hook);
+    coordinator
+      .retry_deferred_migration("", &mut deferred_source)
+      .unwrap();
+    coordinator.resume(None, &mut deferred_source).unwrap();
+  }
+  for failure in 0..points.len() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut keys = Keys::default();
+    setup_deferred(directory.path(), &mut keys);
+    keys.denied = false;
+    let selector = vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .target
+      .unwrap()
+      .credential_selector(true)
+      .unwrap()
+      .1;
+    let mut step = 0;
+    {
+      let mut hook = |_| {
+        let at = step;
+        step += 1;
+        if at == failure {
+          Err(Error::Interrupted)
+        } else {
+          Ok(())
+        }
+      };
+      let mut coordinator = Coordinator::new(directory.path(), &mut keys, &mut hook);
+      let result = coordinator
+        .retry_deferred_migration("", &mut deferred_source)
+        .and_then(|_| coordinator.resume(None, &mut deferred_source));
+      assert!(
+        matches!(result, Err(Error::Interrupted)),
+        "{}",
+        points[failure]
+      );
+    }
+    let mut hook = no_failure;
+    let mut coordinator = Coordinator::new(directory.path(), &mut keys, &mut hook);
+    if vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .phase
+      == Phase::MigrationDeferred
+    {
+      coordinator
+        .retry_deferred_migration("", &mut deferred_source)
+        .unwrap();
+    }
+    let opened = coordinator.resume(None, &mut deferred_source).unwrap();
+    assert_eq!(
+      opened.records.get(b"current").unwrap(),
+      b"latest edited source"
+    );
+    assert!(keys.entries.keys().all(|key| key == &selector));
+    assert_eq!(
+      fs::read(directory.path().join(RETIRED)).unwrap(),
+      b"latest edited source"
+    );
+  }
+}
+
+#[test]
+fn deferral_is_durable_before_edits_and_refuses_any_prepared_file() {
+  for fail_at in 0..2 {
+    let directory = tempfile::tempdir().unwrap();
+    fs::write(directory.path().join(LEGACY), b"old source").unwrap();
+    let mut keys = Keys {
+      denied: true,
+      ..Keys::default()
+    };
+    let mut hook = no_failure;
+    Coordinator::new(directory.path(), &mut keys, &mut hook)
+      .begin_migration("", &mut deferred_source)
+      .err()
+      .unwrap();
+    let mut step = 0;
+    let mut hook = |_| {
+      let at = step;
+      step += 1;
+      if at == fail_at {
+        Err(Error::Interrupted)
+      } else {
+        Ok(())
+      }
+    };
+    assert_eq!(
+      Coordinator::new(directory.path(), &mut keys, &mut hook).defer_migration(),
+      Err(Error::Interrupted)
+    );
+    let phase = vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .phase;
+    assert_eq!(
+      phase,
+      if fail_at == 0 {
+        Phase::CredentialStageIntent
+      } else {
+        Phase::MigrationDeferred
+      }
+    );
+    assert_eq!(
+      fs::read(directory.path().join(LEGACY)).unwrap(),
+      b"old source"
+    );
+  }
+  for name in [ACTIVE, STAGED, RETIRED, "vault.rollback.tauthy"] {
+    let directory = tempfile::tempdir().unwrap();
+    fs::write(directory.path().join(LEGACY), b"old source").unwrap();
+    let mut keys = Keys {
+      denied: true,
+      ..Keys::default()
+    };
+    let mut hook = no_failure;
+    let mut coordinator = Coordinator::new(directory.path(), &mut keys, &mut hook);
+    coordinator
+      .begin_migration("", &mut deferred_source)
+      .err()
+      .unwrap();
+    fs::write(directory.path().join(name), b"unexpected artifact").unwrap();
+    let before = fs::read(directory.path().join("vault.transaction.json")).unwrap();
+    assert_eq!(
+      coordinator.defer_migration(),
+      Err(Error::ReconciliationFailed)
+    );
+    assert_eq!(
+      fs::read(directory.path().join("vault.transaction.json")).unwrap(),
+      before
+    );
+  }
+}
+
 #[test]
 fn create_installs_verified_private_vault_and_keeps_terminal_journal() {
   let directory = tempfile::tempdir().unwrap();

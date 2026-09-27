@@ -1,9 +1,9 @@
-//! Filesystem coordinator for vault lifecycle transactions. Not connected to app commands.
+//! Filesystem coordinator for vault lifecycle transactions.
 //! Each side effect follows durable intent; no automatic stale-vault fallback.
 //! Caller must serialize transactions for a directory (the app vault mutex).
 //! Credential-stage deferral leaves legacy authoritative until activation;
-//! metadata must report that state, and the legacy backend must not consult this
-//! journal. This is distinct from fallback after an active file has been installed.
+//! metadata reports that state; the dispatcher gates legacy operations on a
+//! durable deferred marker. Never fallback after new-file preparation/activation.
 use std::{
   fs::{self, File},
   io::{Read, Write},
@@ -151,6 +151,77 @@ pub(crate) fn fingerprint(path: &Path) -> Result<[u8; 32], Error> {
 }
 
 impl<'a> Coordinator<'a> {
+  /// Only native-credential failure before file preparation may enter this
+  /// state. The source may subsequently change through authenticated legacy
+  /// edits; the journal retains the sole possibly-created credential selector.
+  pub(crate) fn defer_migration(&mut self) -> Result<(), Error> {
+    let mut journal = self.load()?;
+    if journal.operation != Operation::Migrate
+      || !journal.target.as_ref().is_some_and(|id| id.credential)
+      || !matches!(
+        journal.phase,
+        Phase::Prepared | Phase::CredentialStageIntent
+      )
+    {
+      return Err(Error::ReconciliationFailed);
+    }
+    self.require_deferred_artifacts()?;
+    self.check_source(&journal)?;
+    journal.phase = Phase::MigrationDeferred;
+    self.persist(&journal)
+  }
+
+  fn require_deferred_artifacts(&self) -> Result<(), Error> {
+    for name in [ACTIVE, STAGED, RETIRED, changes::ROLLBACK] {
+      if regular_file(&self.directory.join(name))? {
+        return Err(Error::ReconciliationFailed);
+      }
+    }
+    Ok(())
+  }
+
+  /// Authenticate the CURRENT source before changing the deferred journal.
+  /// Reuse its tracked credential if one was created before denial; never mint
+  /// an untracked selector, and never install a candidate from old source data.
+  pub(crate) fn retry_deferred_migration(
+    &mut self,
+    password: &str,
+    reader: &mut dyn FnMut(&Path, &str) -> Result<Records, Error>,
+  ) -> Result<(), Error> {
+    require_supported_durability(self.directory)?;
+    let mut journal = self.load()?;
+    if journal.phase != Phase::MigrationDeferred {
+      return Err(Error::ReconciliationFailed);
+    }
+    self.require_deferred_artifacts()?;
+    let source = self.directory.join(LEGACY);
+    let before = fingerprint(&source)?;
+    self.point("beforeDeferredSourceExtract")?;
+    let records = reader(&source, password)?;
+    self.point("afterDeferredSourceExtract")?;
+    if !password.is_empty() {
+      return Err(Error::ReconciliationFailed);
+    }
+    if fingerprint(&source)? != before {
+      return Err(Error::SourceChanged);
+    }
+    let target = journal.target.as_ref().unwrap();
+    self.point("beforeDeferredCredentialGet")?;
+    let stored = self.credentials.get(target)?;
+    self.point("afterDeferredCredentialGet")?;
+    let candidate = match stored {
+      Some(key) => {
+        Vault::restore_credential_candidate(records, target.vault_id, target.key_generation, key)?
+      }
+      None => (self.candidate_create)(records, None, target.vault_id, target.key_generation)?,
+    };
+    // Effects may start only after the fresh source binding is durable. A
+    // crash here resumes normal preparation with the same tracked selector.
+    journal.source_fingerprint = Some(before);
+    journal.phase = Phase::Prepared;
+    self.persist(&journal)?;
+    self.prepare(&candidate)
+  }
   pub(crate) fn new(
     directory: &'a Path,
     credentials: &'a mut dyn Credentials,
@@ -669,17 +740,27 @@ impl<'a> Coordinator<'a> {
     password: Option<&str>,
     source_reader: &mut dyn FnMut(&Path, &str) -> Result<Records, Error>,
   ) -> Result<(), Error> {
-    let expected = journal.target.as_ref().unwrap();
-    let source_password = if expected.credential {
-      ""
-    } else {
-      password.ok_or(Error::PendingUnlock)?
-    };
+    let source_password = password
+      .or_else(|| journal.target.as_ref().unwrap().credential.then_some(""))
+      .ok_or(Error::PendingUnlock)?;
     self.check_source(journal)?;
     self.point("beforeSourceExtract")?;
     let records = source_reader(&self.directory.join(LEGACY), source_password)?;
     self.point("afterSourceExtract")?;
     self.check_source(journal)?;
+    // Prepared may have been persisted before an incorrect first password.
+    // Authenticate first, then correct only its unescaped protection hint.
+    // No mode changes are permitted once credential/file preparation starts.
+    let mut authenticated = journal.clone();
+    let credential = source_password.is_empty();
+    if authenticated.target.as_ref().unwrap().credential != credential {
+      if authenticated.phase != Phase::Prepared {
+        return Err(Error::ReconciliationFailed);
+      }
+      authenticated.target.as_mut().unwrap().credential = credential;
+      self.persist(&authenticated)?;
+    }
+    let expected = authenticated.target.as_ref().unwrap();
     let vault = if expected.credential {
       self.point("beforeReconstructCredentialGet")?;
       let key = self.credentials.get(expected)?;
