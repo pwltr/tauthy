@@ -1,5 +1,5 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
 import Box from '@mui/material/Box'
 import MuiList from '@mui/material/List'
@@ -15,9 +15,10 @@ const appWindow = getCurrentWebviewWindow()
 type ListProps = {
   className?: string
   entries: ListEntry[]
+  header?: ReactNode
 }
 
-const EntryList = ({ className, entries }: ListProps) => {
+const EntryList = ({ className, entries, header }: ListProps) => {
   const { searchTerm } = useContext(SearchContext)
   const { sortOption, setSortOption, customOrder, setCustomOrder, entryUsage } =
     useContext(SortContext)
@@ -74,6 +75,7 @@ const EntryList = ({ className, entries }: ListProps) => {
   return (
     <>
       <Box className={className} sx={{ flexGrow: 1, maxWidth: 752 }}>
+        {header}
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
             <DragDropContext onDragEnd={onDragEnd}>

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+vi.mock('~/hooks/useBackupStatus', () => ({ useBackupStatus: () => undefined }))
 
 const mocks = vi.hoisted(() => ({
   platform: vi.fn(),
@@ -48,6 +49,18 @@ describe('native export choice', () => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.platform.mockReturnValue('windows')
     mocks.exportCodes.mockResolvedValue('exportSuccess')
+  })
+
+  it('opens the encrypted password prompt directly from a reminder shortcut', async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/import', state: { encryptedExport: true } }]}>
+        <Import />
+      </MemoryRouter>,
+    )
+    expect(
+      await screen.findByRole('button', { name: 'Submit backup password' }),
+    ).toBeInTheDocument()
+    expect(mocks.message).not.toHaveBeenCalled()
   })
 
   it('has one export row and a localized three-button native dialog', async () => {

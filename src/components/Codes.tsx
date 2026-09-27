@@ -10,6 +10,7 @@ import { vault } from '~/utils/storage'
 import { generateTOTPs, getTOTPRefreshDelay, SYNC_COMPLETE_EVENT } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
 import EntryList from '~/components/EntryList'
+import BackupReminder from '~/components/BackupReminder'
 import type { VaultEntry } from '~/types'
 
 export type ListEntry = VaultEntry & {
@@ -123,7 +124,7 @@ const Codes = () => {
       {items.length > 0 && (
         <>
           <StyledProgressBar key={progressKey} durationMs={progressDuration} />
-          <StyledList entries={items} />
+          <StyledList entries={items} header={<BackupReminder />} />
         </>
       )}
 

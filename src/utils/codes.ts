@@ -7,6 +7,7 @@ import { vault } from '~/utils/storage'
 import { createTauthyBackup, mergeTauthyImport, parseTauthyBackup } from '~/utils/tauthyBackup'
 import { generateUUID } from '~/utils'
 import { traceImport } from '~/utils/importDiagnostics'
+import { recordBackupExport } from '~/utils/backupStatus'
 import type {
   FormData,
   VaultEntry,
@@ -678,6 +679,9 @@ export const exportCodes = async (password?: string) => {
   } catch (err) {
     throw Error('exportFailed')
   }
+
+  // Metadata is best-effort; a successful file write remains a successful export.
+  await recordBackupExport(entries, encrypted).catch(() => undefined)
 
   return 'exportSuccess'
 }

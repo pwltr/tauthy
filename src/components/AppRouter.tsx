@@ -10,6 +10,7 @@ import Codes from '~/components/Codes'
 const Create = lazy(() => import('~/components/Create'))
 const Edit = lazy(() => import('~/components/Edit'))
 const Settings = lazy(() => import('~/components/Settings'))
+const DeveloperSettings = lazy(() => import('~/components/DeveloperSettings'))
 const Appearance = lazy(() => import('~/components/Appearance'))
 const Security = lazy(() => import('~/components/Security'))
 const Import = lazy(() => import('~/components/Import'))
@@ -43,6 +44,7 @@ const AppRouter = () => (
           <Route path="create" element={deferred(<Create />)} />
           <Route path="edit/:id" element={deferred(<Edit />)} />
           <Route path="settings" element={deferred(<Settings />)} />
+          <Route path="developer" element={deferred(<DeveloperSettings />)} />
           <Route path="appearance" element={deferred(<Appearance />)} />
           <Route path="security" element={deferred(<Security />)} />
           <Route path="import" element={deferred(<Import />)}>

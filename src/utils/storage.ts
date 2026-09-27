@@ -5,6 +5,7 @@ import { exists, mkdir, remove } from '@tauri-apps/plugin-fs'
 import { VaultEntry } from '~/types'
 import { SYNC_COMPLETE_EVENT, syncInBackground } from '~/utils/sync'
 import { vaultErrorCode } from '~/utils/vaultErrors'
+import { VAULT_DATA_EVENT, resetBackupStatus } from '~/utils/backupStatus'
 
 export interface VaultStatus {
   status: 'locked' | 'unlocked'
@@ -158,6 +159,7 @@ export class Vault {
       throw error
     }
     this.cachedRecord = record
+    window.dispatchEvent(new Event(VAULT_DATA_EVENT))
     // Sync is deliberately best-effort. A missing cloud folder or network
     // failure must never turn a successful local vault edit into a failure.
     void syncInBackground()
@@ -171,6 +173,7 @@ export class Vault {
     await this.ready
     if (this.fileBackend) {
       await invoke('vault_delete', { confirmed: true })
+      resetBackupStatus()
       this.cachedRecord = undefined
       this.setProtection(false)
       return
@@ -182,6 +185,7 @@ export class Vault {
       ),
     )
     localStorage.setItem('isPasswordSet', 'false')
+    resetBackupStatus()
     this.setProtection(false)
   }
 
@@ -255,6 +259,8 @@ export class Vault {
       confirmed: true,
       disconnectSync: true,
     })
+    resetBackupStatus()
+    window.dispatchEvent(new Event(VAULT_DATA_EVENT))
     const status = await this.getStatus()
     this.setProtection(status.protectionHint === 'password')
   }

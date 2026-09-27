@@ -1,6 +1,9 @@
 import { act, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+vi.mock('~/hooks/useBackupStatus', () => ({
+  useBackupStatus: () => ({ reminder: true, dismiss: vi.fn(), snooze: vi.fn() }),
+}))
 
 const mocks = vi.hoisted(() => ({
   generateTOTPs: vi.fn(),
@@ -15,8 +18,17 @@ vi.mock('~/utils', () => ({
   getTOTPRefreshDelay: (expiresAtMs: number) => Math.max(expiresAtMs - Date.now(), 1),
 }))
 vi.mock('~/components/EntryList', () => ({
-  default: ({ className, entries }: { className?: string; entries: Array<{ token?: string }> }) => (
+  default: ({
+    className,
+    entries,
+    header,
+  }: {
+    className?: string
+    entries: Array<{ token?: string }>
+    header?: import('react').ReactNode
+  }) => (
     <div className={className} data-testid="account-list">
+      {header}
       {entries[0]?.token}
     </div>
   ),
@@ -63,6 +75,7 @@ describe('code expiration timing', () => {
     await flushPromises()
 
     expect(screen.getByTestId('account-list')).toHaveTextContent('111111')
+    expect(screen.getByTestId('account-list')).toContainElement(screen.getByText('backup.reminder'))
     expect(screen.getByTestId('progress')).toHaveAttribute('data-duration', '8000')
 
     await act(() => vi.advanceTimersByTimeAsync(7_999))
