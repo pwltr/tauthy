@@ -91,9 +91,13 @@ export class Vault {
       await this.unlock('')
       return this.getStatus()
     }
-    if (status.status === 'locked' && status.phase === 'migrationDeferred') {
-      // This resumes the authenticated legacy backend, not migration. If an
-      // external protection change invalidated the empty-password hint, prompt.
+    if (
+      status.status === 'locked' &&
+      (status.lifecycle === 'legacy' || status.lifecycle === 'legacyMigrationPending')
+    ) {
+      // Legacy protection is only known after authentication. Try passwordless
+      // startup; protected vaults continue through the ordinary unlock screen.
+      // Deferred sessions reopen legacy without retrying credential setup.
       try {
         await this.unlock('')
         return this.getStatus()
@@ -102,8 +106,6 @@ export class Vault {
         return this.getStatus()
       }
     }
-    // Legacy protection is unknown. Explain migration and let the user submit
-    // their existing password (or leave it empty) before any migration effect.
     return status
   }
 

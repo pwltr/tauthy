@@ -37,7 +37,6 @@ const Unlock = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [migration, setMigration] = useState(false)
   const [rotation, setRotation] = useState(false)
   const [replacement, setReplacement] = useState(false)
   const [deferred, setDeferred] = useState(false)
@@ -93,11 +92,6 @@ const Unlock = () => {
       void vault
         .getStatus()
         .then((status) => {
-          setMigration(
-            status.lifecycle === 'legacy' ||
-              (status.lifecycle === 'legacyMigrationPending' &&
-                status.phase !== 'migrationDeferred'),
-          )
           setDeferred(status.phase === 'migrationDeferred')
           setRotation(
             status.lifecycle === 'transactionPending' &&
@@ -137,11 +131,6 @@ const Unlock = () => {
         {t('unlock.subtitle')}
       </Subtitle>
 
-      {migration && (
-        <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
-          {t('vaultUi.migration')}
-        </Alert>
-      )}
       {deferred && (
         <Alert severity="info" sx={{ mb: 2, textAlign: 'left' }}>
           {t('vaultUi.deferred')}

@@ -107,12 +107,65 @@ describe('file-vault frontend dispatcher', () => {
     expect(mocks.invoke).not.toHaveBeenCalledWith('vault_migrate', expect.anything())
   })
 
-  it('does not perform credential creation before the user confirms a legacy migration', async () => {
+  it('migrates passwordless legacy automatically during startup', async () => {
+    const { vault } = await import('./storage')
+    let opened = false
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === 'vault_migrate') opened = true
+      if (command === 'vault_status')
+        return opened
+          ? { status: 'unlocked', lifecycle: 'active', protectionHint: 'deviceCredential' }
+          : { status: 'locked', lifecycle: 'legacy' }
+    })
+    expect(await vault.prepare()).toMatchObject({ status: 'unlocked', lifecycle: 'active' })
+    expect(mocks.invoke).toHaveBeenCalledWith('vault_migrate', { password: '' })
+    expect(vault.hasPassword()).toBe(false)
+  })
+
+  it('prompts protected legacy normally after the empty-password attempt and migrates on unlock', async () => {
+    const { vault } = await import('./storage')
+    let pending = false
+    let opened = false
+    mocks.invoke.mockImplementation(async (command, args) => {
+      if (command === 'vault_status')
+        return {
+          status: opened ? 'unlocked' : 'locked',
+          lifecycle: opened ? 'active' : pending ? 'legacyMigrationPending' : 'legacy',
+          protectionHint: opened ? 'password' : null,
+        }
+      if (command === 'vault_migrate') {
+        pending = true
+        throw { code: 'vaultAuthenticationFailed' }
+      }
+      if (command === 'vault_load' && args.password === 'existing password') opened = true
+    })
+    expect(await vault.prepare()).toMatchObject({ status: 'locked' })
+    await vault.unlock('existing password')
+    expect(mocks.invoke).toHaveBeenCalledWith('vault_load', { password: 'existing password' })
+    expect(vault.hasPassword()).toBe(true)
+  })
+
+  it('does not hide migration errors other than authentication failures at startup', async () => {
     const { vault } = await import('./storage')
     mocks.invoke.mockImplementation(async (command) => {
       if (command === 'vault_status') return { status: 'locked', lifecycle: 'legacy' }
+      if (command === 'vault_migrate') throw { code: 'vaultReconciliationFailed' }
     })
-    await vault.prepare()
+    await expect(vault.prepare()).rejects.toEqual({ code: 'vaultReconciliationFailed' })
+  })
+
+  it('resumes passwordless interrupted migration on startup without beginning another transaction', async () => {
+    const { vault } = await import('./storage')
+    let opened = false
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === 'vault_load') opened = true
+      if (command === 'vault_status')
+        return opened
+          ? { status: 'unlocked', lifecycle: 'active', protectionHint: 'deviceCredential' }
+          : { status: 'locked', lifecycle: 'legacyMigrationPending', phase: 'prepared' }
+    })
+    expect(await vault.prepare()).toMatchObject({ status: 'unlocked', lifecycle: 'active' })
+    expect(mocks.invoke).toHaveBeenCalledWith('vault_load', { password: '' })
     expect(mocks.invoke).not.toHaveBeenCalledWith('vault_migrate', expect.anything())
   })
 
