@@ -1,5 +1,5 @@
 //! Authenticated file-vault session and atomic ordinary saves. Not connected to
-//! Tauri commands; the application still uses Stronghold. A single managed
+//! normal builds; Tauri wiring is opt-in. A single managed
 //! instance must own a directory (plus app single-instance protection).
 //! The mutex spans inspection, authentication, coordinator effects and saves.
 use std::{
@@ -31,6 +31,16 @@ pub(crate) enum Error {
   Metadata(vault_metadata::Error),
   Transaction(TxError),
 }
+
+pub(crate) enum BatchError {
+  Vault(Error),
+  Operation(String),
+}
+impl From<Error> for BatchError {
+  fn from(error: Error) -> Self {
+    Self::Vault(error)
+  }
+}
 impl From<TxError> for Error {
   fn from(value: TxError) -> Self {
     Self::Transaction(value)
@@ -42,7 +52,8 @@ impl From<crate::vault_file::Error> for Error {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) enum Deferred {
   CredentialUnavailable,
   CredentialAccessDenied,
@@ -366,6 +377,32 @@ impl Runtime {
     checkpoint: &mut dyn FnMut(&'static str) -> Result<(), TxError>,
   ) -> Result<(), Error> {
     let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    self.save_locked(&mut state, updates, checkpoint)
+  }
+
+  /// Sync holds this lock across reads, remote merge and its single local batch.
+  /// Callback failures discard every queued write; no native credential access.
+  pub(crate) fn with_record_batch<T>(
+    &self,
+    operation: impl FnOnce(&Records, &mut Vec<Update>) -> Result<T, String>,
+  ) -> Result<T, BatchError> {
+    let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    let session = state.session.as_ref().ok_or(Error::Locked)?;
+    require_completed(&self.directory, &session.vault)?;
+    let mut updates = Vec::new();
+    let result = operation(&session.vault.records, &mut updates).map_err(BatchError::Operation)?;
+    if !updates.is_empty() {
+      self.save_locked(&mut state, updates, &mut no_failure)?;
+    }
+    Ok(result)
+  }
+
+  fn save_locked(
+    &self,
+    state: &mut State,
+    updates: Vec<Update>,
+    checkpoint: &mut dyn FnMut(&'static str) -> Result<(), TxError>,
+  ) -> Result<(), Error> {
     // Any failed save locks the session. In particular, a rename may have
     // succeeded before a later flush/verification failure: never retain stale
     // writable memory or claim the old in-memory data is authoritative.

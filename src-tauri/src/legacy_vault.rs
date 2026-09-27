@@ -620,7 +620,7 @@ fn vault_status_at(state: &VaultState) -> Result<serde_json::Value, String> {
   Ok(serde_json::json!({ "status": if guard.is_some() { "unlocked" } else { "locked" } }))
 }
 
-#[tauri::command]
+#[cfg_attr(not(feature = "file-vault"), tauri::command)]
 pub async fn vault_load(
   app: AppHandle,
   state: State<'_, VaultState>,
@@ -635,12 +635,12 @@ pub async fn vault_load(
   Ok(())
 }
 
-#[tauri::command]
+#[cfg_attr(not(feature = "file-vault"), tauri::command)]
 pub async fn vault_get(state: State<'_, VaultState>) -> Result<String, String> {
   vault_get_at(&state)
 }
 
-#[tauri::command]
+#[cfg_attr(not(feature = "file-vault"), tauri::command)]
 pub async fn vault_save(
   app: AppHandle,
   state: State<'_, VaultState>,
@@ -654,19 +654,19 @@ pub async fn vault_save(
   Ok(())
 }
 
-#[tauri::command]
+#[cfg_attr(not(feature = "file-vault"), tauri::command)]
 pub async fn vault_unload(app: AppHandle, state: State<'_, VaultState>) -> Result<(), String> {
   vault_unload_at(&state)?;
   let _ = crate::tray::refresh_menu(&app);
   Ok(())
 }
 
-#[tauri::command]
+#[cfg_attr(not(feature = "file-vault"), tauri::command)]
 pub async fn vault_status(state: State<'_, VaultState>) -> Result<serde_json::Value, String> {
   vault_status_at(&state)
 }
 
-#[tauri::command]
+#[cfg_attr(not(feature = "file-vault"), tauri::command)]
 pub async fn vault_change_password(
   state: State<'_, VaultState>,
   password: String,

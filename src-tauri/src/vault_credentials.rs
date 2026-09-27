@@ -1,4 +1,4 @@
-//! Explicit device-local credential storage; not yet connected to app commands.
+//! Explicit device-local credential storage; app wiring is opt-in (file-vault).
 //! Calls must run off the UI thread, serialized by the vault mutex. Native APIs
 //! may update an existing entry, so the checked set is not an OS-level CAS.
 //! No process-global default store, enumeration, key cache or fallback backend.
