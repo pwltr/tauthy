@@ -20,7 +20,7 @@
     "authentication": "Mot de passe incorrect.",
     "corrupt": "Le coffre est illisible. Restaurez une sauvegarde indépendante sans supprimer l'original.",
     "unsupported": "Ce format de coffre n'est pas pris en charge.",
-    "platform": "Le nouveau stockage n'est pas encore activé sur cette plateforme. Le coffre existant n'a pas été remplacé.",
+    "platform": "Cet emplacement de stockage n'est pas pris en charge. Sous Windows, Tauthy nécessite un disque local fixe au format NTFS.",
     "identity": "Ce fichier appartient à un autre coffre et nécessite un import explicitement confirmé.",
     "missing": "Le fichier du coffre attendu est absent. Restaurez-le ou supprimez explicitement le coffre pour recommencer.",
     "credentialMissing": "La clé de cet appareil est absente. Restaurez un export indépendant ou une copie synchronisée.",

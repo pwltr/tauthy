@@ -20,7 +20,7 @@
     "authentication": "Incorrect password.",
     "corrupt": "The vault cannot be read. Restore an independent backup; do not delete the original.",
     "unsupported": "This vault format is not supported.",
-    "platform": "The new storage is not enabled for this platform yet. Your existing vault has not been replaced.",
+    "platform": "This storage location is not supported. On Windows, Tauthy requires a fixed local NTFS drive.",
     "identity": "This file belongs to a different vault. It requires an explicitly confirmed import.",
     "missing": "The expected vault file is missing. Restore it or use explicit vault deletion to start over.",
     "credentialMissing": "This device's vault key is missing. Restore an independent export or sync copy.",

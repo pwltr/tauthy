@@ -20,7 +20,7 @@
     "authentication": "Falsches Passwort.",
     "corrupt": "Der Tresor ist nicht lesbar. Stelle eine unabhängige Sicherung wieder her; lösche das Original nicht.",
     "unsupported": "Dieses Tresorformat wird nicht unterstützt.",
-    "platform": "Der neue Speicher ist für diese Plattform noch nicht aktiviert. Der vorhandene Tresor wurde nicht ersetzt.",
+    "platform": "Dieser Speicherort wird nicht unterstützt. Unter Windows benötigt Tauthy ein lokales, fest eingebautes NTFS-Laufwerk.",
     "identity": "Diese Datei gehört zu einem anderen Tresor und erfordert einen ausdrücklich bestätigten Import.",
     "missing": "Die erwartete Tresordatei fehlt. Stelle sie wieder her oder lösche den Tresor ausdrücklich, um neu anzufangen.",
     "credentialMissing": "Der Geräteschlüssel fehlt. Stelle einen unabhängigen Export oder eine Synchronisierungskopie wieder her.",
