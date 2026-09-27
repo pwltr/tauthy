@@ -1,8 +1,6 @@
 name: Build isolated migration test
 
 on:
-  push:
-    branches: [feat/stronghold-migration]
   workflow_dispatch:
 
 permissions:

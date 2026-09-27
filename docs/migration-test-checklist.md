@@ -68,3 +68,40 @@ released-app updater path; those require separately prepared older-version fixtu
 Import diagnostics are stage names/timings only, in timestamped
 `import-diagnostics-*.log` files beneath the selected test run's data directory.
 No account data, passwords, file contents or selected filenames are logged.
+
+## Building the test harness
+
+The **Build isolated migration test** workflow is manual-only and produces the
+Windows download without publishing a release. Production builds still use
+Stronghold; `file-vault` is opt-in, and Windows file-vault writes are enabled only
+in unit tests or the isolated `migration-test` app on supported fixed NTFS disks.
+Never enable `migration-test` in release workflows.
+
+For a local macOS test app, after installing the normal build dependencies:
+
+```sh
+node node_modules/@tauri-apps/cli/tauri.js build --features migration-test --config src-tauri/tauri.migration-test.conf.json --bundles app -- --locked
+open -n "src-tauri/target/release/bundle/macos/Tauthy Migration Test.app" --args --migration-fixture password --migration-run run-1
+```
+
+Quit before reopening. Reuse the same fixture/run to test persistence; change the
+run identifier to repeat migration. Opening the app without arguments selects
+the default passwordless run, not the last argument-selected run. Existing runs
+are never reseeded, including after deletion. `--deny-test-credentials` simulates
+denial; reopen the same run without it to retry. Short passwords and legacy v2
+snapshots are covered by backend tests, not the interactive fixtures.
+
+For diagnostic builds on macOS, prefix the build command with
+`VITE_IMPORT_DIAGNOSTICS=1`. Normal builds emit no diagnostic IPC, and the logging
+command exists only in `migration-test` builds.
+
+Check the opt-in backend without launching an app:
+
+```sh
+cargo check --manifest-path src-tauri/Cargo.toml --locked --features file-vault
+cargo test --manifest-path src-tauri/Cargo.toml --locked --features file-vault vault_
+```
+
+Windows vault tests require an NTFS temporary directory. If `TEMP` points to ReFS,
+a Dev Drive, or a network/removable volume, set `TEMP` and `TMP` to an existing
+local NTFS directory before running tests.
