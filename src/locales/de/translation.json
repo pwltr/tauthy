@@ -1,4 +1,35 @@
 {
+  "vaultUi": {
+    "migration": "Aktualisiere den Tresorspeicher mit deinem bisherigen Passwort oder lasse das Feld leer, wenn keines gesetzt ist. Konten und Synchronisierung bleiben erhalten. Ohne Passwort wird der Schlüssel im Anmeldedatenspeicher dieses Geräts gespeichert: Bewahre einen unabhängigen Export auf, da eine Kopie der Tresordatei allein keine portable Sicherung mehr ist.",
+    "create": "Tresor erstellen",
+    "retry": "Erneut versuchen",
+    "openFailed": "Tresor konnte nicht geöffnet werden:",
+    "optionalPassword": "Passwort (optional)",
+    "createHint": "Ohne Passwort wird der Tresorschlüssel im Anmeldedatenspeicher dieses Geräts geschützt.",
+    "rotationWarning": "Bewahre einen unabhängigen verschlüsselten Export auf. Eine Schutzänderung macht ältere Tresordateikopien mit Geräteschlüssel unbrauchbar. Ein falsches aktuelles Passwort sperrt den Tresor."
+  },
+  "vaultErrors": {
+    "authentication": "Falsches Passwort.",
+    "corrupt": "Der Tresor ist nicht lesbar. Stelle eine unabhängige Sicherung wieder her; lösche das Original nicht.",
+    "unsupported": "Dieses Tresorformat wird nicht unterstützt.",
+    "platform": "Der neue Speicher ist für diese Plattform noch nicht aktiviert. Der vorhandene Tresor wurde nicht ersetzt.",
+    "identity": "Diese Datei gehört zu einem anderen Tresor und erfordert einen ausdrücklich bestätigten Import.",
+    "missing": "Die erwartete Tresordatei fehlt. Stelle sie wieder her oder lösche den Tresor ausdrücklich, um neu anzufangen.",
+    "credentialMissing": "Der Geräteschlüssel fehlt. Stelle einen unabhängigen Export oder eine Synchronisierungskopie wieder her.",
+    "credentialUnavailable": "Der Anmeldedatenspeicher ist nicht verfügbar. Die Migration kann noch nicht fortgesetzt werden.",
+    "credentialDenied": "Der Zugriff auf den Anmeldedatenspeicher wurde verweigert. Erlaube den Zugriff und versuche es erneut.",
+    "credentialMalformed": "Der gespeicherte Geräteschlüssel ist nicht lesbar und wurde nicht überschrieben.",
+    "reconciliation": "Die Tresordateien passen nicht zur gespeicherten Transaktion. Bewahre die Dateien auf und stelle eine Sicherung wieder her.",
+    "stagedCleanup": "Der aktive Tresor ist lesbar, aber vault.pending.tauthy konnte nicht sicher entfernt werden. Bewahre die Dateien zur Wiederherstellung auf.",
+    "copyCleanup": "Eine Arbeitskopie der alten Migration konnte nicht sicher entfernt werden. Bewahre die Dateien zur Wiederherstellung auf.",
+    "preparation": "Eine unterbrochene Schutzänderung oder ein Import benötigt die ursprünglichen Passwörter und eine Bestätigung.",
+    "tooLarge": "Der Tresor überschreitet die unterstützte Größe.",
+    "emptyPassword": "Wähle ein nicht leeres Passwort oder den Geräteschutz.",
+    "locked": "Entsperre zuerst den Tresor.",
+    "io": "Kein Zugriff auf Tresordateien. Prüfe Berechtigungen und freien Speicherplatz.",
+    "foreignCredential": "Ein gerätegeschützter Tresor kann nicht auf einem anderen Gerät importiert werden. Verwende einen verschlüsselten Export oder die Synchronisierung.",
+    "generic": "Die Tresoroperation ist fehlgeschlagen. Versuche es erneut."
+  },
   "welcome": {
     "intro": "Willkommen bei Tauthy – deiner privaten Authenticator-App.",
     "backup": "Ich stelle sicher jederzeit ein Backup zu haben",

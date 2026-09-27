@@ -16,6 +16,16 @@ use crate::{
   vault_transaction::{self, Credentials},
 };
 
+/// Capability negotiation only: no filesystem or credential side effects.
+#[tauri::command]
+pub(crate) fn vault_backend() -> &'static str {
+  if cfg!(feature = "file-vault") {
+    "fileV1"
+  } else {
+    "stronghold"
+  }
+}
+
 #[derive(Clone)]
 pub(crate) struct FileVaultState(Arc<Runtime>);
 impl FileVaultState {

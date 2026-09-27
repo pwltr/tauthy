@@ -6,6 +6,7 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 
 import { useLocalStorage } from '~/hooks'
+import { useVaultProtection } from '~/hooks/useVaultProtection'
 import { AppBarTitleContext } from '~/context'
 import PasswordModal from '~/components/modals/Password'
 import PasswordResetModal from '~/components/modals/PasswordReset'
@@ -16,7 +17,7 @@ import ListItem from '~/components/ListItem'
 
 const Security = () => {
   const { t } = useTranslation()
-  const [isPasswordSet] = useLocalStorage('isPasswordSet', false)
+  const isPasswordSet = useVaultProtection()
   const [shouldAutoLock, setShouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [openPasswordModal, setOpenPasswordModal] = useState(false)

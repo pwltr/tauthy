@@ -3,6 +3,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const vault = vi.hoisted(() => ({
+  fileBackend: false,
+  prepare: vi.fn(),
+  create: vi.fn(),
   checkVault: vi.fn(),
   isUnlocked: vi.fn(),
   lock: vi.fn(),
@@ -15,6 +18,9 @@ const idleTimer = vi.hoisted(() => ({
 const syncInBackground = vi.hoisted(() => vi.fn())
 
 vi.mock('~/utils/storage', () => ({ vault }))
+vi.mock('~/hooks/useVaultProtection', () => ({
+  useVaultProtection: () => localStorage.getItem('isPasswordSet') === 'true',
+}))
 vi.mock('~/components/AppBar', () => ({ default: () => <div>Header</div> }))
 vi.mock('~/utils/sync', () => ({ syncInBackground }))
 vi.mock('react-idle-timer', () => ({
@@ -51,7 +57,10 @@ describe('vault initialization', () => {
     window.localStorage.setItem('shouldAutoLock', 'false')
 
     idleTimer.onIdle = undefined
-    Object.values(vault).forEach((mock) => mock.mockReset())
+    vault.fileBackend = false
+    Object.values(vault).forEach((mock) => {
+      if (typeof mock === 'function') mock.mockReset()
+    })
     vault.checkVault.mockResolvedValue('[]')
     vault.isUnlocked.mockResolvedValue(true)
     vault.lock.mockResolvedValue(undefined)
@@ -121,9 +130,9 @@ describe('vault initialization', () => {
     renderMain()
     await flushPromises()
 
-    expect(screen.getByText('Unable to open the vault: vault read failed')).toBeInTheDocument()
+    expect(screen.getByText('vaultUi.openFailed vault read failed')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    fireEvent.click(screen.getByRole('button', { name: 'vaultUi.retry' }))
     await flushPromises()
 
     expect(vault.unlock).toHaveBeenCalledWith('')
@@ -143,5 +152,46 @@ describe('vault initialization', () => {
 
     expect(vault.lock).toHaveBeenCalledOnce()
     expect(screen.getByText('Unlock')).toBeInTheDocument()
+  })
+
+  it('requires explicit creation for a new file vault, ignoring a stale password flag', async () => {
+    vault.fileBackend = true
+    localStorage.setItem('isPasswordSet', 'false')
+    vault.prepare
+      .mockResolvedValueOnce({ lifecycle: 'new', status: 'locked' })
+      .mockResolvedValue({ lifecycle: 'active', status: 'unlocked' })
+    renderMain()
+    await flushPromises()
+    expect(vault.create).not.toHaveBeenCalled()
+    expect(vault.checkVault).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'vaultUi.create' }))
+    await flushPromises()
+    expect(vault.create).toHaveBeenCalledWith(undefined)
+    expect(screen.getByText('Accounts')).toBeInTheDocument()
+  })
+
+  it('routes a locked file vault to unlock even when the legacy password flag is false', async () => {
+    vault.fileBackend = true
+    vault.prepare.mockResolvedValue({
+      lifecycle: 'active',
+      status: 'locked',
+      protectionHint: 'password',
+    })
+    renderMain()
+    await flushPromises()
+    expect(screen.getByText('Unlock')).toBeInTheDocument()
+    expect(vault.checkVault).not.toHaveBeenCalled()
+    expect(vault.reset).not.toHaveBeenCalled()
+  })
+
+  it('does not reset a missing migrated vault and exposes explicit recovery deletion', async () => {
+    vault.fileBackend = true
+    vault.prepare.mockRejectedValue({ code: 'vaultMissing' })
+    renderMain()
+    await flushPromises()
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'security.deleteVault' })).toBeInTheDocument()
+    expect(vault.reset).not.toHaveBeenCalled()
+    expect(vault.create).not.toHaveBeenCalled()
   })
 })

@@ -1,4 +1,35 @@
 {
+  "vaultUi": {
+    "migration": "Actualiza el almacenamiento con tu contraseña actual o deja el campo vacío si no tienes una. Se conservan las cuentas y la sincronización. Sin contraseña, la clave pasa al almacén de credenciales de este dispositivo: conserva una exportación independiente, ya que copiar solo el archivo deja de ser una copia portátil.",
+    "create": "Crear bóveda",
+    "retry": "Reintentar",
+    "openFailed": "No se pudo abrir la bóveda:",
+    "optionalPassword": "Contraseña (opcional)",
+    "createHint": "Sin contraseña, la clave de la bóveda se protege en el almacén de credenciales de este dispositivo.",
+    "rotationWarning": "Conserva una exportación cifrada independiente. Cambiar la protección invalida las copias anteriores de la bóveda ligadas a la clave del dispositivo. Una contraseña actual incorrecta bloquea la bóveda."
+  },
+  "vaultErrors": {
+    "authentication": "Contraseña incorrecta.",
+    "corrupt": "No se puede leer la bóveda. Restaura una copia independiente sin borrar el original.",
+    "unsupported": "Este formato de bóveda no es compatible.",
+    "platform": "El nuevo almacenamiento aún no está activado en esta plataforma. La bóveda existente no se ha reemplazado.",
+    "identity": "Este archivo pertenece a otra bóveda y requiere una importación confirmada explícitamente.",
+    "missing": "Falta el archivo esperado de la bóveda. Restáuralo o elimina explícitamente la bóveda para empezar de nuevo.",
+    "credentialMissing": "Falta la clave del dispositivo. Restaura una exportación independiente o una copia sincronizada.",
+    "credentialUnavailable": "El almacén de credenciales no está disponible. La migración no puede continuar todavía.",
+    "credentialDenied": "Se denegó el acceso al almacén de credenciales. Permite el acceso y reintenta.",
+    "credentialMalformed": "La clave almacenada no se puede leer. No se ha sobrescrito.",
+    "reconciliation": "Los archivos no coinciden con la transacción guardada. Consérvalos y recupera una copia de seguridad.",
+    "stagedCleanup": "La bóveda activa es legible, pero vault.pending.tauthy no se pudo limpiar de forma segura. Conserva los archivos para recuperarlos.",
+    "copyCleanup": "Una copia de trabajo de migración no se pudo limpiar de forma segura. Conserva los archivos para recuperarlos.",
+    "preparation": "Un cambio de protección o una importación interrumpida necesita las contraseñas originales y confirmación.",
+    "tooLarge": "La bóveda supera el tamaño admitido.",
+    "emptyPassword": "Elige una contraseña no vacía o la protección del dispositivo.",
+    "locked": "Desbloquea la bóveda para continuar.",
+    "io": "No se puede acceder a los archivos. Comprueba los permisos y el espacio disponible.",
+    "foreignCredential": "Una bóveda protegida por un dispositivo no se puede importar en otro. Usa una exportación cifrada o la sincronización.",
+    "generic": "La operación ha fallado. Inténtalo de nuevo."
+  },
   "welcome": {
     "intro": "Te damos la bienvenida a Tauthy: tu autenticador privado.",
     "backup": "Me aseguraré de realizar copias de seguridad de mis datos.",

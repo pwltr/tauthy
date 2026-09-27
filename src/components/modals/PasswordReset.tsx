@@ -1,33 +1,69 @@
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import Button from '@mui/material/Button'
+import TextField from '@mui/material/TextField'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Typography from '@mui/material/Typography'
 
 import { vault } from '~/utils/storage'
-import { useLocalStorage } from '~/hooks'
+import { vaultErrorMessage } from '~/utils/vaultErrors'
 import Modal, { Buttons } from '~/components/Modal'
 
 const PasswordResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation()
-  const [, setIsPasswordSet] = useLocalStorage('isPasswordSet', false)
+  const navigate = useNavigate()
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (!open) setCurrentPassword('')
+  }, [open])
 
   const handleSetPassword = async () => {
+    setBusy(true)
     try {
-      await vault.changePassword('')
-      setIsPasswordSet(false)
+      await vault.changePassword('', currentPassword)
+      setCurrentPassword('')
       toast.success(t('toasts.passwordReset'))
       onClose()
     } catch (err) {
       console.error(err)
-      toast.error(t('toasts.error'))
+      toast.error(vaultErrorMessage(err, t))
+      if (vault.fileBackend && !(await vault.isUnlocked().catch(() => false))) {
+        onClose()
+        navigate('/unlock')
+      }
+    } finally {
+      setBusy(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal
+      open={open}
+      onClose={() => {
+        if (!busy) onClose()
+      }}
+    >
       <div>{t('modals.resetPassword')}</div>
+      {vault.fileBackend && (
+        <>
+          <TextField
+            type="password"
+            label={t('modals.currentPassword')}
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            fullWidth
+            margin="normal"
+          />
+          <Typography variant="body2">{t('vaultUi.rotationWarning')}</Typography>
+        </>
+      )}
       <Buttons>
-        <Button onClick={onClose}>{t('modals.cancel')}</Button>
-        <Button color="primary" variant="contained" onClick={handleSetPassword}>
+        <Button disabled={busy} onClick={onClose}>
+          {t('modals.cancel')}
+        </Button>
+        <Button loading={busy} color="primary" variant="contained" onClick={handleSetPassword}>
           {t('modals.confirm')}
         </Button>
       </Buttons>

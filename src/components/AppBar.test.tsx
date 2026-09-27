@@ -7,6 +7,9 @@ import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 const vault = vi.hoisted(() => ({ lock: vi.fn() }))
 
 vi.mock('~/utils/storage', () => ({ vault }))
+vi.mock('~/hooks/useVaultProtection', () => ({
+  useVaultProtection: () => localStorage.getItem('isPasswordSet') === 'true',
+}))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) =>
