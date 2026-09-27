@@ -1,9 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tauthy</title>
+    <link rel="stylesheet" href="/startup-theme.css" />
+    <script id="startup-theme">
+      // Blocking, dependency-free bootstrap: runs before the first document paint.
+      // Only validated colors/preferences are read; no inline-script CSP exception.
+      ;(() => {
+        let preference = 'system'
+        let cached
+        try {
+          const saved = JSON.parse(localStorage.getItem('theme') ?? '"system"')
+          if (['system', 'light', 'dark', 'black'].includes(saved)) preference = saved
+          cached = JSON.parse(localStorage.getItem('startupTheme') ?? 'null')
+        } catch {
+          // Fall back to the OS preference if storage is unavailable or malformed.
+        }
+        const mode =
+          preference === 'system'
+            ? matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : preference
+        const background =
+          cached?.mode === mode && /^#[a-f0-9]{6}$/i.test(cached.background)
+            ? cached.background
+            : mode === 'black'
+              ? '#000000'
+              : mode === 'dark'
+                ? '#1e1e1e'
+                : '#ffffff'
+        document.documentElement.style.backgroundColor = background
+        document.documentElement.style.colorScheme = mode === 'light' ? 'light' : 'dark'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

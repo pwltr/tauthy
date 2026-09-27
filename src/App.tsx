@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { Toaster } from 'react-hot-toast'
@@ -88,7 +88,7 @@ const App = () => {
 
   const mode = resolvePaletteMode(themePreference, prefersDarkMode)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
     const previousColorScheme = root.style.colorScheme
 
@@ -104,8 +104,18 @@ const App = () => {
     [mode, prefersReducedMotion],
   )
 
+  useLayoutEffect(() => {
+    const background = theme.palette.background.default
+    document.documentElement.style.backgroundColor = background
+    try {
+      localStorage.setItem('startupTheme', JSON.stringify({ mode, background }))
+    } catch {
+      // A disabled/full preference store must not interrupt startup.
+    }
+  }, [mode, theme])
+
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
       <GlobalStyle />
 
@@ -117,19 +127,19 @@ const App = () => {
                 <SortContext.Provider
                   value={{ sortOption, setSortOption, customOrder, setCustomOrder, entryUsage }}
                 >
-                  <ThemeProvider theme={theme}>
+                  <>
                     <AppRouter />
                     <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
 
                     {import.meta.env.DEV && showDeveloperToolbar && <AppDebugger />}
-                  </ThemeProvider>
+                  </>
                 </SortContext.Provider>
               </SearchContext.Provider>
             </ListOptionsContext.Provider>
           </AppSettingsContext.Provider>
         </ThemeContext.Provider>
       </AppBarTitleContext.Provider>
-    </>
+    </ThemeProvider>
   )
 }
 
