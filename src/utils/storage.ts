@@ -4,6 +4,7 @@ import { exists, mkdir, remove } from '@tauri-apps/plugin-fs'
 
 import { VaultEntry } from '~/types'
 import { SYNC_COMPLETE_EVENT, syncInBackground } from '~/utils/sync'
+import { vaultErrorCode } from '~/utils/vaultErrors'
 
 export interface VaultStatus {
   status: 'locked' | 'unlocked'
@@ -15,7 +16,8 @@ export interface VaultStatus {
     | 'active'
     | 'deleting'
     | 'deleted'
-  protectionHint?: 'password' | 'deviceCredential' | null
+  protectionHint?: 'password' | 'deviceCredential' | 'none' | null
+  usingLegacy?: boolean
   operation?: string | null
   phase?: string | null
   migrationDeferred?: string | null
@@ -89,6 +91,17 @@ export class Vault {
       await this.unlock('')
       return this.getStatus()
     }
+    if (status.status === 'locked' && status.phase === 'migrationDeferred') {
+      // This resumes the authenticated legacy backend, not migration. If an
+      // external protection change invalidated the empty-password hint, prompt.
+      try {
+        await this.unlock('')
+        return this.getStatus()
+      } catch (error) {
+        if (vaultErrorCode(error) !== 'vaultAuthenticationFailed') throw error
+        return this.getStatus()
+      }
+    }
     // Legacy protection is unknown. Explain migration and let the user submit
     // their existing password (or leave it empty) before any migration effect.
     return status
@@ -101,6 +114,15 @@ export class Vault {
     else await this.unlock(password ?? '')
     this.setProtection(!!password)
     await this.reset()
+  }
+
+  async retryMigration(password: string) {
+    await this.ready
+    this.cachedRecord = undefined
+    await invoke('vault_migrate', { password })
+    const status = await this.getStatus()
+    this.setProtection(status.protectionHint === 'password')
+    return status
   }
 
   private load(password: string) {

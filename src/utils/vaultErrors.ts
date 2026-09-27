@@ -11,6 +11,7 @@ export const vaultErrorCode = (error: unknown): string => {
 export const vaultErrorMessage = (error: unknown, t: (key: string) => string): string => {
   const code = vaultErrorCode(error)
   const groups: Record<string, string> = {
+    vaultMigrationRequired: 'migrationRequired',
     vaultAuthenticationFailed: 'authentication',
     vaultCorrupt: 'corrupt',
     vaultLegacyCorrupt: 'corrupt',

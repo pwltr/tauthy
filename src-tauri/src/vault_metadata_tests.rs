@@ -10,6 +10,38 @@ fn write(directory: &Path, name: &str, bytes: &[u8]) {
   file.write_all(bytes).unwrap();
 }
 
+#[test]
+fn deferred_source_is_mutable_but_prepared_candidates_are_never_legacy_authoritative() {
+  let directory = tempfile::tempdir().unwrap();
+  write(directory.path(), "vault.stronghold", b"PARTI\x03\x00old");
+  let target = candidate(true);
+  let mut j = journal(
+    directory.path(),
+    &target,
+    Operation::Migrate,
+    Phase::MigrationDeferred,
+  );
+  write(directory.path(), "vault.stronghold", b"PARTI\x03\x00edited");
+  assert_eq!(
+    inspect(directory.path()).unwrap().lifecycle,
+    Lifecycle::LegacyMigrationPending
+  );
+  j.phase = Phase::CredentialStageIntent;
+  save_journal(directory.path(), &j);
+  assert_eq!(inspect(directory.path()).err(), Some(Error::SourceChanged));
+  j.phase = Phase::MigrationDeferred;
+  save_journal(directory.path(), &j);
+  write(
+    directory.path(),
+    "vault.pending.tauthy",
+    &target.seal().unwrap(),
+  );
+  assert_eq!(
+    inspect(directory.path()).err(),
+    Some(Error::ReconciliationFailed)
+  );
+}
+
 fn candidate(credential: bool) -> Vault {
   Vault::create_identity_for_tests(
     Records::default(),

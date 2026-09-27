@@ -65,6 +65,7 @@ pub(crate) struct Status {
   pub(crate) metadata: Metadata,
   pub(crate) locked: bool,
   pub(crate) migration_deferred: Option<Deferred>,
+  pub(crate) legacy_password: Option<bool>,
 }
 
 // No Debug/Clone: session owns a zeroizing DEK and plaintext record map.
@@ -76,6 +77,13 @@ struct Session {
 struct State {
   session: Option<Session>,
   deferred: Option<Deferred>,
+  legacy: Option<LegacySession>,
+}
+
+struct LegacySession {
+  vault: crate::legacy_vault::VaultState,
+  fingerprint: [u8; 32],
+  password: bool,
 }
 
 pub(crate) struct Runtime {
@@ -146,6 +154,96 @@ fn open_with_key(path: &Path, expected: &Vault) -> Result<Session, Error> {
 }
 
 impl Runtime {
+  fn legacy_allowed(&self) -> Result<(), Error> {
+    let m = metadata(&self.directory)?;
+    if m.lifecycle == Lifecycle::Legacy
+      || (m.lifecycle == Lifecycle::LegacyMigrationPending
+        && m.phase == Some(Phase::MigrationDeferred))
+    {
+      Ok(())
+    } else {
+      Err(TxError::ReconciliationFailed.into())
+    }
+  }
+
+  fn check_legacy(&self, session: &LegacySession) -> Result<(), Error> {
+    self.legacy_allowed()?;
+    if vault_transaction::fingerprint(&self.directory.join("vault.stronghold"))?
+      != session.fingerprint
+    {
+      return Err(TxError::SourceChanged.into());
+    }
+    Ok(())
+  }
+
+  fn open_legacy(&self, state: &mut State, password: &str) -> Result<(), Error> {
+    self.legacy_allowed()?;
+    let source = self.directory.join("vault.stronghold");
+    let before = vault_transaction::fingerprint(&source)?;
+    let use_copy = metadata(&self.directory)?.phase == Some(Phase::MigrationDeferred)
+      && match vault_fs::require_supported(&self.directory) {
+        Ok(()) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::Unsupported => false,
+        Err(_) => return Err(TxError::Io.into()),
+      };
+    let vault = if use_copy {
+      crate::legacy_vault::migration_session(&source, password)?
+    } else {
+      // No new-storage journal exists when the filesystem is unsupported. Use
+      // the released legacy backend, including its own verified v2 upgrade.
+      let vault = crate::legacy_vault::VaultState::default();
+      crate::legacy_vault::vault_load_at(&vault, source.clone(), password.to_string()).map_err(
+        |error| {
+          if error.contains("Please try another password.") {
+            TxError::Envelope(crate::vault_file::Error::Authentication)
+          } else {
+            TxError::ReconciliationFailed
+          }
+        },
+      )?;
+      vault
+    };
+    let after = vault_transaction::fingerprint(&source)?;
+    if use_copy && before != after {
+      return Err(TxError::SourceChanged.into());
+    }
+    state.legacy = Some(LegacySession {
+      vault,
+      fingerprint: after,
+      password: !password.is_empty(),
+    });
+    Ok(())
+  }
+
+  fn recover_deferred(
+    &self,
+    state: &mut State,
+    password: &str,
+    error: TxError,
+    credentials: &mut dyn Credentials,
+  ) -> Result<(), Error> {
+    self.note_deferral(state, &error);
+    if state.deferred.is_none() {
+      return Err(error.into());
+    }
+    let m = metadata(&self.directory)?;
+    if m.lifecycle == Lifecycle::LegacyMigrationPending {
+      if m.phase != Some(Phase::MigrationDeferred) {
+        if !matches!(
+          m.phase,
+          Some(Phase::Prepared | Phase::CredentialStageIntent)
+        ) || !password.is_empty()
+        {
+          return Err(error.into());
+        }
+        let mut hook = no_failure;
+        Coordinator::new(&self.directory, credentials, &mut hook).defer_migration()?;
+      }
+    } else if m.lifecycle != Lifecycle::Legacy {
+      return Err(error.into());
+    }
+    self.open_legacy(state, password)
+  }
   /// Production entry points keep the legacy reader selected by Rust, not IPC.
   pub(crate) fn migrate_legacy(
     &self,
@@ -199,7 +297,12 @@ impl Runtime {
         && metadata.phase == Some(Phase::Completed)
         && metadata.identity_hint.as_ref() == Some(&identity(&session.vault))
     });
+    let legacy_session = state
+      .legacy
+      .as_ref()
+      .is_some_and(|session| self.check_legacy(session).is_ok());
     Ok(Status {
+      legacy_password: state.legacy.as_ref().map(|session| session.password),
       migration_deferred: if matches!(
         metadata.lifecycle,
         Lifecycle::Legacy | Lifecycle::LegacyMigrationPending
@@ -208,19 +311,16 @@ impl Runtime {
       } else {
         None
       },
+      locked: !active_session && !legacy_session,
       metadata,
-      locked: !active_session,
     })
   }
 
   pub(crate) fn lock(&self) -> Result<(), Error> {
     // Dropping the session clears the DEK and all raw values. Nothing persisted.
-    self
-      .state
-      .lock()
-      .map_err(|_| Error::StateUnavailable)?
-      .session
-      .take();
+    let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    state.session.take();
+    state.legacy.take();
     Ok(())
   }
 
@@ -261,7 +361,11 @@ impl Runtime {
   ) -> Result<(), Error> {
     let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
     state.session.take();
+    state.legacy.take();
     let metadata = metadata(&self.directory)?;
+    if metadata.phase == Some(Phase::MigrationDeferred) {
+      return self.open_legacy(&mut state, password.unwrap_or(""));
+    }
     match metadata.lifecycle {
       Lifecycle::New => return Err(Error::CreationRequired),
       Lifecycle::Legacy => return Err(Error::MigrationRequired),
@@ -287,16 +391,14 @@ impl Runtime {
     };
     match result {
       Ok(vault) => self.install_session(&mut state, vault),
-      Err(error) => {
-        self.note_deferral(&mut state, &error);
-        Err(error.into())
-      }
+      Err(error) => self.recover_deferred(&mut state, password.unwrap_or(""), error, credentials),
     }
   }
 
   /// Explicit migration request. Credential failure is a recorded runtime fact,
   /// not inferred from a phase and not permission to fallback after activation.
-  /// The eventual backend dispatcher may keep pre-activation legacy authoritative.
+  /// Native failure before file preparation keeps legacy authoritative through
+  /// a durable deferred marker. Explicit retry re-authenticates current records.
   pub(crate) fn migrate(
     &self,
     password: &str,
@@ -305,20 +407,25 @@ impl Runtime {
   ) -> Result<(), Error> {
     let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
     state.session.take();
-    if metadata(&self.directory)?.lifecycle != Lifecycle::Legacy {
+    state.legacy.take();
+    let m = metadata(&self.directory)?;
+    if m.lifecycle != Lifecycle::Legacy && m.phase != Some(Phase::MigrationDeferred) {
       return Err(TxError::Conflict.into());
     }
     let mut hook = no_failure;
     let mut coordinator = Coordinator::new(&self.directory, credentials, &mut hook);
-    let result = coordinator
-      .begin_migration(password, reader)
-      .and_then(|_| coordinator.resume(Some(password), reader));
+    let result = if m.phase == Some(Phase::MigrationDeferred) {
+      coordinator
+        .retry_deferred_migration(password, reader)
+        .and_then(|_| coordinator.resume(Some(password), reader))
+    } else {
+      coordinator
+        .begin_migration(password, reader)
+        .and_then(|_| coordinator.resume(Some(password), reader))
+    };
     match result {
       Ok(vault) => self.install_session(&mut state, vault),
-      Err(error) => {
-        self.note_deferral(&mut state, &error);
-        Err(error.into())
-      }
+      Err(error) => self.recover_deferred(&mut state, password, error, credentials),
     }
   }
 
@@ -350,12 +457,20 @@ impl Runtime {
       return Err(TxError::RecordsChanged.into());
     }
     state.session = Some(session);
+    state.legacy.take();
     state.deferred = None;
     Ok(())
   }
 
   pub(crate) fn get(&self, name: &[u8]) -> Result<Option<Vec<u8>>, Error> {
     let state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if let Some(legacy) = state.legacy.as_ref() {
+      self.check_legacy(legacy)?;
+      return legacy
+        .vault
+        .with_unlocked(|vault| vault.get_record(name))
+        .map_err(|_| TxError::ReconciliationFailed.into());
+    }
     let session = state.session.as_ref().ok_or(Error::Locked)?;
     require_completed(&self.directory, &session.vault)?;
     Ok(
@@ -387,6 +502,19 @@ impl Runtime {
     operation: impl FnOnce(&Records, &mut Vec<Update>) -> Result<T, String>,
   ) -> Result<T, BatchError> {
     let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if let Some(legacy) = state.legacy.as_ref() {
+      self.check_legacy(legacy)?;
+      let records = legacy
+        .vault
+        .with_unlocked(|vault| vault.raw_records())
+        .map_err(|_| Error::Transaction(TxError::ReconciliationFailed))?;
+      let mut updates = Vec::new();
+      let result = operation(&records, &mut updates).map_err(BatchError::Operation)?;
+      if !updates.is_empty() {
+        self.save_locked(&mut state, updates, &mut no_failure)?;
+      }
+      return Ok(result);
+    }
     let session = state.session.as_ref().ok_or(Error::Locked)?;
     require_completed(&self.directory, &session.vault)?;
     let mut updates = Vec::new();
@@ -403,6 +531,25 @@ impl Runtime {
     updates: Vec<Update>,
     checkpoint: &mut dyn FnMut(&'static str) -> Result<(), TxError>,
   ) -> Result<(), Error> {
+    if let Some(mut legacy) = state.legacy.take() {
+      self.check_legacy(&legacy)?;
+      legacy
+        .vault
+        .with_unlocked(|vault| {
+          for update in updates {
+            match update.value {
+              Some(value) => vault.put_record(&update.name, value.to_vec())?,
+              None => vault.delete_record(&update.name)?,
+            }
+          }
+          vault.commit()
+        })
+        .map_err(|_| TxError::Io)?;
+      legacy.fingerprint =
+        vault_transaction::fingerprint(&self.directory.join("vault.stronghold"))?;
+      state.legacy = Some(legacy);
+      return Ok(());
+    }
     // Any failed save locks the session. In particular, a rename may have
     // succeeded before a later flush/verification failure: never retain stale
     // writable memory or claim the old in-memory data is authoritative.
@@ -468,6 +615,7 @@ impl Runtime {
       return Err(TxError::ConfirmationRequired.into());
     }
     state.session.take();
+    state.legacy.take();
     state.deferred = None;
     let mut hook = no_failure;
     let mut coordinator = Coordinator::new(&self.directory, credentials, &mut hook);
@@ -522,6 +670,9 @@ impl Runtime {
     credentials: &mut dyn Credentials,
   ) -> Result<(), Error> {
     let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if state.legacy.is_some() {
+      return Err(Error::MigrationRequired);
+    }
     if !confirmed {
       return Err(TxError::ConfirmationRequired.into());
     }
@@ -547,6 +698,9 @@ impl Runtime {
     credentials: &mut dyn Credentials,
   ) -> Result<(), Error> {
     let mut state = self.state.lock().map_err(|_| Error::StateUnavailable)?;
+    if state.legacy.is_some() {
+      return Err(Error::MigrationRequired);
+    }
     if !confirmed {
       return Err(TxError::ConfirmationRequired.into());
     }

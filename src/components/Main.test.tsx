@@ -6,6 +6,7 @@ const vault = vi.hoisted(() => ({
   fileBackend: false,
   prepare: vi.fn(),
   create: vi.fn(),
+  retryMigration: vi.fn(),
   checkVault: vi.fn(),
   isUnlocked: vi.fn(),
   lock: vi.fn(),
@@ -193,5 +194,28 @@ describe('vault initialization', () => {
     expect(screen.getByRole('button', { name: 'security.deleteVault' })).toBeInTheDocument()
     expect(vault.reset).not.toHaveBeenCalled()
     expect(vault.create).not.toHaveBeenCalled()
+  })
+
+  it('keeps deferred accounts usable and retries only on an explicit click', async () => {
+    vault.fileBackend = true
+    vault.prepare.mockResolvedValue({
+      lifecycle: 'legacyMigrationPending',
+      status: 'unlocked',
+      usingLegacy: true,
+    })
+    vault.retryMigration.mockResolvedValue({
+      lifecycle: 'active',
+      status: 'unlocked',
+      usingLegacy: false,
+    })
+    renderMain()
+    await flushPromises()
+    expect(screen.getByText('Accounts')).toBeInTheDocument()
+    expect(screen.getByText('vaultUi.deferred')).toBeInTheDocument()
+    expect(vault.retryMigration).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'vaultUi.retryMigration' }))
+    await flushPromises()
+    expect(vault.retryMigration).toHaveBeenCalledWith('')
+    expect(screen.queryByText('vaultUi.deferred')).not.toBeInTheDocument()
   })
 })

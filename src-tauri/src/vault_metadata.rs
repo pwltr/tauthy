@@ -256,11 +256,25 @@ pub(crate) fn inspect(directory: &Path) -> Result<Metadata, Error> {
     return Err(Error::MissingVault);
   }
   let source_authoritative = journal.operation == Operation::Migrate && active.is_none();
+  if journal.phase == Phase::MigrationDeferred {
+    for name in [
+      "vault.tauthy",
+      "vault.pending.tauthy",
+      "vault.rollback.tauthy",
+      "vault.stronghold.retired",
+    ] {
+      if open_regular(&directory.join(name))?.is_some() {
+        return Err(Error::ReconciliationFailed);
+      }
+    }
+  }
   let (lifecycle, backend, hint) = if source_authoritative {
-    require_fingerprint(
-      &directory.join("vault.stronghold"),
-      journal.source_fingerprint,
-    )?;
+    if journal.phase != Phase::MigrationDeferred {
+      require_fingerprint(
+        &directory.join("vault.stronghold"),
+        journal.source_fingerprint,
+      )?;
+    }
     (
       Lifecycle::LegacyMigrationPending,
       legacy_backend(&directory.join("vault.stronghold"))?,

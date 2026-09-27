@@ -1,5 +1,7 @@
 {
   "vaultUi": {
+    "deferred": "La actualización del almacenamiento se ha pospuesto. Tus cuentas siguen usando Stronghold y permanecen accesibles. Reintenta cuando el almacenamiento del dispositivo esté disponible.",
+    "retryMigration": "Reintentar actualización del almacenamiento",
     "replaceTitle": "Reemplazar bóveda desde archivo",
     "replaceExplanation": "Solo para recuperar un archivo vault.tauthy protegido por contraseña. Para añadir cuentas de una copia de seguridad, usa Importar. Los archivos protegidos por un dispositivo no son copias portátiles.",
     "replaceWarning": "Reemplaza todas las cuentas locales y desconecta la sincronización. No borra los archivos en la nube. Conserva primero una exportación independiente y vuelve a conectar la sincronización después.",
@@ -16,6 +18,7 @@
     "rotationWarning": "Conserva una exportación cifrada independiente. Cambiar la protección invalida las copias anteriores de la bóveda ligadas a la clave del dispositivo. Una contraseña actual incorrecta bloquea la bóveda."
   },
   "vaultErrors": {
+    "migrationRequired": "Completa la actualización del almacenamiento antes de cambiar la protección o reemplazar la bóveda.",
     "authentication": "Contraseña incorrecta.",
     "corrupt": "No se puede leer la bóveda. Restaura una copia independiente sin borrar el original.",
     "unsupported": "Este formato de bóveda no es compatible.",

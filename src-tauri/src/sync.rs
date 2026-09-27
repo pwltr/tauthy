@@ -1149,6 +1149,86 @@ mod tests {
   }
 
   #[test]
+  fn vault_deferred_legacy_session_syncs_with_file_backend_without_native_calls() {
+    use crate::{
+      vault_journal::Identity,
+      vault_runtime::Runtime,
+      vault_transaction::{Credentials, Error as TxError},
+    };
+    struct Unavailable {
+      calls: usize,
+    }
+    impl Credentials for Unavailable {
+      fn get(&mut self, _: &Identity) -> Result<Option<Zeroizing<[u8; 32]>>, TxError> {
+        self.calls += 1;
+        Err(TxError::CredentialUnavailable)
+      }
+      fn set(&mut self, _: &Identity, _: &[u8; 32]) -> Result<(), TxError> {
+        panic!("unexpected native key write")
+      }
+      fn remove(&mut self, _: &Identity) -> Result<(), TxError> {
+        panic!("unexpected native key removal")
+      }
+    }
+    let root = tempfile::tempdir().unwrap();
+    let legacy_directory = root.path().join("legacy");
+    let file_directory = root.path().join("file");
+    fs::create_dir(&legacy_directory).unwrap();
+    fs::create_dir(&file_directory).unwrap();
+    let legacy = VaultState::default();
+    crate::legacy_vault::vault_load_at(
+      &legacy,
+      legacy_directory.join("vault.stronghold"),
+      "".into(),
+    )
+    .unwrap();
+    crate::legacy_vault::vault_save_at(
+      &legacy,
+      serde_json::to_string(&vec![entry("a", "Alpha")]).unwrap(),
+    )
+    .unwrap();
+    drop(legacy);
+    let a = Runtime::new(legacy_directory);
+    let b = Runtime::new(file_directory);
+    let mut keys = Unavailable { calls: 0 };
+    a.migrate_legacy("", &mut keys).unwrap();
+    let calls = keys.calls;
+    b.create(Some("local"), &mut keys).unwrap();
+    b.with_records(|vault| {
+      vault.save_records(vec![(
+        VAULT_STORE_NAME,
+        Some(serde_json::to_vec(&vec![entry("b", "Beta")]).unwrap()),
+      )])
+    })
+    .unwrap();
+    create_at(
+      &a,
+      root.path().to_string_lossy().into_owned(),
+      "sync-password".into(),
+    )
+    .unwrap();
+    join_at(
+      &b,
+      root
+        .path()
+        .join(SYNC_FOLDER_NAME)
+        .to_string_lossy()
+        .into_owned(),
+      "sync-password".into(),
+    )
+    .unwrap();
+    sync_at(&a).unwrap();
+    assert_eq!(a.with_records(current_entries).unwrap().len(), 2);
+    assert_eq!(keys.calls, calls);
+    assert!(a.status().unwrap().legacy_password.is_some());
+    a.lock().unwrap();
+    a.unlock_current(Some(""), None, &mut keys).unwrap();
+    sync_at(&a).unwrap();
+    assert_eq!(keys.calls, calls);
+    assert_eq!(a.with_records(current_entries).unwrap().len(), 2);
+  }
+
+  #[test]
   fn vault_file_backend_two_vaults_sync_deletion_noop_restart_and_disconnect() {
     use crate::{
       vault_journal::Identity,

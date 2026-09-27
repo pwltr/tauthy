@@ -55,6 +55,8 @@ const Main = () => {
   const [needsCreation, setNeedsCreation] = useState(false)
   const [creationPassword, setCreationPassword] = useState('')
   const [openReset, setOpenReset] = useState(false)
+  const [usingLegacy, setUsingLegacy] = useState(false)
+  const [migrationPassword, setMigrationPassword] = useState('')
 
   const initializeVault = useCallback(
     async (reload = false) => {
@@ -69,6 +71,7 @@ const Main = () => {
       try {
         if (vault.fileBackend) {
           const status = await vault.prepare(reload)
+          setUsingLegacy(status.usingLegacy ?? false)
           if (status.lifecycle === 'new' || status.lifecycle === 'deleted') {
             setNeedsCreation(true)
             return
@@ -151,6 +154,35 @@ const Main = () => {
     <AppBarBackContext.Provider value={{ backDisabled, setBackDisabled }}>
       <Wrapper>
         <AppBar />
+        {usingLegacy && !isLoading && !initializationError && (
+          <Stack spacing={1} sx={{ p: 2 }}>
+            <Alert severity="info">{t('vaultUi.deferred')}</Alert>
+            {isPasswordSet && (
+              <TextField
+                type="password"
+                label={t('modals.currentPassword')}
+                value={migrationPassword}
+                onChange={(event) => setMigrationPassword(event.target.value)}
+              />
+            )}
+            <Button
+              onClick={async () => {
+                setIsLoading(true)
+                try {
+                  const status = await vault.retryMigration(migrationPassword)
+                  setMigrationPassword('')
+                  setUsingLegacy(status.usingLegacy ?? false)
+                } catch (error) {
+                  setInitializationError(vaultErrorMessage(error, t))
+                } finally {
+                  setIsLoading(false)
+                }
+              }}
+            >
+              {t('vaultUi.retryMigration')}
+            </Button>
+          </Stack>
+        )}
         {isLoading ? (
           <InitializationState>
             <CircularProgress size={28} />

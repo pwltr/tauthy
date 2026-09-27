@@ -20,6 +20,7 @@ struct Keys {
   entries: HashMap<String, Zeroizing<[u8; 32]>>,
   unavailable: bool,
   denied: bool,
+  deny_after_set: bool,
 }
 impl Keys {
   fn check(&self) -> Result<(), TxError> {
@@ -49,6 +50,9 @@ impl Credentials for Keys {
       return Err(TxError::Conflict);
     }
     self.entries.insert(selector, Zeroizing::new(*key));
+    if self.deny_after_set {
+      self.denied = true;
+    }
     Ok(())
   }
   fn remove(&mut self, id: &Identity) -> Result<(), TxError> {
@@ -294,24 +298,28 @@ fn save_fault_matrix_reopens_only_complete_old_or_new_records() {
 #[test]
 fn migration_deferral_is_a_runtime_result_not_a_phase_guess() {
   let directory = tempfile::tempdir().unwrap();
-  fs::write(directory.path().join("vault.stronghold"), b"PARTI\x03\x00").unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "".into()).unwrap();
+  crate::legacy_vault::vault_save_at(&legacy, "[]".into()).unwrap();
+  drop(legacy);
+  let original = fs::read(&source).unwrap();
   let runtime = Runtime::new(directory.path().into());
   let mut keys = Keys {
     unavailable: true,
     ..Keys::default()
   };
-  let mut reader = |_: &Path, _: &str| Ok(Records::default());
-  assert_eq!(
-    runtime.migrate("", &mut keys, &mut reader),
-    Err(Error::Transaction(TxError::CredentialUnavailable))
-  );
+  runtime.migrate_legacy("", &mut keys).unwrap();
   let status = runtime.status().unwrap();
   assert_eq!(status.metadata.lifecycle, Lifecycle::LegacyMigrationPending);
   assert_eq!(
     status.migration_deferred,
     Some(Deferred::CredentialUnavailable)
   );
-  assert!(status.locked);
+  assert!(!status.locked);
+  assert_eq!(status.legacy_password, Some(false));
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"[]".to_vec()));
+  assert_eq!(fs::read(&source).unwrap(), original);
   assert_eq!(
     Runtime::new(directory.path().into())
       .status()
@@ -321,16 +329,13 @@ fn migration_deferral_is_a_runtime_result_not_a_phase_guess() {
   );
   keys.unavailable = false;
   keys.denied = true;
-  assert_eq!(
-    runtime.unlock(None, None, &mut keys, &mut reader),
-    Err(Error::Transaction(TxError::CredentialAccessDenied))
-  );
+  runtime.migrate_legacy("", &mut keys).unwrap();
   assert_eq!(
     runtime.status().unwrap().migration_deferred,
     Some(Deferred::CredentialAccessDenied)
   );
   keys.denied = false;
-  runtime.unlock(None, None, &mut keys, &mut reader).unwrap();
+  runtime.migrate_legacy("", &mut keys).unwrap();
   assert_eq!(
     runtime.status().unwrap().metadata.lifecycle,
     Lifecycle::Active
@@ -338,8 +343,231 @@ fn migration_deferral_is_a_runtime_result_not_a_phase_guess() {
   assert_eq!(runtime.status().unwrap().migration_deferred, None);
   assert_eq!(
     fs::read(directory.path().join("vault.stronghold.retired")).unwrap(),
-    b"PARTI\x03\x00"
+    original
   );
+}
+
+#[test]
+fn deletion_under_deferral_removes_the_staged_credential_and_legacy_source() {
+  let directory = tempfile::tempdir().unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "".into()).unwrap();
+  legacy
+    .with_unlocked(|vault| {
+      vault.put_record(b"vault", b"[]".to_vec())?;
+      vault.commit()
+    })
+    .unwrap();
+  drop(legacy);
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys {
+    deny_after_set: true,
+    ..Keys::default()
+  };
+  runtime.migrate_legacy("", &mut keys).unwrap();
+  assert_eq!(keys.entries.len(), 1);
+  assert_eq!(
+    vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .phase,
+    Phase::MigrationDeferred
+  );
+  keys.denied = false;
+  keys.deny_after_set = false;
+  runtime.delete(true, &mut keys).unwrap();
+  assert!(keys.entries.is_empty());
+  assert!(!source.exists());
+  assert_eq!(
+    vault_journal::read(directory.path())
+      .unwrap()
+      .unwrap()
+      .phase,
+    Phase::Deleted
+  );
+}
+
+#[test]
+fn deferred_edits_restart_and_retry_migrate_current_records_and_reuse_tracked_key() {
+  let directory = tempfile::tempdir().unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "".into()).unwrap();
+  legacy
+    .with_unlocked(|vault| {
+      vault.put_record(b"vault", b"old".to_vec())?;
+      vault.put_record(b"opaque", b"retained".to_vec())?;
+      vault.commit()
+    })
+    .unwrap();
+  drop(legacy);
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys {
+    deny_after_set: true,
+    ..Keys::default()
+  };
+  runtime.migrate_legacy("", &mut keys).unwrap();
+  let journal = vault_journal::read(directory.path()).unwrap().unwrap();
+  assert_eq!(journal.phase, Phase::MigrationDeferred);
+  assert_eq!(keys.entries.len(), 1);
+  let selector = journal
+    .target
+    .as_ref()
+    .unwrap()
+    .credential_selector(true)
+    .unwrap()
+    .1;
+  let staged_key = **keys.entries.get(&selector).unwrap();
+  runtime
+    .save(vec![
+      put(b"vault", b"edited"),
+      put(b"sync-config-v1", b"sync edited"),
+    ])
+    .unwrap();
+  let edited = fs::read(&source).unwrap();
+  assert_ne!(
+    Some(vault_transaction::fingerprint(&source).unwrap()),
+    journal.source_fingerprint
+  );
+  let journal_bytes = fs::read(directory.path().join("vault.transaction.json")).unwrap();
+  assert_eq!(
+    runtime.change_password(None, Some("new"), true, &mut keys),
+    Err(Error::MigrationRequired)
+  );
+  runtime.lock().unwrap();
+  assert_eq!(runtime.get(b"vault"), Err(Error::Locked));
+  drop(runtime);
+  let runtime = Runtime::new(directory.path().into());
+  runtime.unlock_current(Some(""), None, &mut keys).unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"edited".to_vec()));
+  assert!(runtime.status().unwrap().migration_deferred.is_none());
+  assert!(runtime.migrate_legacy("wrong", &mut keys).is_err());
+  assert_eq!(fs::read(&source).unwrap(), edited);
+  assert_eq!(
+    fs::read(directory.path().join("vault.transaction.json")).unwrap(),
+    journal_bytes
+  );
+  keys.denied = false;
+  keys.deny_after_set = false;
+  runtime.migrate_legacy("", &mut keys).unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"edited".to_vec()));
+  assert_eq!(
+    runtime.get(b"sync-config-v1").unwrap(),
+    Some(b"sync edited".to_vec())
+  );
+  assert_eq!(runtime.get(b"opaque").unwrap(), Some(b"retained".to_vec()));
+  assert!(runtime.status().unwrap().legacy_password.is_none());
+  assert_eq!(keys.entries.len(), 1);
+  assert_eq!(**keys.entries.get(&selector).unwrap(), staged_key);
+  assert_eq!(
+    fs::read(directory.path().join("vault.stronghold.retired")).unwrap(),
+    edited
+  );
+}
+
+#[test]
+fn deferred_batches_discard_failed_callbacks_and_refuse_external_source_changes() {
+  let directory = tempfile::tempdir().unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "".into()).unwrap();
+  crate::legacy_vault::vault_save_at(&legacy, "old".into()).unwrap();
+  drop(legacy);
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys {
+    unavailable: true,
+    ..Keys::default()
+  };
+  runtime.migrate_legacy("", &mut keys).unwrap();
+  let before = fs::read(&source).unwrap();
+  let failed: Result<(), BatchError> = runtime.with_record_batch(|_, updates| {
+    updates.push(put(b"vault", b"must not commit"));
+    Err("syncConflict".into())
+  });
+  assert!(matches!(failed, Err(BatchError::Operation(error)) if error == "syncConflict"));
+  assert!(!runtime.status().unwrap().locked);
+  assert_eq!(fs::read(&source).unwrap(), before);
+  fs::write(&source, &before[..before.len() - 1]).unwrap();
+  assert_eq!(
+    runtime.save(vec![put(b"vault", b"never")]),
+    Err(TxError::SourceChanged.into())
+  );
+  assert!(runtime.status().unwrap().locked);
+}
+
+#[test]
+fn incorrect_first_password_for_passwordless_legacy_is_retryable_without_deletion() {
+  let directory = tempfile::tempdir().unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "".into()).unwrap();
+  crate::legacy_vault::vault_save_at(&legacy, "accounts".into()).unwrap();
+  drop(legacy);
+  let before = fs::read(&source).unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  assert_eq!(
+    runtime.migrate_legacy("mistake", &mut keys),
+    Err(TxError::Envelope(crate::vault_file::Error::Authentication).into())
+  );
+  let journal = fs::read(directory.path().join("vault.transaction.json")).unwrap();
+  assert_eq!(
+    runtime.unlock_current(Some("another mistake"), None, &mut keys),
+    Err(TxError::Envelope(crate::vault_file::Error::Authentication).into())
+  );
+  assert_eq!(
+    fs::read(directory.path().join("vault.transaction.json")).unwrap(),
+    journal
+  );
+  assert_eq!(fs::read(&source).unwrap(), before);
+  runtime.unlock_current(Some(""), None, &mut keys).unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"accounts".to_vec()));
+  assert_eq!(
+    runtime.status().unwrap().metadata.lifecycle,
+    Lifecycle::Active
+  );
+  assert_eq!(
+    fs::read(directory.path().join("vault.stronghold.retired")).unwrap(),
+    before
+  );
+}
+
+#[test]
+fn unsupported_platform_uses_only_existing_legacy_backend_and_can_later_migrate_password_mode() {
+  let directory = tempfile::tempdir().unwrap();
+  let source = directory.path().join("vault.stronghold");
+  let legacy = crate::legacy_vault::VaultState::default();
+  crate::legacy_vault::vault_load_at(&legacy, source.clone(), "short".into()).unwrap();
+  crate::legacy_vault::vault_save_at(&legacy, "old".into()).unwrap();
+  drop(legacy);
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys {
+    unavailable: true,
+    ..Keys::default()
+  };
+  {
+    let mut state = runtime.state.lock().unwrap();
+    runtime
+      .recover_deferred(
+        &mut state,
+        "short",
+        TxError::Journal(vault_journal::Error::Unsupported),
+        &mut keys,
+      )
+      .unwrap();
+  }
+  assert_eq!(runtime.status().unwrap().legacy_password, Some(true));
+  assert_eq!(
+    runtime.status().unwrap().migration_deferred,
+    Some(Deferred::UnsupportedDurability)
+  );
+  runtime.save(vec![put(b"vault", b"edited")]).unwrap();
+  assert!(!directory.path().join("vault.transaction.json").exists());
+  runtime.migrate_legacy("short", &mut keys).unwrap();
+  assert_eq!(runtime.get(b"vault").unwrap(), Some(b"edited".to_vec()));
+  assert!(runtime.status().unwrap().legacy_password.is_none());
+  assert!(keys.entries.is_empty());
 }
 
 #[test]
