@@ -54,7 +54,18 @@ describe('file vault protection controls', () => {
     mocks.isUnlocked.mockResolvedValue(true)
   })
 
-  it('asks for the current password and explains rotation before confirmation', async () => {
+  it.each([false, true])(
+    'uses the same compact filled password field (remove password: %s)',
+    (removePassword) => {
+      renderModal(removePassword)
+      const field = screen
+        .getByLabelText('translated modals.currentPassword')
+        .closest('.MuiInputBase-root')
+      expect(field).toHaveClass('MuiFilledInput-root', 'MuiInputBase-sizeSmall')
+    },
+  )
+
+  it('asks for the current and new passwords without storage implementation warnings', async () => {
     renderModal()
     fireEvent.change(screen.getByLabelText('translated modals.currentPassword'), {
       target: { value: 'old' },
@@ -65,13 +76,14 @@ describe('file vault protection controls', () => {
     fireEvent.change(screen.getByLabelText('translated modals.repeatPassword'), {
       target: { value: 'new-password' },
     })
-    expect(screen.getByText('translated vaultUi.rotationWarning')).toBeInTheDocument()
+    expect(screen.queryByText('translated vaultUi.rotationWarning')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'translated modals.confirm' }))
     await waitFor(() => expect(mocks.changePassword).toHaveBeenCalledWith('new-password', 'old'))
   })
 
   it('removes password protection with current authentication rather than empty-password wrapping', async () => {
     renderModal(true)
+    expect(screen.queryByText('translated vaultUi.rotationWarning')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('translated modals.currentPassword'), {
       target: { value: 'old' },
     })

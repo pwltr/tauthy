@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { open } from '@tauri-apps/plugin-dialog'
@@ -9,7 +9,11 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import Box from '@mui/material/Box'
+import Toolbar from '@mui/material/Toolbar'
 
+import AppBar from '~/components/AppBar'
+import { AppBarBackContext, AppBarTitleContext } from '~/context'
 import { vault } from '~/utils/storage'
 import { vaultErrorMessage } from '~/utils/vaultErrors'
 
@@ -17,6 +21,7 @@ import { vaultErrorMessage } from '~/utils/vaultErrors'
 const VaultRecovery = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [path, setPath] = useState('')
   const [foreignPassword, setForeignPassword] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
@@ -28,6 +33,10 @@ const VaultRecovery = () => {
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    setAppBarTitle(t('vaultUi.replaceTitle'))
+  }, [setAppBarTitle, t])
 
   useEffect(() => {
     if (!vault.fileBackend) return
@@ -104,77 +113,85 @@ const VaultRecovery = () => {
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 3, maxWidth: 540, width: '100%', mx: 'auto', overflowY: 'auto' }}>
-      <Typography variant="h6">{t('vaultUi.replaceTitle')}</Typography>
-      <Typography variant="body2">{t('vaultUi.replaceExplanation')}</Typography>
-      <Alert severity="warning">{t('vaultUi.replaceWarning')}</Alert>
-      {recovery && <Alert severity="info">{t('vaultUi.replaceResume')}</Alert>}
-      {error && <Alert severity="error">{error}</Alert>}
-      {!ready && <Alert severity="info">{t('vaultErrors.locked')}</Alert>}
-      <Button disabled={busy || !ready} variant="outlined" onClick={() => void choose()}>
-        {t('vaultUi.chooseFile')}
-      </Button>
-      {path && (
-        <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
-          {path.split(/[\\/]/).pop()}
-        </Typography>
-      )}
-      <TextField
-        disabled={busy}
-        type="password"
-        label={t('vaultUi.filePassword')}
-        value={foreignPassword}
-        onChange={(event) => setForeignPassword(event.target.value)}
-      />
-      {sourcePasswordRequired && (
-        <TextField
-          disabled={busy}
-          type="password"
-          label={t('modals.currentPassword')}
-          value={currentPassword}
-          onChange={(event) => setCurrentPassword(event.target.value)}
-        />
-      )}
-      <Typography variant="body2">{t('vaultUi.createHint')}</Typography>
-      <TextField
-        disabled={busy}
-        type="password"
-        label={t('vaultUi.optionalPassword')}
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-      />
-      <TextField
-        disabled={busy}
-        type="password"
-        label={t('modals.repeatPassword')}
-        value={repeatPassword}
-        onChange={(event) => setRepeatPassword(event.target.value)}
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            disabled={busy}
-            checked={confirmed}
-            onChange={(event) => setConfirmed(event.target.checked)}
-          />
-        }
-        label={t('vaultUi.replaceConfirm')}
-      />
-      <Stack direction="row" spacing={1}>
-        <Button disabled={busy} onClick={() => navigate('/unlock')}>
-          {t('modals.cancel')}
-        </Button>
-        <Button
-          color="error"
-          variant="contained"
-          disabled={!confirmed || !path || !ready}
-          loading={busy}
-          onClick={() => void submit()}
+    <AppBarBackContext.Provider value={{ backDisabled: busy, setBackDisabled: () => {} }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <AppBar />
+        <Toolbar />
+        <Stack
+          spacing={2}
+          sx={{ p: 3, maxWidth: 540, width: '100%', mx: 'auto', overflowY: 'auto' }}
         >
-          {t('vaultUi.replaceTitle')}
-        </Button>
-      </Stack>
-    </Stack>
+          <Typography variant="body2">{t('vaultUi.replaceExplanation')}</Typography>
+          <Alert severity="warning">{t('vaultUi.replaceWarning')}</Alert>
+          {recovery && <Alert severity="info">{t('vaultUi.replaceResume')}</Alert>}
+          {error && <Alert severity="error">{error}</Alert>}
+          {!ready && <Alert severity="info">{t('vaultErrors.locked')}</Alert>}
+          <Button disabled={busy || !ready} variant="outlined" onClick={() => void choose()}>
+            {t('vaultUi.chooseFile')}
+          </Button>
+          {path && (
+            <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+              {path.split(/[\\/]/).pop()}
+            </Typography>
+          )}
+          <TextField
+            disabled={busy}
+            type="password"
+            label={t('vaultUi.filePassword')}
+            value={foreignPassword}
+            onChange={(event) => setForeignPassword(event.target.value)}
+          />
+          {sourcePasswordRequired && (
+            <TextField
+              disabled={busy}
+              type="password"
+              label={t('modals.currentPassword')}
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+            />
+          )}
+          <Typography variant="body2">{t('vaultUi.createHint')}</Typography>
+          <TextField
+            disabled={busy}
+            type="password"
+            label={t('vaultUi.optionalPassword')}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <TextField
+            disabled={busy}
+            type="password"
+            label={t('modals.repeatPassword')}
+            value={repeatPassword}
+            onChange={(event) => setRepeatPassword(event.target.value)}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                disabled={busy}
+                checked={confirmed}
+                onChange={(event) => setConfirmed(event.target.checked)}
+              />
+            }
+            label={t('vaultUi.replaceConfirm')}
+          />
+          <Stack direction="row" spacing={1}>
+            <Button disabled={busy} onClick={() => navigate('/unlock')}>
+              {t('modals.cancel')}
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              disabled={!confirmed || !path || !ready}
+              loading={busy}
+              onClick={() => void submit()}
+            >
+              {t('vaultUi.replaceTitle')}
+            </Button>
+          </Stack>
+        </Stack>
+      </Box>
+    </AppBarBackContext.Provider>
   )
 }
 

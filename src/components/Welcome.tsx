@@ -7,6 +7,11 @@ import FormGroup from '@mui/material/FormGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import MuiButton from '@mui/material/Button'
+import Alert from '@mui/material/Alert'
+
+import { vault } from '~/utils/storage'
+import { useLocalStorage } from '~/hooks'
+import { vaultErrorMessage } from '~/utils/vaultErrors'
 
 import logo from '../../assets/app-icons/icon-round-bordered.png'
 
@@ -27,11 +32,27 @@ const Welcome = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [checked, setChecked] = useState(false)
+  const [, setShowWelcome] = useLocalStorage('showWelcome', true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async () => {
-    if (checked) {
-      localStorage.setItem('showWelcome', 'false')
+    if (!checked || busy) return
+    setBusy(true)
+    setError('')
+    try {
+      if (vault.fileBackend) {
+        // Finishing onboarding is the creation action. Only a genuinely new
+        // vault may be created; pending operations resume through prepare().
+        const status = await vault.prepare()
+        if (status.lifecycle === 'new') await vault.create()
+      }
+      setShowWelcome(false)
       navigate('/')
+    } catch (error) {
+      setError(vaultErrorMessage(error, t))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -57,11 +78,18 @@ const Welcome = () => {
         />
       </FormGroup>
 
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       <Button
         aria-label="accept"
         color="primary"
         variant="contained"
-        disabled={!checked}
+        disabled={!checked || busy}
+        loading={busy}
         onClick={handleSubmit}
       >
         {t('welcome.start')}

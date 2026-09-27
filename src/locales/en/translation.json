@@ -1,7 +1,7 @@
 {
   "vaultUi": {
-    "deferred": "Storage upgrade is deferred. Your accounts still use Stronghold and remain usable. Retry when device storage is available.",
-    "retryMigration": "Retry storage upgrade",
+    "deferred": "Tauthy couldn’t finish setting up secure storage. Your accounts still work. Try again and allow access if prompted.",
+    "retryMigration": "Try again",
     "replaceTitle": "Replace vault from file",
     "replaceExplanation": "For recovery from a password-protected vault.tauthy file only. To add accounts from a backup, use Import instead. Device-protected files are not portable backups.",
     "replaceWarning": "This replaces all local accounts and disconnects sync. Cloud files are not deleted. Keep an independent export first; reconnect sync after replacement.",
@@ -13,8 +13,7 @@
     "retry": "Retry",
     "openFailed": "Unable to open the vault:",
     "optionalPassword": "Password (optional)",
-    "createHint": "Without a password, your vault key is protected by this device's credential store.",
-    "rotationWarning": "Keep an independent encrypted export. Changing protection invalidates older device-key vault file copies. An incorrect current password locks the vault."
+    "createHint": "Choose a password, or leave it blank to open Tauthy without one."
   },
   "vaultErrors": {
     "migrationRequired": "Complete the storage upgrade before changing protection or replacing the vault.",

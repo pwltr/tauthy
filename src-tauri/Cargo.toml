@@ -55,6 +55,8 @@ tauri-plugin-single-instance = "2.4.4"
 # Opt-in integration/testing only. Not enabled in release workflows; platform
 # durability guards remain in force independently of this feature.
 file-vault = []
+# Disposable packaged migration testing only; never enable in release workflows.
+migration-test = ["file-vault"]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]

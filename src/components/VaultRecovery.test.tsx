@@ -1,25 +1,40 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useState, type ReactNode } from 'react'
+import { AppBarTitleContext } from '~/context'
 
 const mocks = vi.hoisted(() => ({ status: vi.fn(), importForeign: vi.fn(), open: vi.fn() }))
 vi.mock('~/utils/storage', () => ({
   vault: { fileBackend: true, getStatus: mocks.status, importForeign: mocks.importForeign },
 }))
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: mocks.open }))
+vi.mock('~/hooks/useVaultProtection', () => ({ useVaultProtection: () => true }))
 const t = (key: string) => `translated ${key}`
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t }) }))
 import VaultRecovery from './VaultRecovery'
 
-const renderScreen = () =>
+const TitleProvider = ({ children }: { children: ReactNode }) => {
+  const [appBarTitle, setAppBarTitle] = useState('Tauthy')
+  return (
+    <AppBarTitleContext.Provider value={{ appBarTitle, setAppBarTitle }}>
+      {children}
+    </AppBarTitleContext.Provider>
+  )
+}
+
+const renderScreen = (from = '/security') =>
   render(
-    <MemoryRouter initialEntries={['/vault-recovery']}>
-      <Routes>
-        <Route path="/vault-recovery" element={<VaultRecovery />} />
-        <Route path="/" element={<div>Accounts</div>} />
-        <Route path="/unlock" element={<div>Unlock</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <TitleProvider>
+      <MemoryRouter initialEntries={[from, '/vault-recovery']} initialIndex={1}>
+        <Routes>
+          <Route path="/vault-recovery" element={<VaultRecovery />} />
+          <Route path="/security" element={<div>Security settings</div>} />
+          <Route path="/" element={<div>Accounts</div>} />
+          <Route path="/unlock" element={<div>Unlock</div>} />
+        </Routes>
+      </MemoryRouter>
+    </TitleProvider>,
   )
 
 const choose = async () => {
@@ -39,6 +54,35 @@ describe('foreign vault recovery screen', () => {
     })
     mocks.open.mockResolvedValue('/test/foreign.tauthy')
     mocks.importForeign.mockResolvedValue(undefined)
+  })
+
+  it.each(['/security', '/unlock'])(
+    'shows the standard header and returns to %s with Back',
+    async (from) => {
+      renderScreen(from)
+      const header = screen.getByRole('banner')
+      expect(header).toHaveTextContent('translated vaultUi.replaceTitle')
+      expect(
+        screen.getByRole('heading', { name: 'translated vaultUi.replaceTitle' }),
+      ).toBeInTheDocument()
+      expect(
+        screen.getAllByRole('heading', { name: 'translated vaultUi.replaceTitle' }),
+      ).toHaveLength(1)
+      fireEvent.click(screen.getByRole('button', { name: 'menu' }))
+      expect(
+        await screen.findByText(from === '/security' ? 'Security settings' : 'Unlock'),
+      ).toBeInTheDocument()
+      expect(mocks.importForeign).not.toHaveBeenCalled()
+    },
+  )
+
+  it('disables Back while replacement is in progress', async () => {
+    mocks.importForeign.mockImplementation(() => new Promise(() => {}))
+    renderScreen()
+    await choose()
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: 'translated vaultUi.replaceTitle' }))
+    expect(screen.getByRole('button', { name: 'menu' })).toBeDisabled()
   })
 
   it('explains destructive replacement and requires file selection plus explicit confirmation', async () => {

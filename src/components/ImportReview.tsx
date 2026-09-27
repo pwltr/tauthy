@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography'
 
 import { AppBarBackContext, AppBarTitleContext } from '~/context'
 import { commitPreparedImport, type ImportPreview } from '~/utils'
+import { traceImport } from '~/utils/importDiagnostics'
 
 type ImportReviewContext = {
   preview?: ImportPreview
@@ -44,6 +45,9 @@ const ImportReview = () => {
   }, [setAppBarTitle, t])
 
   useEffect(() => () => setBackDisabled(false), [setBackDisabled])
+  useEffect(() => {
+    traceImport(preview ? 'reviewMounted' : 'reviewMissingPreview')
+  }, [preview])
 
   if (!preview) return <Navigate to="/import" replace />
 

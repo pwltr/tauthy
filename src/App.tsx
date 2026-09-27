@@ -25,8 +25,10 @@ import {
 
 // init react-i18next
 import '~/utils/i18n'
+import { installImportDiagnostics } from '~/utils/importDiagnostics'
 
 const App = () => {
+  useEffect(installImportDiagnostics, [])
   const { t, i18n } = useTranslation()
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')

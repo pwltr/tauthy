@@ -1,0 +1,69 @@
+name: Build isolated migration test
+
+on:
+  push:
+    branches: [feat/stronghold-migration]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migration-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@86e7197484018ef6aaa9255d186f6ce1754276dd # 1.97.0
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: yarn install --immutable
+
+      - name: Check unchanged production gate
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --features file-vault
+
+      - name: Verify packaged production effects remain disabled
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --features file-vault packaged_windows_effects_require_the_isolated_test_feature
+
+      - name: Test isolated Windows vault integration
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --features migration-test
+
+      - name: Build isolated portable test app
+        env:
+          VITE_IMPORT_DIAGNOSTICS: '1'
+        run: yarn tauri build --features migration-test --config src-tauri/tauri.migration-test.conf.json --no-bundle -- --locked
+
+      - name: Prepare test launcher
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path migration-test-artifact
+          Copy-Item 'src-tauri/target/release/Tauthy Migration Test.exe' migration-test-artifact/
+          Copy-Item scripts/run-migration-tests.ps1 migration-test-artifact/'Run Migration Tests.ps1'
+          Copy-Item scripts/run-migration-tests.cmd migration-test-artifact/'Run Migration Tests.cmd'
+          Copy-Item docs/migration-test-checklist.md migration-test-artifact/'Test instructions.md'
+
+      - name: Upload Windows test download
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Tauthy-Migration-Test-Windows
+          path: migration-test-artifact/
+          if-no-files-found: error
+          retention-days: 14

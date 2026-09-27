@@ -37,20 +37,26 @@ const Unlock = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [recoveryError, setRecoveryError] = useState(false)
   const [rotation, setRotation] = useState(false)
   const [replacement, setReplacement] = useState(false)
   const [deferred, setDeferred] = useState(false)
   const [targetPassword, setTargetPassword] = useState('')
   const [openReset, setOpenReset] = useState(false)
-  const [isDisabled, setIsDisabled] = useState(true)
+  const [isUnlocking, setIsUnlocking] = useState(false)
+  const [isCheckingStatus, setIsCheckingStatus] = useState(vault.fileBackend)
+  const unlockInFlight = useRef(false)
 
   const onSubmit = async (
     event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLElement>,
   ) => {
     event.preventDefault()
+    if (unlockInFlight.current || isCheckingStatus) return
 
-    setIsDisabled(true)
+    unlockInFlight.current = true
+    setIsUnlocking(true)
     setError(false)
+    setRecoveryError(false)
 
     try {
       await vault.unlock(password, rotation ? targetPassword || undefined : undefined)
@@ -62,7 +68,6 @@ const Unlock = () => {
         await vault.reset()
       }
       void syncInBackground()
-      setIsDisabled(false)
       setError(false)
       setPassword('')
       setTargetPassword('')
@@ -72,26 +77,27 @@ const Unlock = () => {
 
       // lock it again in case of wrong status
       await vault.lock().catch(() => undefined)
+      setRecoveryError(vaultErrorCode(err) !== 'vaultAuthenticationFailed')
       setErrorMessage(
         vaultErrorCode(err) === 'vaultAuthenticationFailed'
           ? t('unlock.invalid')
           : vaultErrorMessage(err, t),
       )
 
-      // FIX: too many wrong attempts in short amount
-      // of time lead to corrupted stronghold
-      setTimeout(() => {
-        setIsDisabled(false)
-        setError(true)
-      }, 2000)
+      setError(true)
+    } finally {
+      unlockInFlight.current = false
+      setIsUnlocking(false)
     }
   }
 
   useEffect(() => {
+    let active = true
     if (vault.fileBackend) {
       void vault
         .getStatus()
         .then((status) => {
+          if (!active) return
           setDeferred(status.phase === 'migrationDeferred')
           setRotation(
             status.lifecycle === 'transactionPending' &&
@@ -102,13 +108,18 @@ const Unlock = () => {
           )
         })
         .catch((error) => {
+          if (!active) return
           setError(true)
+          setRecoveryError(vaultErrorCode(error) !== 'vaultAuthenticationFailed')
           setErrorMessage(vaultErrorMessage(error, t))
         })
+        .finally(() => {
+          if (active) setIsCheckingStatus(false)
+        })
     }
-    // FIX: too many wrong attempts in short amount
-    // of time lead to corrupted stronghold
-    setTimeout(() => setIsDisabled(false), 2000)
+    return () => {
+      active = false
+    }
   }, [])
 
   useEffect(() => {
@@ -173,16 +184,16 @@ const Unlock = () => {
           aria-label={t('unlock.unlock')}
           color="primary"
           variant="contained"
-          loading={isDisabled}
+          loading={isUnlocking || isCheckingStatus}
           onClick={onSubmit}
         >
           {t('unlock.unlock')}
         </Button>
       </form>
-      {vault.fileBackend && (error || replacement) && (
+      {vault.fileBackend && ((error && recoveryError) || replacement) && (
         <Button onClick={() => navigate('/vault-recovery')}>{t('vaultUi.replaceTitle')}</Button>
       )}
-      {vault.fileBackend && error && (
+      {vault.fileBackend && error && recoveryError && (
         <Button color="error" onClick={() => setOpenReset(true)}>
           {t('security.deleteVault')}
         </Button>

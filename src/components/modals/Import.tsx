@@ -10,6 +10,7 @@ import LinkIcon from '@mui/icons-material/Link'
 
 import { ImportFormat, ImportPreview, prepareImport } from '~/utils'
 import Modal from '~/components/Modal'
+import { traceImport } from '~/utils/importDiagnostics'
 import ListItem from '~/components/ListItem'
 import ImportPasswordModal from '~/components/modals/ImportPassword'
 import twoFasIcon from '../../../assets/import-providers/2fas.svg'
@@ -84,7 +85,7 @@ const ImportModal = ({
   const formatName = (value: ImportFormat) =>
     value === 'otpauth' ? t('import.otpAuth') : formatNames[value]
   const inputRef = useRef<HTMLInputElement>(null)
-  const [format, setFormat] = useState<ImportFormat>()
+  const selectedFormat = useRef<ImportFormat | undefined>(undefined)
   const [pendingEncryptedImport, setPendingEncryptedImport] = useState<{
     file: File
     format: ImportFormat
@@ -93,13 +94,17 @@ const ImportModal = ({
   const [isDecrypting, setIsDecrypting] = useState(false)
 
   const handleClick = (format: ImportFormat) => {
-    setFormat(format)
+    traceImport('pickerOpening')
+    // Native pickers can return before React commits a state update. Keep the
+    // selection synchronous so their change event never loses the format.
+    selectedFormat.current = format
     if (inputRef.current)
       inputRef.current.accept = format === 'otpauth' ? '.txt,.uris' : '.json,.2fas,.tauthy'
     inputRef.current?.click()
   }
 
   const showImportError = (err: unknown) => {
+    traceImport('importErrorShown')
     const error =
       err instanceof Error && knownImportErrors.includes(err.message) ? err.message : 'importFailed'
     toast.error(t(`toasts.${error}`))
@@ -147,12 +152,17 @@ const ImportModal = ({
             style={{ display: 'none' }}
             onChange={async (event) => {
               const input = event.currentTarget
+              traceImport('pickerReturned')
               const file = input.files?.[0]
+              const format = selectedFormat.current
+              traceImport(file ? 'fileSelected' : 'noFileSelected')
+              if (!format) traceImport('formatMissing')
               if (format && file) {
                 try {
                   onReview(await prepareImport(file, format))
                 } catch (err) {
                   if (err instanceof Error && err.message === 'importPasswordRequired') {
+                    traceImport('passwordPrompt')
                     setPendingEncryptedImport({ file, format })
                   } else {
                     showImportError(err)

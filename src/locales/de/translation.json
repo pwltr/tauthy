@@ -1,7 +1,7 @@
 {
   "vaultUi": {
-    "deferred": "Die Speicheraktualisierung wurde verschoben. Deine Konten verwenden weiterhin Stronghold und bleiben nutzbar. Versuche es erneut, wenn der Gerätespeicher verfügbar ist.",
-    "retryMigration": "Speicheraktualisierung erneut versuchen",
+    "deferred": "Tauthy konnte den sicheren Speicher nicht vollständig einrichten. Deine Konten funktionieren weiterhin. Versuche es erneut und erlaube den Zugriff, falls du dazu aufgefordert wirst.",
+    "retryMigration": "Erneut versuchen",
     "replaceTitle": "Tresor aus Datei ersetzen",
     "replaceExplanation": "Nur zur Wiederherstellung aus einer passwortgeschützten vault.tauthy-Datei. Verwende Importieren, um Konten aus einer Sicherung hinzuzufügen. Gerätegeschützte Dateien sind keine portablen Sicherungen.",
     "replaceWarning": "Alle lokalen Konten werden ersetzt und die Synchronisierung getrennt. Cloud-Dateien werden nicht gelöscht. Erstelle zuerst einen unabhängigen Export und verbinde die Synchronisierung danach neu.",
@@ -13,8 +13,7 @@
     "retry": "Erneut versuchen",
     "openFailed": "Tresor konnte nicht geöffnet werden:",
     "optionalPassword": "Passwort (optional)",
-    "createHint": "Ohne Passwort wird der Tresorschlüssel im Anmeldedatenspeicher dieses Geräts geschützt.",
-    "rotationWarning": "Bewahre einen unabhängigen verschlüsselten Export auf. Eine Schutzänderung macht ältere Tresordateikopien mit Geräteschlüssel unbrauchbar. Ein falsches aktuelles Passwort sperrt den Tresor."
+    "createHint": "Wähle ein Passwort oder lasse das Feld leer, um Tauthy ohne Passwort zu öffnen."
   },
   "vaultErrors": {
     "migrationRequired": "Schließe die Speicheraktualisierung ab, bevor du den Schutz änderst oder den Tresor ersetzt.",

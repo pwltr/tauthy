@@ -53,9 +53,20 @@ impl PlatformCredentials<NativeBackend> {
 
 impl<B: Backend> PlatformCredentials<B> {
   fn selector(&self, identity: &Identity) -> Result<(&'static str, String), Error> {
-    identity
+    let selector = identity
       .credential_selector(self.development)
-      .ok_or(Error::IdentityMismatch)
+      .ok_or(Error::IdentityMismatch)?;
+    #[cfg(feature = "migration-test")]
+    return Ok((
+      if self.development {
+        "tauthy-migration-test-dev.local-vault.v1"
+      } else {
+        "tauthy-migration-test.local-vault.v1"
+      },
+      selector.1,
+    ));
+    #[cfg(not(feature = "migration-test"))]
+    Ok(selector)
   }
 }
 

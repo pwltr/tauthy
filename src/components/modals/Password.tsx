@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
 
 import { vault } from '~/utils/storage'
 import { useVaultProtection } from '~/hooks/useVaultProtection'
@@ -85,7 +84,6 @@ const PasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }
           onChange={(event) => setCurrentPassword(event.target.value)}
         />
       )}
-      {vault.fileBackend && <Typography variant="body2">{t('vaultUi.rotationWarning')}</Typography>}
       <TextField
         type="password"
         label={t('modals.newPassword')}
