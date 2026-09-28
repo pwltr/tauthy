@@ -1,0 +1,16 @@
+html {
+  background: #1e1e1e;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: inherit;
+}
+
+@media (prefers-color-scheme: light) {
+  html {
+    background: #ffffff;
+    color-scheme: light;
+  }
+}
