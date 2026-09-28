@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useState, type ReactNode } from 'react'
 import { AppBarTitleContext } from '~/context'
 
+vi.mock('@tauri-apps/plugin-os', () => ({ type: () => 'linux' }))
 const mocks = vi.hoisted(() => ({ status: vi.fn(), importForeign: vi.fn(), open: vi.fn() }))
 vi.mock('~/utils/storage', () => ({
   vault: { fileBackend: true, getStatus: mocks.status, importForeign: mocks.importForeign },

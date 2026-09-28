@@ -8,7 +8,7 @@ afterEach(() => {
   vi.resetModules()
 })
 
-describe('platform light colors', () => {
+describe('platform theme colors', () => {
   it('uses white surfaces and a readable header on macOS', async () => {
     os.platform = 'macos'
     vi.resetModules()
@@ -19,6 +19,15 @@ describe('platform light colors', () => {
     expect(light.mui.palette.background.default).toBe('#ffffff')
     expect(light.mui.palette.background.paper).toBe('#ffffff')
     expect(light.mui.palette.primary.main).toBe('#363636')
+  })
+
+  it('uses a slightly darker header while preserving the dark background on macOS', async () => {
+    os.platform = 'macos'
+    vi.resetModules()
+    const { default: dark } = await import('./dark')
+
+    expect(dark.mui.palette.secondary.main).toBe('#191919')
+    expect(dark.mui.palette.background.default).toBe('#1e1e1e')
   })
 
   it('uses the Windows light header color with readable text without changing dark mode', async () => {

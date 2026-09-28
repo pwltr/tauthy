@@ -1,6 +1,7 @@
 import { useState, useContext, ChangeEvent, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { type as osType } from '@tauri-apps/plugin-os'
 import { styled } from '@mui/material/styles'
 import MuiAppBar from '@mui/material/AppBar'
 import MuiToolbar from '@mui/material/Toolbar'
@@ -78,7 +79,12 @@ const AppBar = () => {
   }
 
   return (
-    <MuiAppBar data-tauthy-app-bar position="fixed" color="secondary">
+    <MuiAppBar
+      data-tauthy-app-bar
+      position="fixed"
+      color="secondary"
+      enableColorOnDark={osType() === 'macos'}
+    >
       <Toolbar>
         {location.pathname !== '/' && (
           <IconButton

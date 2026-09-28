@@ -1,11 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTheme, ThemeProvider } from '@mui/material/styles'
 
 import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 
 const vault = vi.hoisted(() => ({ lock: vi.fn() }))
+const os = vi.hoisted(() => ({ platform: 'linux' }))
 
+vi.mock('@tauri-apps/plugin-os', () => ({ type: () => os.platform }))
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/hooks/useVaultProtection', () => ({
   useVaultProtection: () => localStorage.getItem('isPasswordSet') === 'true',
@@ -23,26 +26,29 @@ vi.mock('react-i18next', () => ({
 
 import AppBar from '~/components/AppBar'
 
-const renderAppBar = (path = '/', backDisabled = false) =>
+const renderAppBar = (path = '/', backDisabled = false, theme = createTheme()) =>
   render(
-    <AppBarTitleContext.Provider value={{ appBarTitle: 'Tauthy', setAppBarTitle: vi.fn() }}>
-      <AppBarBackContext.Provider value={{ backDisabled, setBackDisabled: vi.fn() }}>
-        <SearchContext.Provider value={{ searchTerm: '', setSearch: vi.fn() }}>
-          <MemoryRouter initialEntries={['/', path]} initialIndex={1}>
-            <Routes>
-              <Route path="/" element={<AppBar />} />
-              <Route path="/import/review" element={<AppBar />} />
-              <Route path="/settings" element={<div>Settings page</div>} />
-              <Route path="/unlock" element={<div>Unlock page</div>} />
-            </Routes>
-          </MemoryRouter>
-        </SearchContext.Provider>
-      </AppBarBackContext.Provider>
-    </AppBarTitleContext.Provider>,
+    <ThemeProvider theme={theme}>
+      <AppBarTitleContext.Provider value={{ appBarTitle: 'Tauthy', setAppBarTitle: vi.fn() }}>
+        <AppBarBackContext.Provider value={{ backDisabled, setBackDisabled: vi.fn() }}>
+          <SearchContext.Provider value={{ searchTerm: '', setSearch: vi.fn() }}>
+            <MemoryRouter initialEntries={['/', path]} initialIndex={1}>
+              <Routes>
+                <Route path="/" element={<AppBar />} />
+                <Route path="/import/review" element={<AppBar />} />
+                <Route path="/settings" element={<div>Settings page</div>} />
+                <Route path="/unlock" element={<div>Unlock page</div>} />
+              </Routes>
+            </MemoryRouter>
+          </SearchContext.Provider>
+        </AppBarBackContext.Provider>
+      </AppBarTitleContext.Provider>
+    </ThemeProvider>,
   )
 
 describe('AppBar actions', () => {
   beforeEach(() => {
+    os.platform = 'linux'
     window.localStorage.clear()
     vault.lock.mockReset()
     vault.lock.mockResolvedValue(undefined)
@@ -63,6 +69,26 @@ describe('AppBar actions', () => {
     const input = screen.getByPlaceholderText('Search')
     const searchStyle = getComputedStyle(input.parentElement!)
     expect(searchStyle.color).toBe(getComputedStyle(screen.getByRole('banner')).color)
+  })
+
+  it('uses the secondary header color in macOS dark mode', () => {
+    os.platform = 'macos'
+    renderAppBar(
+      '/',
+      false,
+      createTheme({
+        status: { danger: '#ff0000' },
+        palette: {
+          mode: 'dark',
+          secondary: { main: '#191919' },
+          neutral: { main: '#64748b' },
+        },
+      }),
+    )
+
+    expect(
+      getComputedStyle(screen.getByRole('banner')).getPropertyValue('--AppBar-background'),
+    ).toBe('#191919')
   })
 
   it('shows a dedicated lock button for password-protected vaults', async () => {
