@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   translate: (key: string) =>
     ({
       'appearance.language': 'Language',
+      'appearance.selectLanguage': 'Select language',
       'appearance.selectTheme': 'Select theme',
       'appearance.sortOrder': 'Sort order',
       'appearance.sortOptions.custom': 'Manual order',
@@ -55,6 +56,7 @@ describe('selection modals', () => {
       </AppBarTitleContext.Provider>,
     )
 
+    expect(screen.getByRole('dialog', { name: 'Select theme' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Dark' })).toBeChecked()
 
     fireEvent.click(screen.getByRole('radio', { name: 'System' }))
@@ -73,6 +75,7 @@ describe('selection modals', () => {
 
     const { unmount } = render(<Language open onClose={onClose} />)
 
+    expect(screen.getByRole('dialog', { name: 'Select language' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Deutsch' })).toBeChecked()
 
     fireEvent.click(screen.getByRole('radio', { name: 'Français' }))
@@ -104,6 +107,7 @@ describe('selection modals', () => {
       </SortContext.Provider>,
     )
 
+    expect(screen.getByRole('dialog', { name: 'Sort order' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Issuer, A–Z' })).toBeChecked()
     fireEvent.click(screen.getByRole('radio', { name: 'Frequently used' }))
 

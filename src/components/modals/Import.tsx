@@ -143,7 +143,11 @@ const ImportModal = ({
 
   return (
     <>
-      <Modal open={open && !pendingEncryptedImport} onClose={onClose}>
+      <Modal
+        open={open && !pendingEncryptedImport}
+        onClose={onClose}
+        title={t('modals.importCodes')}
+      >
         <>
           <input
             ref={inputRef}

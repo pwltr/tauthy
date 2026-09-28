@@ -108,6 +108,7 @@
     "pageTitle": "Apariencia",
     "theme": "Tema",
     "selectTheme": "Seleccionar tema",
+    "selectLanguage": "Seleccionar idioma",
     "themes": {
       "system": "Predeterminado del sistema",
       "light": "Claro",
@@ -192,6 +193,9 @@
     "coffee": "Buy Me a Coffee"
   },
   "modals": {
+    "chooseIcon": "Elegir icono",
+    "importCodes": "Importar códigos",
+    "qrCode": "Código QR",
     "password": "Elige una contraseña para tu baúl",
     "resetPassword": "¿Reestablecer contraseña?",
     "currentPassword": "Contraseña actual",

@@ -108,6 +108,7 @@
     "pageTitle": "Appearance",
     "theme": "Theme",
     "selectTheme": "Select theme",
+    "selectLanguage": "Select language",
     "themes": {
       "system": "System Default",
       "light": "Light",
@@ -192,6 +193,9 @@
     "coffee": "Buy Me a Coffee"
   },
   "modals": {
+    "chooseIcon": "Choose icon",
+    "importCodes": "Import codes",
+    "qrCode": "QR code",
     "password": "Choose a password for your encrypted vault",
     "resetPassword": "Reset password?",
     "currentPassword": "Current Password",

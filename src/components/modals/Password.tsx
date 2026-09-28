@@ -66,11 +66,11 @@ const PasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }
   return (
     <Modal
       open={open}
+      title={t('modals.password')}
       onClose={() => {
         if (!busy) onClose()
       }}
     >
-      <div>{t('modals.password')}</div>
       {vault.fileBackend && isPasswordSet && (
         <TextField
           type="password"

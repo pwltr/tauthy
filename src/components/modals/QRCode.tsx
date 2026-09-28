@@ -1,4 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
+import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 
 import Modal from '~/components/Modal'
@@ -47,23 +48,27 @@ const QRCodeModal = ({
   entry: ListEntry
   open: boolean
   onClose: () => void
-}) => (
-  <Modal open={open} onClose={onClose}>
-    <Container onClick={onClose}>
-      <Code>
-        <QRCodeSVG
-          value={getOtpUri(entry.name, entry.secret, entry.issuer, entry.group)}
-          size={280}
-        />
+}) => {
+  const { t } = useTranslation()
 
-        {entry.icon && <Icon src={`data:image/svg+xml;base64,${entry.icon}`} alt="" />}
-      </Code>
+  return (
+    <Modal open={open} onClose={onClose} title={t('modals.qrCode')}>
+      <Container onClick={onClose}>
+        <Code>
+          <QRCodeSVG
+            value={getOtpUri(entry.name, entry.secret, entry.issuer, entry.group)}
+            size={280}
+          />
 
-      <Text>
-        {entry.name} {entry.issuer && `(${entry.issuer})`}
-      </Text>
-    </Container>
-  </Modal>
-)
+          {entry.icon && <Icon src={`data:image/svg+xml;base64,${entry.icon}`} alt="" />}
+        </Code>
+
+        <Text>
+          {entry.name} {entry.issuer && `(${entry.issuer})`}
+        </Text>
+      </Container>
+    </Modal>
+  )
+}
 
 export default QRCodeModal

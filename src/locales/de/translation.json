@@ -108,6 +108,7 @@
     "pageTitle": "Erscheinungsbild",
     "theme": "Farbschema",
     "selectTheme": "Farbschema auswählen",
+    "selectLanguage": "Sprache auswählen",
     "themes": {
       "system": "Systemstandard",
       "light": "Hell",
@@ -192,6 +193,9 @@
     "coffee": "Kaffee bezahlen"
   },
   "modals": {
+    "chooseIcon": "Symbol auswählen",
+    "importCodes": "Codes importieren",
+    "qrCode": "QR-Code",
     "password": "Passwort für Verschlüsselung wählen",
     "resetPassword": "Passwort wirklich löschen?",
     "currentPassword": "aktuelles Passwort",

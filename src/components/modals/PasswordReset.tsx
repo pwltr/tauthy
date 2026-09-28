@@ -40,11 +40,11 @@ const PasswordResetModal = ({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <Modal
       open={open}
+      title={t('modals.resetPassword')}
       onClose={() => {
         if (!busy) onClose()
       }}
     >
-      <div>{t('modals.resetPassword')}</div>
       {vault.fileBackend && (
         <>
           <TextField

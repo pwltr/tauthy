@@ -34,10 +34,7 @@ const ResetModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <Typography variant="h6" component="h2" gutterBottom>
-        {t('security.deleteVault')}
-      </Typography>
+    <Modal open={open} onClose={onClose} title={t('security.deleteVault')}>
       <Typography variant="body2">{t('modals.deleteWarning')}</Typography>
       <Buttons>
         <Button color="error" variant="contained" onClick={handleResetVault}>

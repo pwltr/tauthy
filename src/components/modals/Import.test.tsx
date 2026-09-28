@@ -26,8 +26,21 @@ vi.mock('react-i18next', () => ({
   }),
 }))
 vi.mock('~/components/Modal', () => ({
-  default: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div>{children}</div> : null,
+  default: ({
+    open,
+    title,
+    children,
+  }: {
+    open: boolean
+    title: string
+    children: React.ReactNode
+  }) =>
+    open ? (
+      <div role="dialog" aria-label={title}>
+        <h2>{title}</h2>
+        {children}
+      </div>
+    ) : null,
   Buttons: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 vi.mock('~/components/modals/ExportPassword', () => ({ default: () => null }))

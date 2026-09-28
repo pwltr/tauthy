@@ -44,11 +44,8 @@ const SyncPasswordModal = ({ mode, open, busy, onClose, onSubmit }: Props) => {
   }
 
   return (
-    <Modal open={open} onClose={() => !busy && onClose()}>
+    <Modal open={open} onClose={() => !busy && onClose()} title={t(`sync.${mode}PasswordTitle`)}>
       <form onSubmit={submit}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          {t(`sync.${mode}PasswordTitle`)}
-        </Typography>
         <Typography color="text.secondary" sx={{ mb: 2 }}>
           {t(`sync.${mode}PasswordDescription`)}
         </Typography>

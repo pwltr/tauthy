@@ -108,6 +108,7 @@
     "pageTitle": "Apparence",
     "theme": "Thème",
     "selectTheme": "Choisir le thème",
+    "selectLanguage": "Sélectionner la langue",
     "themes": {
       "system": "Par défaut du système",
       "light": "Clair",
@@ -192,6 +193,9 @@
     "coffee": "Offrez-moi un café"
   },
   "modals": {
+    "chooseIcon": "Choisir une icône",
+    "importCodes": "Importer des codes",
+    "qrCode": "Code QR",
     "password": "Choisissez un mot de passe pour votre coffre-fort chiffré",
     "resetPassword": "Réinitialiser le mot de passe ?",
     "currentPassword": "Mot de passe actuel",

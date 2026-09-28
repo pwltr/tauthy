@@ -107,7 +107,7 @@ const IconsModal = ({
   }
 
   return (
-    <Modal open={open} onClose={onCloseModal}>
+    <Modal open={open} onClose={onCloseModal} title={t('modals.chooseIcon')}>
       <TextField
         value={searchTerm}
         label={t('appBar.search')}

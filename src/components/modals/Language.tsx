@@ -23,7 +23,7 @@ const Language = ({ open, onClose }: { open: boolean; onClose: () => void }) => 
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} title={t('appearance.selectLanguage')}>
       <RadioGroup
         aria-label={t('appearance.language')}
         value={language}

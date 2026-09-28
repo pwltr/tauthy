@@ -22,7 +22,7 @@ const Sort = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} title={t('appearance.sortOrder')}>
       <RadioGroup
         aria-label={t('appearance.sortOrder')}
         value={sortOption}

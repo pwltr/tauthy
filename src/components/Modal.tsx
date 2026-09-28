@@ -1,6 +1,8 @@
+import { useId } from 'react'
 import { styled } from '@mui/material/styles'
 import MuiModal from '@mui/material/Modal'
 import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
 
 const StyledBox = styled(Box)(
   ({ theme }) => `
@@ -30,23 +32,29 @@ export const Buttons = styled('div')`
 const Modal = ({
   open,
   onClose,
+  title,
   children,
 }: {
   open: boolean
   onClose: () => void
+  title: string
   children: React.ReactNode
 }) => {
+  const titleId = useId()
+
   return (
-    <MuiModal
-      open={open}
-      onClose={onClose}
-      // aria-labelledby="modal-title"
-      // aria-describedby="modal-modal-description"
-    >
-      <StyledBox>
-        {/* {title} */}
-        {/* {content} */}
-        {/* {buttons} */}
+    <MuiModal open={open} onClose={onClose}>
+      <StyledBox role="dialog" aria-labelledby={titleId}>
+        <Typography
+          id={titleId}
+          variant="subtitle1"
+          component="h2"
+          color="text.primary"
+          sx={{ fontWeight: 600 }}
+          gutterBottom
+        >
+          {title}
+        </Typography>
         {children}
       </StyledBox>
     </MuiModal>

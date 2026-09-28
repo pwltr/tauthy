@@ -30,11 +30,8 @@ const ImportPasswordModal = ({ busy, error, formatName, onClose, onSubmit, open 
   }
 
   return (
-    <Modal open={open} onClose={busy ? () => {} : onClose}>
+    <Modal open={open} onClose={busy ? () => {} : onClose} title={t('modals.importPasswordTitle')}>
       <form onSubmit={handleSubmit}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          {t('modals.importPasswordTitle')}
-        </Typography>
         <Typography variant="body2">
           {t('modals.importPasswordDescription', { format: formatName })}
         </Typography>
