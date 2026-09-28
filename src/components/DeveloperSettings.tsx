@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import { AppBarTitleContext } from '~/context'
 import { developerSettingsEnabled, subscribeDeveloperSettings } from '~/utils/developerSettings'
 import { BACKUP_STATUS_EVENT, BACKUP_STATUS_KEY, WEEK_MS } from '~/utils/backupStatus'
+import SettingsPage from '~/components/SettingsPage'
 
 const DeveloperSettings = () => {
   const { t } = useTranslation()
@@ -35,12 +36,14 @@ const DeveloperSettings = () => {
   }
 
   return (
-    <Stack spacing={2} sx={{ p: 2 }}>
-      <Typography variant="body2">{t('developer.backupDescription')}</Typography>
-      <Button variant="outlined" onClick={previewBackupReminder} sx={{ alignSelf: 'flex-start' }}>
-        {t('developer.previewBackup')}
-      </Button>
-    </Stack>
+    <SettingsPage>
+      <Stack spacing={2} sx={{ p: 2 }}>
+        <Typography variant="body2">{t('developer.backupDescription')}</Typography>
+        <Button variant="outlined" onClick={previewBackupReminder} sx={{ alignSelf: 'flex-start' }}>
+          {t('developer.previewBackup')}
+        </Button>
+      </Stack>
+    </SettingsPage>
   )
 }
 

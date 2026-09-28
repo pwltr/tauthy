@@ -17,6 +17,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
+import SettingsPage from '~/components/SettingsPage'
 import { developerSettingsEnabled, enableDeveloperSettings } from '~/utils/developerSettings'
 import logo from '../../assets/app-icons/icon-round-bordered.png'
 
@@ -87,7 +88,7 @@ const About = () => {
   }, [])
 
   return (
-    <>
+    <SettingsPage>
       <Header>
         <LogoButton type="button" aria-label="Tauthy" onClick={pressLogo}>
           <LogoImage
@@ -155,7 +156,7 @@ const About = () => {
           </ListItemButton>
         </ListItem>
       </List>
-    </>
+    </SettingsPage>
   )
 }
 

@@ -18,6 +18,7 @@ import SortModal from '~/components/modals/Sort'
 import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
+import SettingsPage from '~/components/SettingsPage'
 
 const languages: Record<string, string> = {
   en: 'English',
@@ -51,89 +52,91 @@ const Appearance = () => {
 
   return (
     <>
-      <List>
-        <ListSection>
-          <ListSubheader>App</ListSubheader>
-          <ListItem disablePadding onClick={handleOpenThemeModal}>
-            <ListItemButton>
-              <ListItemText
-                primary={t('appearance.theme')}
-                secondary={t(`appearance.themes.${theme}`)}
-              />
-            </ListItemButton>
-          </ListItem>
+      <SettingsPage>
+        <List>
+          <ListSection>
+            <ListSubheader>App</ListSubheader>
+            <ListItem disablePadding onClick={handleOpenThemeModal}>
+              <ListItemButton>
+                <ListItemText
+                  primary={t('appearance.theme')}
+                  secondary={t(`appearance.themes.${theme}`)}
+                />
+              </ListItemButton>
+            </ListItem>
 
-          <ListItem disablePadding onClick={handleOpenLanguageModal}>
-            <ListItemButton>
-              <ListItemText primary={t('appearance.language')} secondary={languages[language]} />
-            </ListItemButton>
-          </ListItem>
-        </ListSection>
+            <ListItem disablePadding onClick={handleOpenLanguageModal}>
+              <ListItemButton>
+                <ListItemText primary={t('appearance.language')} secondary={languages[language]} />
+              </ListItemButton>
+            </ListItem>
+          </ListSection>
 
-        <ListSection>
-          <ListSubheader>{t('appearance.entries')}</ListSubheader>
-          <ListItem disablePadding onClick={handleOpenSortModal}>
-            <ListItemButton>
-              <ListItemText
-                primary={t('appearance.sortOrder')}
-                secondary={t(`appearance.sortOptions.${sortOption}`)}
-              />
-            </ListItemButton>
-          </ListItem>
+          <ListSection>
+            <ListSubheader>{t('appearance.entries')}</ListSubheader>
+            <ListItem disablePadding onClick={handleOpenSortModal}>
+              <ListItemButton>
+                <ListItemText
+                  primary={t('appearance.sortOrder')}
+                  secondary={t(`appearance.sortOptions.${sortOption}`)}
+                />
+              </ListItemButton>
+            </ListItem>
 
-          <ListItem
-            disablePadding
-            secondaryAction={<Switch checked={dense} />}
-            onClick={() => setListOptions({ dense: !dense, groupByTwos })}
-          >
-            <ListItemButton>
-              <ListItemText primary={t('appearance.compact')} />
-            </ListItemButton>
-          </ListItem>
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={dense} />}
+              onClick={() => setListOptions({ dense: !dense, groupByTwos })}
+            >
+              <ListItemButton>
+                <ListItemText primary={t('appearance.compact')} />
+              </ListItemButton>
+            </ListItem>
 
-          <ListItem
-            disablePadding
-            secondaryAction={<Switch checked={groupByTwos} />}
-            onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
-          >
-            <ListItemButton>
-              <ListItemText primary={t('appearance.grouping')} />
-            </ListItemButton>
-          </ListItem>
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={groupByTwos} />}
+              onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
+            >
+              <ListItemButton>
+                <ListItemText primary={t('appearance.grouping')} />
+              </ListItemButton>
+            </ListItem>
 
-          {/* <ListItem disablePadding onClick={() => setListOptions({ dense: !dense, groupByTwos })}>
+            {/* <ListItem disablePadding onClick={() => setListOptions({ dense: !dense, groupByTwos })}>
           <ListItemButton>
           <ListItemText primary="Edit groups" />
           </ListItemButton>
         </ListItem> */}
-        </ListSection>
+          </ListSection>
 
-        <ListSection>
-          <ListSubheader>{t('appearance.usage')}</ListSubheader>
-          <ListItem
-            disablePadding
-            secondaryAction={<Switch checked={minimizeOnCopy} />}
-            onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
-          >
-            <ListItemButton>
-              <ListItemText primary={t('appearance.minimize')} />
-            </ListItemButton>
-          </ListItem>
+          <ListSection>
+            <ListSubheader>{t('appearance.usage')}</ListSubheader>
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={minimizeOnCopy} />}
+              onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
+            >
+              <ListItemButton>
+                <ListItemText primary={t('appearance.minimize')} />
+              </ListItemButton>
+            </ListItem>
 
-          <ListItem
-            disablePadding
-            secondaryAction={<Switch checked={showTrayIcon} />}
-            onClick={() => setAppSettings({ minimizeOnCopy, showTrayIcon: !showTrayIcon })}
-          >
-            <ListItemButton>
-              <ListItemText
-                primary={t('appearance.tray')}
-                secondary={t('appearance.trayDescription')}
-              />
-            </ListItemButton>
-          </ListItem>
-        </ListSection>
-      </List>
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={showTrayIcon} />}
+              onClick={() => setAppSettings({ minimizeOnCopy, showTrayIcon: !showTrayIcon })}
+            >
+              <ListItemButton>
+                <ListItemText
+                  primary={t('appearance.tray')}
+                  secondary={t('appearance.trayDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+          </ListSection>
+        </List>
+      </SettingsPage>
 
       <ThemeModal open={openThemeModal} onClose={handleCloseThemeModal} />
       <LanguageModal open={openLanguageModal} onClose={handleCloseLanguageModal} />

@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
+import SettingsPage from '~/components/SettingsPage'
 import SyncPasswordModal from '~/components/modals/SyncPassword'
 import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
@@ -179,89 +180,93 @@ const Sync = () => {
 
   if (!status) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress size={28} />
-      </Box>
+      <SettingsPage>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress size={28} />
+        </Box>
+      </SettingsPage>
     )
   }
 
   return (
     <>
-      <Box sx={{ px: 2, pt: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          {t('sync.description')}
-        </Typography>
-      </Box>
-      {status.enabled ? (
-        <>
-          {backgroundError && (
-            <Alert severity="warning" sx={{ mx: 2, mt: 2 }}>
-              {syncErrorMessage(backgroundError)}
-            </Alert>
-          )}
-          <List>
-            <ListItem>
-              <ListItemText
-                primary={t('sync.connected')}
-                secondary={status.path}
-                slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
-              />
-            </ListItem>
-            <ListItem>
-              <ListItemText
-                primary={t('sync.lastSynced')}
-                secondary={
-                  status.lastSyncedAt
-                    ? new Intl.DateTimeFormat(i18n.language, {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      }).format(status.lastSyncedAt)
-                    : t('sync.never')
-                }
-              />
-            </ListItem>
-            <ListItem disablePadding onClick={() => !busy && void synchronize()}>
-              <ListItemButton disabled={busy}>
+      <SettingsPage>
+        <Box sx={{ px: 2, pt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {t('sync.description')}
+          </Typography>
+        </Box>
+        {status.enabled ? (
+          <>
+            {backgroundError && (
+              <Alert severity="warning" sx={{ mx: 2, mt: 2 }}>
+                {syncErrorMessage(backgroundError)}
+              </Alert>
+            )}
+            <List>
+              <ListItem>
                 <ListItemText
-                  primary={t('sync.syncNow')}
-                  secondary={t('sync.syncNowDescription')}
+                  primary={t('sync.connected')}
+                  secondary={status.path}
+                  slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
                 />
-              </ListItemButton>
-            </ListItem>
-            {showRecovery && (
-              <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+              </ListItem>
+              <ListItem>
+                <ListItemText
+                  primary={t('sync.lastSynced')}
+                  secondary={
+                    status.lastSyncedAt
+                      ? new Intl.DateTimeFormat(i18n.language, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }).format(status.lastSyncedAt)
+                      : t('sync.never')
+                  }
+                />
+              </ListItem>
+              <ListItem disablePadding onClick={() => !busy && void synchronize()}>
                 <ListItemButton disabled={busy}>
                   <ListItemText
-                    primary={t('sync.mergeConflictedCopy')}
-                    secondary={t('sync.mergeConflictedCopyDescription')}
+                    primary={t('sync.syncNow')}
+                    secondary={t('sync.syncNowDescription')}
                   />
                 </ListItemButton>
               </ListItem>
-            )}
-            <ListItem disablePadding onClick={() => !busy && void disconnect()}>
-              <ListItemButton disabled={busy}>
-                <ListItemText
-                  primary={t('sync.disconnect')}
-                  secondary={t('sync.disconnectDescription')}
-                />
+              {showRecovery && (
+                <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+                  <ListItemButton disabled={busy}>
+                    <ListItemText
+                      primary={t('sync.mergeConflictedCopy')}
+                      secondary={t('sync.mergeConflictedCopyDescription')}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              )}
+              <ListItem disablePadding onClick={() => !busy && void disconnect()}>
+                <ListItemButton disabled={busy}>
+                  <ListItemText
+                    primary={t('sync.disconnect')}
+                    secondary={t('sync.disconnectDescription')}
+                  />
+                </ListItemButton>
+              </ListItem>
+            </List>
+          </>
+        ) : (
+          <List>
+            <ListItem disablePadding onClick={() => void chooseCreate()}>
+              <ListItemButton>
+                <ListItemText primary={t('sync.create')} secondary={t('sync.createDescription')} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding onClick={() => void chooseJoin()}>
+              <ListItemButton>
+                <ListItemText primary={t('sync.join')} secondary={t('sync.joinDescription')} />
               </ListItemButton>
             </ListItem>
           </List>
-        </>
-      ) : (
-        <List>
-          <ListItem disablePadding onClick={() => void chooseCreate()}>
-            <ListItemButton>
-              <ListItemText primary={t('sync.create')} secondary={t('sync.createDescription')} />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding onClick={() => void chooseJoin()}>
-            <ListItemButton>
-              <ListItemText primary={t('sync.join')} secondary={t('sync.joinDescription')} />
-            </ListItemButton>
-          </ListItem>
-        </List>
-      )}
+        )}
+      </SettingsPage>
       <SyncPasswordModal
         mode={pending?.mode ?? 'create'}
         open={!!pending}

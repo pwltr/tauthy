@@ -16,6 +16,7 @@ import ImportModal from '~/components/modals/Import'
 import ExportPasswordModal from '~/components/modals/ExportPassword'
 import { traceImport } from '~/utils/importDiagnostics'
 import { useBackupStatus } from '~/hooks/useBackupStatus'
+import SettingsPage from '~/components/SettingsPage'
 
 const Import = () => {
   const { t, i18n } = useTranslation()
@@ -120,37 +121,39 @@ const Import = () => {
       {location.pathname === '/import/review' ? (
         <Outlet context={{ preview }} />
       ) : (
-        <List>
-          <ListSection>
-            <ListItem disablePadding onClick={handleOpenImportModal}>
-              <ListItemButton>
-                <ListItemText
-                  primary={t('import.import')}
-                  secondary={t('import.importDescription')}
-                />
-              </ListItemButton>
-            </ListItem>
+        <SettingsPage>
+          <List>
+            <ListSection>
+              <ListItem disablePadding onClick={handleOpenImportModal}>
+                <ListItemButton>
+                  <ListItemText
+                    primary={t('import.import')}
+                    secondary={t('import.importDescription')}
+                  />
+                </ListItemButton>
+              </ListItem>
 
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleChooseExport} disabled={isChoosingExport}>
-                <ListItemText
-                  primary={t('import.export')}
-                  secondary={
-                    backupStatus
-                      ? `${t(`backup.${backupStatus.state}`)}${
-                          backupStatus.exportedAt !== undefined
-                            ? ` · ${new Date(backupStatus.exportedAt).toLocaleString(
-                                i18n?.language,
-                              )}`
-                            : ''
-                        }`
-                      : t('import.exportDescription')
-                  }
-                />
-              </ListItemButton>
-            </ListItem>
-          </ListSection>
-        </List>
+              <ListItem disablePadding>
+                <ListItemButton onClick={handleChooseExport} disabled={isChoosingExport}>
+                  <ListItemText
+                    primary={t('import.export')}
+                    secondary={
+                      backupStatus
+                        ? `${t(`backup.${backupStatus.state}`)}${
+                            backupStatus.exportedAt !== undefined
+                              ? ` · ${new Date(backupStatus.exportedAt).toLocaleString(
+                                  i18n?.language,
+                                )}`
+                              : ''
+                          }`
+                        : t('import.exportDescription')
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            </ListSection>
+          </List>
+        </SettingsPage>
       )}
 
       <ImportModal

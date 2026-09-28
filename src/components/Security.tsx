@@ -14,6 +14,7 @@ import ResetModal from '~/components/modals/Reset'
 import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
+import SettingsPage from '~/components/SettingsPage'
 import { vault } from '~/utils/storage'
 import { useNavigate } from 'react-router-dom'
 
@@ -39,67 +40,69 @@ const Security = () => {
 
   return (
     <>
-      <List>
-        <ListSection>
-          <ListSubheader>{t('security.encryption')}</ListSubheader>
-          <ListItem disablePadding onClick={handleOpenPasswordModal}>
-            <ListItemButton>
-              <ListItemText
-                primary={t('security.password')}
-                secondary={t('security.passwordDescription')}
-              />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding>
-            <ListItemButton disabled={!isPasswordSet} onClick={handleOpenPasswordResetModal}>
-              <ListItemText
-                primary={t('security.passwordReset')}
-                secondary={t('security.passwordResetDescription')}
-              />
-            </ListItemButton>
-          </ListItem>
-        </ListSection>
-
-        <ListSection>
-          <ListSubheader>{t('security.behaviour')}</ListSubheader>
-          <ListItem
-            disablePadding
-            secondaryAction={<Switch checked={shouldAutoLock} />}
-            onClick={() => setShouldAutoLock(!shouldAutoLock)}
-          >
-            <ListItemButton>
-              <ListItemText
-                primary={t('security.autoLock')}
-                secondary={t('security.autoLockDescription')}
-              />
-            </ListItemButton>
-          </ListItem>
-        </ListSection>
-
-        <ListSection>
-          <ListSubheader sx={{ color: 'error.main' }}>{t('security.dangerZone')}</ListSubheader>
-          {vault.fileBackend && (
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => navigate('/vault-recovery')}>
+      <SettingsPage>
+        <List>
+          <ListSection>
+            <ListSubheader>{t('security.encryption')}</ListSubheader>
+            <ListItem disablePadding onClick={handleOpenPasswordModal}>
+              <ListItemButton>
                 <ListItemText
-                  primary={t('vaultUi.replaceTitle')}
-                  secondary={t('vaultUi.replaceWarning')}
+                  primary={t('security.password')}
+                  secondary={t('security.passwordDescription')}
                 />
               </ListItemButton>
             </ListItem>
-          )}
-          <ListItem disablePadding onClick={() => setOpenResetModal(true)}>
-            <ListItemButton>
-              <ListItemText
-                primary={t('security.deleteVault')}
-                secondary={t('security.deleteVaultDescription')}
-                sx={{ '& .MuiListItemText-primary': { color: 'error.main' } }}
-              />
-            </ListItemButton>
-          </ListItem>
-        </ListSection>
-      </List>
+
+            <ListItem disablePadding>
+              <ListItemButton disabled={!isPasswordSet} onClick={handleOpenPasswordResetModal}>
+                <ListItemText
+                  primary={t('security.passwordReset')}
+                  secondary={t('security.passwordResetDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+          </ListSection>
+
+          <ListSection>
+            <ListSubheader>{t('security.behaviour')}</ListSubheader>
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={shouldAutoLock} />}
+              onClick={() => setShouldAutoLock(!shouldAutoLock)}
+            >
+              <ListItemButton>
+                <ListItemText
+                  primary={t('security.autoLock')}
+                  secondary={t('security.autoLockDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+          </ListSection>
+
+          <ListSection>
+            <ListSubheader sx={{ color: 'error.main' }}>{t('security.dangerZone')}</ListSubheader>
+            {vault.fileBackend && (
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => navigate('/vault-recovery')}>
+                  <ListItemText
+                    primary={t('vaultUi.replaceTitle')}
+                    secondary={t('vaultUi.replaceWarning')}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
+            <ListItem disablePadding onClick={() => setOpenResetModal(true)}>
+              <ListItemButton>
+                <ListItemText
+                  primary={t('security.deleteVault')}
+                  secondary={t('security.deleteVaultDescription')}
+                  sx={{ '& .MuiListItemText-primary': { color: 'error.main' } }}
+                />
+              </ListItemButton>
+            </ListItem>
+          </ListSection>
+        </List>
+      </SettingsPage>
 
       <PasswordModal open={openPasswordModal} onClose={handleClosePasswordModal} />
       <PasswordResetModal open={openPasswordResetModal} onClose={handleClosePasswordResetModal} />

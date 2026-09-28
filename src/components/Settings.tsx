@@ -15,6 +15,7 @@ import { developerSettingsEnabled, subscribeDeveloperSettings } from '~/utils/de
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
+import SettingsPage from '~/components/SettingsPage'
 
 const Settings = () => {
   const { t } = useTranslation()
@@ -30,72 +31,74 @@ const Settings = () => {
   }, [])
 
   return (
-    <List>
-      <ListItem disablePadding onClick={() => navigate('/appearance')}>
-        <ListItemButton>
-          <ListItemIcon>
-            <BrushIcon color="primary" />
-          </ListItemIcon>
-          <ListItemText
-            primary={t('settings.appearance')}
-            secondary={t('settings.appearanceDescription')}
-          />
-        </ListItemButton>
-      </ListItem>
-
-      <ListItem disablePadding onClick={() => navigate('/security')}>
-        <ListItemButton>
-          <ListItemIcon>
-            <SecurityIcon color="primary" />
-          </ListItemIcon>
-          <ListItemText
-            primary={t('settings.security')}
-            secondary={t('settings.securityDescription')}
-          />
-        </ListItemButton>
-      </ListItem>
-
-      <ListItem disablePadding onClick={() => navigate('/import')}>
-        <ListItemButton>
-          <ListItemIcon>
-            <BackupIcon color="primary" />
-          </ListItemIcon>
-          <ListItemText
-            primary={t('settings.import')}
-            secondary={t('settings.importDescription')}
-          />
-        </ListItemButton>
-      </ListItem>
-
-      <ListItem disablePadding onClick={() => navigate('/sync')}>
-        <ListItemButton>
-          <ListItemIcon>
-            <SyncIcon color="primary" />
-          </ListItemIcon>
-          <ListItemText primary={t('settings.sync')} secondary={t('settings.syncDescription')} />
-        </ListItemButton>
-      </ListItem>
-
-      {showDeveloperSettings && (
-        <ListItem disablePadding onClick={() => navigate('/developer')}>
+    <SettingsPage>
+      <List>
+        <ListItem disablePadding onClick={() => navigate('/appearance')}>
           <ListItemButton>
             <ListItemIcon>
-              <BugReportIcon color="primary" />
+              <BrushIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary={t('developer.pageTitle')} />
+            <ListItemText
+              primary={t('settings.appearance')}
+              secondary={t('settings.appearanceDescription')}
+            />
           </ListItemButton>
         </ListItem>
-      )}
 
-      <ListItem disablePadding onClick={() => navigate('/about')}>
-        <ListItemButton>
-          <ListItemIcon>
-            <InfoIcon color="primary" />
-          </ListItemIcon>
-          <ListItemText primary={t('appBar.about')} secondary={t('settings.aboutDescription')} />
-        </ListItemButton>
-      </ListItem>
-    </List>
+        <ListItem disablePadding onClick={() => navigate('/security')}>
+          <ListItemButton>
+            <ListItemIcon>
+              <SecurityIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('settings.security')}
+              secondary={t('settings.securityDescription')}
+            />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding onClick={() => navigate('/import')}>
+          <ListItemButton>
+            <ListItemIcon>
+              <BackupIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('settings.import')}
+              secondary={t('settings.importDescription')}
+            />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding onClick={() => navigate('/sync')}>
+          <ListItemButton>
+            <ListItemIcon>
+              <SyncIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText primary={t('settings.sync')} secondary={t('settings.syncDescription')} />
+          </ListItemButton>
+        </ListItem>
+
+        {showDeveloperSettings && (
+          <ListItem disablePadding onClick={() => navigate('/developer')}>
+            <ListItemButton>
+              <ListItemIcon>
+                <BugReportIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary={t('developer.pageTitle')} />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        <ListItem disablePadding onClick={() => navigate('/about')}>
+          <ListItemButton>
+            <ListItemIcon>
+              <InfoIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText primary={t('appBar.about')} secondary={t('settings.aboutDescription')} />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </SettingsPage>
   )
 }
 
