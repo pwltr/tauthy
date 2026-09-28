@@ -44,6 +44,10 @@ use vault_commands as application_commands;
 #[cfg(target_os = "macos")]
 mod menu;
 
+fn protect_window_content() -> bool {
+  !cfg!(debug_assertions)
+}
+
 fn main() {
   let builder = tauri::Builder::default();
 
@@ -139,6 +143,12 @@ fn main() {
         app.manage(migration_test::ImportDiagnostics::new(&directory)?);
         app.manage(vault_commands::FileVaultState::new(directory));
       }
+      // Release builds keep account codes out of screenshots and screen sharing.
+      // Development builds remain capturable for visual QA.
+      app
+        .get_webview_window("main")
+        .ok_or_else(|| std::io::Error::other("main window is unavailable"))?
+        .set_content_protected(protect_window_content())?;
       // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
       #[cfg(target_os = "macos")]
       menu::setup(app)?;
@@ -157,4 +167,18 @@ fn main() {
   builder
     .run(tauri::generate_context!())
     .expect("error while running application");
+}
+
+#[cfg(test)]
+mod tests {
+  use super::protect_window_content;
+
+  #[test]
+  fn screen_capture_policy_matches_the_build() {
+    if cfg!(debug_assertions) {
+      assert!(!protect_window_content());
+    } else {
+      assert!(protect_window_content());
+    }
+  }
 }
