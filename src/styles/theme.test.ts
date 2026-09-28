@@ -35,4 +35,13 @@ describe('theme preferences', () => {
     expect(regularTheme.components?.MuiButtonBase?.defaultProps?.disableRipple).toBe(false)
     expect(reducedMotionTheme.components?.MuiButtonBase?.defaultProps?.disableRipple).toBe(true)
   })
+
+  it('uses the compact filled style for text fields by default', () => {
+    const theme = getDesignTokens('light')
+
+    expect(theme.components?.MuiTextField?.defaultProps).toMatchObject({
+      variant: 'filled',
+      size: 'small',
+    })
+  })
 })

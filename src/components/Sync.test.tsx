@@ -192,7 +192,7 @@ describe('sync location pickers', () => {
     mocks.getSyncStatus.mockResolvedValue({
       enabled: true,
       provider: 'pubky',
-      path: 'pubky://user',
+      path: 'user',
       lastSyncedAt: null,
     })
     render(<Sync />)

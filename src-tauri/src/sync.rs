@@ -825,7 +825,7 @@ fn status_for(config: Option<&SyncConfig>) -> SyncStatus {
 fn pubky_status_for(config: &PubkySyncConfig) -> SyncStatus {
   SyncStatus {
     enabled: true,
-    path: Some(format!("pubky://{}", config.public_key)),
+    path: Some(config.public_key.clone()),
     last_synced_at: config.last_synced_at,
     provider: Some("pubky"),
     vault_changed: false,

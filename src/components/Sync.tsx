@@ -312,10 +312,11 @@ const Sync = () => {
           </List>
         )}
       </SettingsPage>
-      <Modal open={!!pubkyRecoveryCode} onClose={() => setPubkyRecoveryCode('')}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          {t('sync.pubkyRecoveryCode')}
-        </Typography>
+      <Modal
+        open={!!pubkyRecoveryCode}
+        onClose={() => setPubkyRecoveryCode('')}
+        title={t('sync.pubkyRecoveryCode')}
+      >
         <Typography variant="body2" color="text.secondary">
           {t('sync.pubkySaveCode')}
         </Typography>

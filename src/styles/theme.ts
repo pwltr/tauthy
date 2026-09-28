@@ -148,6 +148,10 @@ export const getDesignTokens = (mode: PaletteMode, reduceMotion = false): ThemeO
         },
       },
       MuiTextField: {
+        defaultProps: {
+          variant: 'filled',
+          size: 'small',
+        },
         variants: [
           {
             props: { variant: 'filled' },

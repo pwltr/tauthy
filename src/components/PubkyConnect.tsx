@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useTranslation } from 'react-i18next'
@@ -31,6 +31,7 @@ const PubkyConnect = () => {
   const [recoveryCode, setRecoveryCode] = useState('')
   const [enteredCode, setEnteredCode] = useState('')
   const [busy, setBusy] = useState(false)
+  const setupCompleted = useRef(false)
 
   useEffect(() => {
     setAppBarTitle(t('sync.pubkyTitle'))
@@ -53,7 +54,9 @@ const PubkyConnect = () => {
       })
     return () => {
       active = false
-      void cancelPubkySync()
+      if (!setupCompleted.current) {
+        void cancelPubkySync().catch(() => undefined)
+      }
     }
   }, [])
 
@@ -98,13 +101,14 @@ const PubkyConnect = () => {
     setAuthUrl('')
     setEnteredCode('')
     setRecoveryCode('')
-    navigate('/sync')
+    navigate(-1)
   }
 
   const create = async () => {
     setBusy(true)
     try {
       await createPubkySync(recoveryCode)
+      setupCompleted.current = true
       setStage('recovery')
     } catch (error) {
       if (error === 'syncFileExists') {
@@ -122,9 +126,10 @@ const PubkyConnect = () => {
     setBusy(true)
     try {
       await joinPubkySync(enteredCode.trim())
+      setupCompleted.current = true
       toast.success(t('toasts.syncConfigured'))
       setEnteredCode('')
-      navigate('/sync')
+      navigate(-1)
     } catch (error) {
       toast.error(
         t(

@@ -41,7 +41,7 @@ describe('Pubky connection', () => {
   it('creates sync only after approval and shows a 256-bit recovery code', async () => {
     mocks.poll.mockResolvedValue({ approved: true, publicKey: 'pubky-user', hasRemote: false })
     mocks.create.mockResolvedValue({ status: { enabled: true, provider: 'pubky' } })
-    render(<PubkyConnect />)
+    const { unmount } = render(<PubkyConnect />)
 
     expect(await screen.findByText('sync.pubkyApproval')).toHaveClass('MuiTypography-body2')
     expect(screen.getByTestId('pubky-qr-frame')).toHaveStyle({ padding: '8px' })
@@ -59,12 +59,17 @@ describe('Pubky connection', () => {
     expect(code).toMatch(/^[0-9a-f]{64}$/)
     expect(screen.getByRole('button', { name: 'sync.pubkyCodeSaved' })).toBeInTheDocument()
     expect(screen.getByText('sync.pubkySaveCode')).toHaveClass('MuiTypography-body2')
+
+    fireEvent.click(screen.getByRole('button', { name: 'sync.pubkyCodeSaved' }))
+    expect(mocks.navigate).toHaveBeenCalledWith(-1)
+    unmount()
+    expect(mocks.cancel).not.toHaveBeenCalled()
   })
 
   it('joins existing sync with the supplied recovery code', async () => {
     mocks.poll.mockResolvedValue({ approved: true, publicKey: 'pubky-user', hasRemote: true })
     mocks.join.mockResolvedValue({ status: { enabled: true, provider: 'pubky' } })
-    render(<PubkyConnect />)
+    const { unmount } = render(<PubkyConnect />)
 
     expect(await screen.findByText('pubky-user')).toHaveStyle({ fontFamily: 'monospace' })
     const code = 'a'.repeat(64)
@@ -74,6 +79,18 @@ describe('Pubky connection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'sync.join' }))
 
     await waitFor(() => expect(mocks.join).toHaveBeenCalledWith(code))
-    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/sync'))
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(-1))
+    unmount()
+    expect(mocks.cancel).not.toHaveBeenCalled()
+  })
+
+  it('cancels an unfinished authorization when leaving', async () => {
+    mocks.poll.mockResolvedValue({ approved: false, publicKey: null, hasRemote: null })
+    const { unmount } = render(<PubkyConnect />)
+
+    expect(await screen.findByText('sync.pubkyApproval')).toBeInTheDocument()
+    unmount()
+
+    await waitFor(() => expect(mocks.cancel).toHaveBeenCalledOnce())
   })
 })
