@@ -1,6 +1,5 @@
-import { styled } from '@mui/material/styles'
-import MuiListSubheader from '@mui/material/ListSubheader'
+import MuiListSubheader, { type ListSubheaderProps } from '@mui/material/ListSubheader'
 
-const ListSubheader = styled(MuiListSubheader)(() => '')
+const ListSubheader = (props: ListSubheaderProps) => <MuiListSubheader {...props} disableSticky />
 
 export default ListSubheader
