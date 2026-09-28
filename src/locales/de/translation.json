@@ -120,7 +120,7 @@
     "import": "Import & Export",
     "importDescription": "Konten importieren oder Sicherung exportieren",
     "sync": "Synchronisierung",
-    "syncDescription": "Konten über verschlüsselte Dateien in einem Cloud-Ordner synchronisieren",
+    "syncDescription": "Konten geräteübergreifend synchronisieren",
     "aboutDescription": "Version, Projektlinks und Unterstützung"
   },
   "appearance": {

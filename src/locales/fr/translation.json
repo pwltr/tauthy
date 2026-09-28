@@ -120,7 +120,7 @@
     "import": "Importer et exporter",
     "importDescription": "Importer des comptes ou exporter une sauvegarde",
     "sync": "Synchronisation",
-    "syncDescription": "Synchroniser les comptes via des fichiers chiffrés dans un dossier cloud",
+    "syncDescription": "Synchroniser les comptes entre appareils",
     "aboutDescription": "Version, liens du projet et soutien"
   },
   "appearance": {

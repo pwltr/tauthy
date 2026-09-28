@@ -120,7 +120,7 @@
     "import": "Import & Export",
     "importDescription": "Import accounts or export a backup",
     "sync": "Sync",
-    "syncDescription": "Sync accounts through encrypted files in a cloud folder",
+    "syncDescription": "Sync accounts across devices",
     "aboutDescription": "Version, project links, and support"
   },
   "appearance": {
