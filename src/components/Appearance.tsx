@@ -19,24 +19,16 @@ import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import ListItem from '~/components/ListItem'
 
-// TODO: find a better solution for this
-const languages: { [key: string]: string | undefined } = {
-  'en-UK': 'English',
-  'en-US': 'English',
-  'de-AT': 'Deutsch',
-  'de-DE': 'Deutsch',
-  'fr-FR': 'Français',
-  'fr-BE': 'Français',
-  'fr-CA': 'Français',
-  'fr-CH': 'Français',
-  'fr-LU': 'Français',
-  'fr-MC': 'Français',
-  'es-ES': 'Español',
-  'es-MX': 'Español',
+const languages: Record<string, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  fr: 'Français',
+  es: 'Español',
 }
 
 const Appearance = () => {
   const { t, i18n } = useTranslation()
+  const language = (i18n.resolvedLanguage ?? i18n.language).split('-')[0]
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const { theme } = useContext(ThemeContext)
   const { minimizeOnCopy, showTrayIcon, setAppSettings } = useContext(AppSettingsContext)
@@ -73,10 +65,7 @@ const Appearance = () => {
 
           <ListItem disablePadding onClick={handleOpenLanguageModal}>
             <ListItemButton>
-              <ListItemText
-                primary={t('appearance.language')}
-                secondary={languages[i18n.language]}
-              />
+              <ListItemText primary={t('appearance.language')} secondary={languages[language]} />
             </ListItemButton>
           </ListItem>
         </ListSection>
