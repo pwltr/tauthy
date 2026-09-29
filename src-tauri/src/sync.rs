@@ -54,6 +54,7 @@ const PUBKY_CLIENT_ID: &str = "com.pwltr.tauthy";
 
 const ERR_AUTHENTICATION: &str = "syncAuthenticationFailed";
 const ERR_CONFLICT: &str = "syncConflict";
+const ERR_LOCAL_CONFLICT: &str = "syncLocalConflict";
 const ERR_CORRUPT: &str = "syncCorrupt";
 const ERR_FILE_EXISTS: &str = "syncFileExists";
 const ERR_DEVICE_FILE: &str = "syncDeviceFileInvalid";
@@ -1324,7 +1325,13 @@ pub async fn pubky_sync_join(
     })?;
     let device_id = random_id()?;
     let mut payload = remote.clone();
-    add_initial_local_entries(&mut payload, local_entries, &device_id)?;
+    add_initial_local_entries(&mut payload, local_entries, &device_id).map_err(|error| {
+      if error == ERR_CONFLICT {
+        ERR_LOCAL_CONFLICT.to_string()
+      } else {
+        error
+      }
+    })?;
     if payload != remote {
       pubky_publish(
         &session,

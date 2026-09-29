@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   syncNow: vi.fn(),
   mergeConflictedSyncCopy: vi.fn(),
   navigate: vi.fn(),
+  getPubkyRecoveryCode: vi.fn(),
+  copy: vi.fn(),
 }))
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
@@ -17,7 +19,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
   open: mocks.open,
 }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
-vi.mock('~/utils/helpers', () => ({ copyToClipboard: vi.fn() }))
+vi.mock('~/utils/helpers', () => ({ copyToClipboard: mocks.copy }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { file?: string }) =>
@@ -29,6 +31,7 @@ vi.mock('~/utils/sync', () => ({
   createSync: vi.fn(),
   disconnectSync: vi.fn(),
   getSyncStatus: mocks.getSyncStatus,
+  getPubkyRecoveryCode: mocks.getPubkyRecoveryCode,
   getBackgroundSyncError: mocks.getBackgroundSyncError,
   joinSync: vi.fn(),
   mergeConflictedSyncCopy: mocks.mergeConflictedSyncCopy,
@@ -45,6 +48,8 @@ describe('sync location pickers', () => {
     mocks.open.mockReset()
     mocks.toastError.mockReset()
     mocks.syncNow.mockReset()
+    mocks.getPubkyRecoveryCode.mockReset()
+    mocks.copy.mockReset()
     mocks.getBackgroundSyncError.mockReset()
     mocks.getBackgroundSyncError.mockReturnValue(undefined)
     mocks.getSyncStatus.mockResolvedValue({ enabled: false, path: null, lastSyncedAt: null })
@@ -193,5 +198,25 @@ describe('sync location pickers', () => {
     expect(screen.getByText('sync.recovery')).toBeInTheDocument()
     expect(screen.getByText('sync.pubkyShowCode')).toBeInTheDocument()
     expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
+  })
+
+  it('shows the Pubky recovery code as selectable text rather than a field', async () => {
+    const code = 'a'.repeat(64)
+    mocks.getSyncStatus.mockResolvedValue({
+      enabled: true,
+      provider: 'pubky',
+      path: 'user',
+      lastSyncedAt: null,
+    })
+    mocks.getPubkyRecoveryCode.mockResolvedValue(code)
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.pubkyShowCode'))
+
+    const displayedCode = await screen.findByText(code)
+    expect(displayedCode.tagName).toBe('CODE')
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'sync.pubkyCopyCode' }))
+    expect(mocks.copy).toHaveBeenCalledWith(code)
   })
 })

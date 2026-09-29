@@ -310,6 +310,7 @@
     "syncDisconnected": "Sincronización desconectada.",
     "syncAuthenticationFailed": "La contraseña de recuperación es incorrecta o el archivo fue modificado.",
     "syncConflict": "Los baúles local y sincronizado contienen un conflicto que no se puede combinar con seguridad.",
+    "syncLocalConflict": "Esta bóveda y la sincronización de Pubky contienen versiones distintas de la misma cuenta. No se cambió nada.",
     "syncCorrupt": "Los datos de sincronización están dañados o no son válidos.",
     "syncDeviceFileInvalid": "No se puede leer {{file}}. Puede estar incompleto, dañado o pertenecer a otra sincronización. Guarda una copia antes de modificarlo; tu bóveda local está a salvo.",
     "syncDeviceFileLimit": "Hay más de 32 archivos de dispositivos y la sincronización se ha pausado. Conserva los archivos y crea una copia de seguridad cifrada antes de pedir ayuda; no los borres sin comprobarlos.",

@@ -10,11 +10,12 @@ const mocks = vi.hoisted(() => ({
   join: vi.fn(),
   navigate: vi.fn(),
   copy: vi.fn(),
+  toastError: vi.fn(),
 }))
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
-vi.mock('react-hot-toast', () => ({ default: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
 vi.mock('qrcode.react', () => ({
   QRCodeSVG: ({ style }: { style?: CSSProperties }) => (
     <svg aria-label="Pubky QR code" style={style} />
@@ -45,10 +46,10 @@ describe('Pubky connection', () => {
 
     expect(await screen.findByText('sync.pubkyApproval')).toHaveClass('MuiTypography-body2')
     expect(screen.getByTestId('pubky-qr-frame')).toHaveStyle({
-      padding: '8px',
-      borderWidth: '2px',
+      padding: '12px',
+      borderWidth: '1px',
       borderStyle: 'solid',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
     })
     expect(screen.getByLabelText('Pubky QR code')).toHaveStyle({ display: 'block' })
     expect(screen.getByText('sync.pubkyWaiting')).toHaveClass('MuiTypography-alignCenter')
@@ -62,6 +63,8 @@ describe('Pubky connection', () => {
     await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce())
     const code = mocks.create.mock.calls[0][0]
     expect(code).toMatch(/^[0-9a-f]{64}$/)
+    expect(screen.getByText(code).tagName).toBe('CODE')
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'sync.pubkyCodeSaved' })).toBeInTheDocument()
     expect(screen.getByText('sync.pubkySaveCode')).toHaveClass('MuiTypography-body2')
 
@@ -88,6 +91,29 @@ describe('Pubky connection', () => {
     unmount()
     expect(mocks.cancel).not.toHaveBeenCalled()
   })
+
+  it.each([
+    'syncAuthenticationFailed',
+    'syncConflict',
+    'syncLocalConflict',
+    'syncCorrupt',
+    'syncUnsupported',
+  ])(
+    'shows the specific %s join failure',
+    async (error) => {
+      mocks.poll.mockResolvedValue({ approved: true, publicKey: 'pubky-user', hasRemote: true })
+      mocks.join.mockRejectedValue(error)
+      const { unmount } = render(<PubkyConnect />)
+
+      fireEvent.change(await screen.findByLabelText('sync.pubkyRecoveryCode'), {
+        target: { value: 'a'.repeat(64) },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'sync.join' }))
+
+      await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(`toasts.${error}`))
+      unmount()
+    },
+  )
 
   it('cancels an unfinished authorization when leaving', async () => {
     mocks.poll.mockResolvedValue({ approved: false, publicKey: null, hasRemote: null })

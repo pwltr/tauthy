@@ -10,6 +10,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { AppBarTitleContext } from '~/context'
+import RecoveryCodeDisplay from '~/components/RecoveryCodeDisplay'
 import { copyToClipboard } from '~/utils/helpers'
 import {
   cancelPubkySync,
@@ -20,6 +21,18 @@ import {
 } from '~/utils/sync'
 
 type Stage = 'starting' | 'approval' | 'create' | 'join' | 'recovery' | 'error'
+
+const joinErrorKey = (error: unknown) =>
+  typeof error === 'string' &&
+  [
+    'syncAuthenticationFailed',
+    'syncConflict',
+    'syncLocalConflict',
+    'syncCorrupt',
+    'syncUnsupported',
+  ].includes(error)
+    ? error
+    : 'pubkyUnavailable'
 
 const PubkyConnect = () => {
   const { t } = useTranslation()
@@ -131,13 +144,7 @@ const PubkyConnect = () => {
       setEnteredCode('')
       navigate(-1)
     } catch (error) {
-      toast.error(
-        t(
-          `toasts.${
-            error === 'syncAuthenticationFailed' ? 'syncAuthenticationFailed' : 'pubkyUnavailable'
-          }`,
-        ),
-      )
+      toast.error(t(`toasts.${joinErrorKey(error)}`))
     } finally {
       setBusy(false)
     }
@@ -224,14 +231,7 @@ const PubkyConnect = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               {t('sync.pubkySaveCode')}
             </Typography>
-            <TextField
-              value={recoveryCode}
-              label={t('sync.pubkyRecoveryCode')}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              multiline
-              margin="normal"
-            />
+            <RecoveryCodeDisplay code={recoveryCode} />
             <Box
               sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 1, mt: 2 }}
             >
@@ -284,14 +284,7 @@ const PubkyConnect = () => {
             <Typography variant="body2" color="text.secondary">
               {t('sync.pubkySaveCode')}
             </Typography>
-            <TextField
-              value={recoveryCode}
-              label={t('sync.pubkyRecoveryCode')}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
-              multiline
-              margin="normal"
-            />
+            <RecoveryCodeDisplay code={recoveryCode} />
             <Box
               sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 1, mt: 2 }}
             >

@@ -11,7 +11,6 @@ import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
 import SyncIcon from '@mui/icons-material/Sync'
 
 import { AppBarTitleContext } from '~/context'
@@ -20,6 +19,7 @@ import ListSection from '~/components/ListSection'
 import ListSubheader from '~/components/ListSubheader'
 import SettingsPage from '~/components/SettingsPage'
 import Modal, { Buttons } from '~/components/Modal'
+import RecoveryCodeDisplay from '~/components/RecoveryCodeDisplay'
 import { copyToClipboard } from '~/utils/helpers'
 import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
@@ -312,13 +312,7 @@ const Sync = () => {
         <Typography variant="body2" color="text.secondary">
           {t('sync.pubkySaveCode')}
         </Typography>
-        <TextField
-          value={pubkyRecoveryCode}
-          slotProps={{ input: { readOnly: true } }}
-          fullWidth
-          multiline
-          margin="normal"
-        />
+        <RecoveryCodeDisplay code={pubkyRecoveryCode} />
         <Buttons>
           <Button onClick={() => void copyToClipboard(pubkyRecoveryCode)}>
             {t('sync.pubkyCopyCode')}

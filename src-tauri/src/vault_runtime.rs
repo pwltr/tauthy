@@ -385,7 +385,14 @@ impl Runtime {
         };
         coordinator.resume_change(password, target_password)
       }
-      Some(Operation::Create | Operation::Migrate) => coordinator.resume(password, reader),
+      Some(Operation::Create) => match coordinator.resume(password, reader) {
+        Err(TxError::NeedsPreparation) => {
+          coordinator.resume_empty_create(password)?;
+          coordinator.resume(password, reader)
+        }
+        other => other,
+      },
+      Some(Operation::Migrate) => coordinator.resume(password, reader),
       _ => return Err(TxError::ReconciliationFailed.into()),
     };
     match result {

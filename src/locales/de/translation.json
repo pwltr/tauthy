@@ -310,6 +310,7 @@
     "syncDisconnected": "Synchronisierung getrennt.",
     "syncAuthenticationFailed": "Das Sync-Wiederherstellungspasswort ist falsch oder die Datei wurde verändert.",
     "syncConflict": "Lokaler und synchronisierter Tresor enthalten einen Kontokonflikt, der nicht sicher zusammengeführt werden kann.",
+    "syncLocalConflict": "Dieser Tresor und Pubky-Sync enthalten unterschiedliche Versionen desselben Kontos. Es wurde nichts geändert.",
     "syncCorrupt": "Die Sync-Daten sind beschädigt oder ungültig.",
     "syncDeviceFileInvalid": "{{file}} kann nicht gelesen werden. Die Datei ist möglicherweise unvollständig, beschädigt oder gehört zu einer anderen Synchronisierung. Sichere sie vor Änderungen; der lokale Tresor ist sicher.",
     "syncDeviceFileLimit": "Die Synchronisierung enthält mehr als 32 Gerätedateien und wurde angehalten. Behalte die Dateien und erstelle eine verschlüsselte Sicherung, bevor du Hilfe suchst; lösche Gerätedateien nicht wahllos.",
