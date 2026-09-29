@@ -3,7 +3,11 @@
     "pageTitle": "Paramètres développeur",
     "previewBackup": "Afficher le rappel de sauvegarde",
     "backupDescription": "Réinitialise le statut de sauvegarde de cet appareil et ouvre l’accueil. Ajoutez au moins un compte pour voir le rappel. Les comptes et fichiers de sauvegarde ne sont pas modifiés.",
-    "previewFailed": "Impossible de réinitialiser le statut de sauvegarde."
+    "previewFailed": "Impossible de réinitialiser le statut de sauvegarde.",
+    "wipeApp": "Effacer l’application",
+    "wipeDescription": "Supprime tous les comptes locaux et les réglages de l’application, puis revient à l’accueil. Les sauvegardes exportées et les fichiers du dossier de synchronisation restent intacts.",
+    "wipeWarning": "Supprimer tous les comptes locaux et les réglages de l’application sur cet appareil ? Cette action est irréversible. Les sauvegardes exportées et les fichiers du dossier de synchronisation seront conservés.",
+    "wipeFailed": "Impossible d’effacer l’application."
   },
   "backup": {
     "never": "Aucun export enregistré sur cet appareil",

@@ -3,7 +3,11 @@
     "pageTitle": "Entwicklereinstellungen",
     "previewBackup": "Sicherungserinnerung anzeigen",
     "backupDescription": "Setzt den Sicherungsstatus dieses Geräts zurück und öffnet die Startseite. Mindestens ein Konto ist erforderlich, um die Erinnerung zu sehen. Konten und Sicherungsdateien werden nicht verändert.",
-    "previewFailed": "Sicherungsstatus konnte nicht zurückgesetzt werden."
+    "previewFailed": "Sicherungsstatus konnte nicht zurückgesetzt werden.",
+    "wipeApp": "App zurücksetzen",
+    "wipeDescription": "Löscht alle lokalen Konten und App-Einstellungen und kehrt zur Einführung zurück. Exportierte Sicherungen und Dateien im Synchronisierungsordner bleiben erhalten.",
+    "wipeWarning": "Alle lokalen Konten und App-Einstellungen auf diesem Gerät löschen? Dies kann nicht rückgängig gemacht werden. Exportierte Sicherungen und Dateien im Synchronisierungsordner bleiben erhalten.",
+    "wipeFailed": "Die App konnte nicht zurückgesetzt werden."
   },
   "backup": {
     "never": "Kein Export auf diesem Gerät vermerkt",

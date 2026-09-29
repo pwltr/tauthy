@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -10,8 +10,10 @@ import {
 import { enableDeveloperSettings } from '~/utils/developerSettings'
 import DeveloperSettings from './DeveloperSettings'
 
-const mocks = vi.hoisted(() => ({ error: vi.fn() }))
+const mocks = vi.hoisted(() => ({ error: vi.fn(), confirm: vi.fn(), wipeApp: vi.fn() }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.error } }))
+vi.mock('@tauri-apps/plugin-dialog', () => ({ confirm: mocks.confirm }))
+vi.mock('~/utils/wipeApp', () => ({ wipeApp: mocks.wipeApp }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 
 const show = () =>
@@ -31,6 +33,8 @@ describe('developer backup reminder preview', () => {
     sessionStorage.clear()
     vi.restoreAllMocks()
     mocks.error.mockReset()
+    mocks.confirm.mockReset()
+    mocks.wipeApp.mockReset()
   })
 
   it('rejects direct navigation until developer settings are enabled', () => {
@@ -72,5 +76,55 @@ describe('developer backup reminder preview', () => {
     fireEvent.click(screen.getByRole('button', { name: 'developer.previewBackup' }))
     expect(mocks.error).toHaveBeenCalledWith('developer.previewFailed')
     expect(screen.queryByText('Home destination')).not.toBeInTheDocument()
+  })
+})
+
+describe('developer app wipe', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    localStorage.clear()
+    sessionStorage.clear()
+    mocks.error.mockReset()
+    mocks.confirm.mockReset()
+    mocks.wipeApp.mockReset()
+    enableDeveloperSettings()
+  })
+
+  it('does not wipe when confirmation is cancelled', async () => {
+    localStorage.setItem('showWelcome', 'false')
+    mocks.confirm.mockResolvedValue(false)
+    show()
+
+    fireEvent.click(screen.getByRole('button', { name: 'developer.wipeApp' }))
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledOnce())
+    expect(mocks.wipeApp).not.toHaveBeenCalled()
+    expect(localStorage.getItem('showWelcome')).toBe('false')
+  })
+
+  it('wipes only after confirmation', async () => {
+    mocks.confirm.mockResolvedValue(true)
+    mocks.wipeApp.mockResolvedValue(undefined)
+    show()
+
+    fireEvent.click(screen.getByRole('button', { name: 'developer.wipeApp' }))
+    await waitFor(() => expect(mocks.wipeApp).toHaveBeenCalledOnce())
+    expect(mocks.confirm).toHaveBeenCalledWith('developer.wipeWarning', {
+      title: 'developer.wipeApp',
+      kind: 'warning',
+      okLabel: 'developer.wipeApp',
+      cancelLabel: 'modals.cancel',
+    })
+  })
+
+  it('reports a wipe failure without clearing settings', async () => {
+    localStorage.setItem('showWelcome', 'false')
+    mocks.confirm.mockResolvedValue(true)
+    mocks.wipeApp.mockRejectedValue(new Error('vault deletion failed'))
+    show()
+
+    fireEvent.click(screen.getByRole('button', { name: 'developer.wipeApp' }))
+    await waitFor(() => expect(mocks.error).toHaveBeenCalledWith('developer.wipeFailed'))
+    expect(localStorage.getItem('showWelcome')).toBe('false')
+    expect(screen.getByRole('button', { name: 'developer.wipeApp' })).toBeEnabled()
   })
 })

@@ -3,7 +3,11 @@
     "pageTitle": "Developer settings",
     "previewBackup": "Preview backup reminder",
     "backupDescription": "Resets this device’s backup status and opens the home screen. Add at least one account to see the reminder. Accounts and backup files are not changed.",
-    "previewFailed": "Could not reset backup status."
+    "previewFailed": "Could not reset backup status.",
+    "wipeApp": "Wipe App",
+    "wipeDescription": "Delete all local accounts and app settings, then return to onboarding. Exported backups and files in your sync folder are not deleted.",
+    "wipeWarning": "Delete all local accounts and app settings on this device? This cannot be undone. Exported backups and files in your sync folder will remain.",
+    "wipeFailed": "Could not wipe the app."
   },
   "backup": {
     "never": "No export recorded on this device",

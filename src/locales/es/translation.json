@@ -3,7 +3,11 @@
     "pageTitle": "Ajustes de desarrollador",
     "previewBackup": "Mostrar recordatorio de copia de seguridad",
     "backupDescription": "Restablece el estado de copia de seguridad de este dispositivo y abre el inicio. Añade al menos una cuenta para ver el recordatorio. Las cuentas y los archivos de copia de seguridad no se modifican.",
-    "previewFailed": "No se pudo restablecer el estado de copia de seguridad."
+    "previewFailed": "No se pudo restablecer el estado de copia de seguridad.",
+    "wipeApp": "Borrar la aplicación",
+    "wipeDescription": "Elimina todas las cuentas locales y los ajustes de la aplicación y vuelve a la bienvenida. No se borran las copias exportadas ni los archivos de la carpeta de sincronización.",
+    "wipeWarning": "¿Eliminar todas las cuentas locales y los ajustes de esta aplicación en este dispositivo? No se puede deshacer. Se conservarán las copias exportadas y los archivos de la carpeta de sincronización.",
+    "wipeFailed": "No se pudo borrar la aplicación."
   },
   "backup": {
     "never": "No hay exportaciones registradas en este dispositivo",

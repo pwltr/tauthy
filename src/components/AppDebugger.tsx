@@ -34,7 +34,6 @@ const formatError = (error: unknown) => (error instanceof Error ? error.message 
 
 const AppDebugger = () => {
   const [output, setOutput] = useState('')
-  const [isClearing, setIsClearing] = useState(false)
 
   const handleGetStatus = async () => {
     try {
@@ -62,20 +61,6 @@ const AppDebugger = () => {
     }
   }
 
-  const handleClearAll = async () => {
-    setIsClearing(true)
-    setOutput('Clearing development data...')
-
-    try {
-      await vault.destroy()
-      localStorage.clear()
-      window.location.replace('/welcome')
-    } catch (err) {
-      setOutput(`Clear failed: ${formatError(err)}`)
-      setIsClearing(false)
-    }
-  }
-
   const handleDebug = async () => {
     try {
       const result = await checkUpdate()
@@ -97,15 +82,6 @@ const AppDebugger = () => {
         </Button>
         <Button color="warning" size="small" variant="contained" onClick={handleDebug}>
           Debug
-        </Button>
-        <Button
-          color="error"
-          size="small"
-          variant="contained"
-          disabled={isClearing}
-          onClick={handleClearAll}
-        >
-          {isClearing ? 'Clearing…' : 'Clear'}
         </Button>
       </Row>
     </Container>
