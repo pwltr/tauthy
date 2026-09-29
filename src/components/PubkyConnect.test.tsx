@@ -98,22 +98,19 @@ describe('Pubky connection', () => {
     'syncLocalConflict',
     'syncCorrupt',
     'syncUnsupported',
-  ])(
-    'shows the specific %s join failure',
-    async (error) => {
-      mocks.poll.mockResolvedValue({ approved: true, publicKey: 'pubky-user', hasRemote: true })
-      mocks.join.mockRejectedValue(error)
-      const { unmount } = render(<PubkyConnect />)
+  ])('shows the specific %s join failure', async (error) => {
+    mocks.poll.mockResolvedValue({ approved: true, publicKey: 'pubky-user', hasRemote: true })
+    mocks.join.mockRejectedValue(error)
+    const { unmount } = render(<PubkyConnect />)
 
-      fireEvent.change(await screen.findByLabelText('sync.pubkyRecoveryCode'), {
-        target: { value: 'a'.repeat(64) },
-      })
-      fireEvent.click(screen.getByRole('button', { name: 'sync.join' }))
+    fireEvent.change(await screen.findByLabelText('sync.pubkyRecoveryCode'), {
+      target: { value: 'a'.repeat(64) },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'sync.join' }))
 
-      await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(`toasts.${error}`))
-      unmount()
-    },
-  )
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(`toasts.${error}`))
+    unmount()
+  })
 
   it('cancels an unfinished authorization when leaving', async () => {
     mocks.poll.mockResolvedValue({ approved: false, publicKey: null, hasRemote: null })

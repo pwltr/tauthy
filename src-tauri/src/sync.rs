@@ -20,6 +20,7 @@ use tauri::async_runtime::Mutex as AsyncMutex;
 use tauri::{AppHandle, State};
 use zeroize::{Zeroize, Zeroizing};
 
+use crate::diagnostics::Diagnostics;
 use crate::vault_access::{ApplicationVault, RecordAccess, VaultAccess};
 
 pub(crate) const SYNC_STORE_NAME: &[u8] = b"sync-config-v1";
@@ -1009,14 +1010,23 @@ async fn pubky_restore(
 async fn pubky_sync_at(
   state: &impl VaultAccess,
   pubky_state: &PubkySyncState,
+  diagnostics: &Diagnostics,
 ) -> Result<SyncStatus, String> {
   let (mut config, local_entries) =
     state.with_records(|vault| Ok((load_pubky_config(vault)?, current_entries(vault)?)))?;
   let session = pubky_restore(&config, pubky_state).await?;
   let key = Zeroizing::new(decode_exact(&config.key, KEY_SIZE)?);
-  let remote = pubky_remote_payload(&session, &key, &config.wrapped_key).await?;
+  let remote = pubky_remote_payload(&session, &key, &config.wrapped_key)
+    .await
+    .map_err(|error| {
+      diagnostics.record_error("pubky.read.error", &error);
+      error
+    })?;
   update_from_local(&mut config.payload, local_entries, &config.device_id);
-  let merged = merge_payloads(config.payload.clone(), remote.clone())?;
+  let merged = merge_payloads(config.payload.clone(), remote.clone()).map_err(|error| {
+    diagnostics.record_error("pubky.merge.error", &error);
+    error
+  })?;
   if merged != remote {
     pubky_publish(
       &session,
@@ -1025,7 +1035,11 @@ async fn pubky_sync_at(
       &key,
       &config.wrapped_key,
     )
-    .await?;
+    .await
+    .map_err(|error| {
+      diagnostics.record_error("pubky.publish.error", &error);
+      error
+    })?;
   }
   state.with_records(|vault| {
     // Edits may have happened while the network request was in flight.
@@ -1214,6 +1228,7 @@ pub async fn pubky_sync_create(
   app: AppHandle,
   state: State<'_, ApplicationVault>,
   pubky_state: State<'_, PubkySyncState>,
+  diagnostics: State<'_, Diagnostics>,
   recovery_code: String,
 ) -> Result<PubkySetupResult, String> {
   let recovery_code = Zeroizing::new(recovery_code);
@@ -1252,7 +1267,12 @@ pub async fn pubky_sync_create(
   let remote = envelope(&payload, sync_key.as_ref(), wrapped_key.clone())?;
   // The anchor contains the initial payload. If the next write fails, the
   // already-displayed recovery code can still join that anchor on retry.
-  pubky_write_envelope(&session, PUBKY_ANCHOR, &remote).await?;
+  pubky_write_envelope(&session, PUBKY_ANCHOR, &remote)
+    .await
+    .map_err(|error| {
+      diagnostics.record_error("pubky.publish.error", &error);
+      error
+    })?;
   pubky_publish(
     &session,
     &device_id,
@@ -1260,7 +1280,11 @@ pub async fn pubky_sync_create(
     sync_key.as_ref(),
     &wrapped_key,
   )
-  .await?;
+  .await
+  .map_err(|error| {
+    diagnostics.record_error("pubky.publish.error", &error);
+    error
+  })?;
   let session_secret = session
     .as_grant()
     .ok_or_else(|| ERR_UNSUPPORTED.to_string())?
@@ -1297,6 +1321,7 @@ pub async fn pubky_sync_join(
   app: AppHandle,
   state: State<'_, ApplicationVault>,
   pubky_state: State<'_, PubkySyncState>,
+  diagnostics: State<'_, Diagnostics>,
   mut recovery_code: String,
 ) -> Result<PubkySetupResult, String> {
   let _operation = pubky_state.operation.lock().await;
@@ -1312,9 +1337,19 @@ pub async fn pubky_sync_join(
       .await
       .clone()
       .ok_or_else(|| ERR_NOT_CONFIGURED.to_string())?;
-    let anchor = pubky_read_envelope(&session, PUBKY_ANCHOR).await?;
+    let anchor = pubky_read_envelope(&session, PUBKY_ANCHOR)
+      .await
+      .map_err(|error| {
+        diagnostics.record_error("pubky.read.error", &error);
+        error
+      })?;
     let sync_key = unwrap_key(&anchor.key, recovery_code.as_bytes())?;
-    let remote = pubky_remote_payload(&session, sync_key.as_ref(), &anchor.key).await?;
+    let remote = pubky_remote_payload(&session, sync_key.as_ref(), &anchor.key)
+      .await
+      .map_err(|error| {
+        diagnostics.record_error("pubky.read.error", &error);
+        error
+      })?;
     let local_entries = state.with_records(|vault| {
       if vault.get_record(SYNC_STORE_NAME)?.is_some()
         || vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()
@@ -1326,6 +1361,7 @@ pub async fn pubky_sync_join(
     let device_id = random_id()?;
     let mut payload = remote.clone();
     add_initial_local_entries(&mut payload, local_entries, &device_id).map_err(|error| {
+      diagnostics.record_error("pubky.merge.error", &error);
       if error == ERR_CONFLICT {
         ERR_LOCAL_CONFLICT.to_string()
       } else {
@@ -1340,7 +1376,11 @@ pub async fn pubky_sync_join(
         sync_key.as_ref(),
         &anchor.key,
       )
-      .await?;
+      .await
+      .map_err(|error| {
+        diagnostics.record_error("pubky.publish.error", &error);
+        error
+      })?;
     }
     let session_secret = session
       .as_grant()
@@ -1525,13 +1565,14 @@ pub async fn sync_now(
   app: AppHandle,
   state: State<'_, ApplicationVault>,
   pubky_state: State<'_, PubkySyncState>,
+  diagnostics: State<'_, Diagnostics>,
 ) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
   let is_pubky =
     state.with_records(|vault| Ok(vault.get_record(PUBKY_SYNC_STORE_NAME)?.is_some()))?;
   let status = if is_pubky {
     let _operation = pubky_state.operation.lock().await;
-    pubky_sync_at(&state, &pubky_state).await
+    pubky_sync_at(&state, &pubky_state, &diagnostics).await
   } else {
     tauri::async_runtime::spawn_blocking(move || sync_at(&state))
       .await

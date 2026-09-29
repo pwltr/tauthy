@@ -149,20 +149,52 @@ export const disconnectSync = async () => {
   return status
 }
 
-export const startPubkySync = () => invoke<string>('pubky_sync_start')
-export const pollPubkySync = () => invoke<PubkyApproval>('pubky_sync_poll')
+export const startPubkySync = async () => {
+  recordDiagnostic('pubky.approval.start')
+  try {
+    return await invoke<string>('pubky_sync_start')
+  } catch (error) {
+    recordDiagnostic('pubky.approval.error', error)
+    throw error
+  }
+}
+
+export const pollPubkySync = async () => {
+  try {
+    const result = await invoke<PubkyApproval>('pubky_sync_poll')
+    if (result.approved) recordDiagnostic('pubky.approval.ok')
+    return result
+  } catch (error) {
+    recordDiagnostic('pubky.approval.error', error)
+    throw error
+  }
+}
 export const cancelPubkySync = () => invoke<void>('pubky_sync_cancel')
 
 export const createPubkySync = async (recoveryCode: string) => {
-  const result = await invoke<PubkySetupResult>('pubky_sync_create', { recoveryCode })
-  announceSync()
-  return result
+  recordDiagnostic('pubky.create.start')
+  try {
+    const result = await invoke<PubkySetupResult>('pubky_sync_create', { recoveryCode })
+    announceSync()
+    recordDiagnostic('pubky.create.ok')
+    return result
+  } catch (error) {
+    recordDiagnostic('pubky.create.error', error)
+    throw error
+  }
 }
 
 export const joinPubkySync = async (recoveryCode: string) => {
-  const result = await invoke<PubkySetupResult>('pubky_sync_join', { recoveryCode })
-  announceSync()
-  return result
+  recordDiagnostic('pubky.join.start')
+  try {
+    const result = await invoke<PubkySetupResult>('pubky_sync_join', { recoveryCode })
+    announceSync()
+    recordDiagnostic('pubky.join.ok')
+    return result
+  } catch (error) {
+    recordDiagnostic('pubky.join.error', error)
+    throw error
+  }
 }
 
 export const getPubkyRecoveryCode = () => invoke<string>('pubky_sync_recovery_code')

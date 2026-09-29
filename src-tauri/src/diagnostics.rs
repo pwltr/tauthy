@@ -28,6 +28,18 @@ fn valid_stage(stage: &str) -> bool {
       | "sync.connect.start"
       | "sync.connect.ok"
       | "sync.connect.error"
+      | "pubky.approval.start"
+      | "pubky.approval.ok"
+      | "pubky.approval.error"
+      | "pubky.create.start"
+      | "pubky.create.ok"
+      | "pubky.create.error"
+      | "pubky.join.start"
+      | "pubky.join.ok"
+      | "pubky.join.error"
+      | "pubky.read.error"
+      | "pubky.merge.error"
+      | "pubky.publish.error"
       | "import.start"
       | "import.ok"
       | "import.error"
@@ -60,6 +72,7 @@ fn valid_code(code: &str) -> bool {
       | "syncCorrupt"
       | "syncDeviceFileLimit"
       | "syncFileExists"
+      | "syncLocalConflict"
       | "syncMultipleFiles"
       | "syncNotConfigured"
       | "syncUnavailable"
@@ -189,6 +202,12 @@ impl Diagnostics {
       .map_err(|_| "Diagnostic log unavailable")
   }
 
+  // Backend errors can contain untrusted details. Keep only the fixed code.
+  pub(crate) fn record_error(&self, stage: &str, error: &str) {
+    let code = if valid_code(error) { error } else { "other" };
+    let _ = self.record(stage, Some(code));
+  }
+
   pub(crate) fn export(&self) -> Result<String, &'static str> {
     let entries = self
       .entries
@@ -237,6 +256,8 @@ mod tests {
     assert!(diagnostics
       .record("sync.now.error", Some("syncUnavailable: /private/path"))
       .is_err());
+    diagnostics.record_error("pubky.read.error", "syncLocalConflict");
+    diagnostics.record_error("pubky.publish.error", "syncUnavailable: /private/path");
     fs::write(
       directory.path().join(LOG_NAME),
       format!(
@@ -248,6 +269,15 @@ mod tests {
     let reopened = Diagnostics::new(directory.path()).unwrap();
     assert!(reopened.export().unwrap().contains("sync.now.start"));
     assert!(!reopened.export().unwrap().contains("secret-value"));
+    assert!(diagnostics
+      .export()
+      .unwrap()
+      .contains("pubky.read.error syncLocalConflict"));
+    assert!(diagnostics
+      .export()
+      .unwrap()
+      .contains("pubky.publish.error other"));
+    assert!(!diagnostics.export().unwrap().contains("/private/path"));
   }
 
   #[test]
