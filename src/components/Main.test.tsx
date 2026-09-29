@@ -19,6 +19,7 @@ const idleTimer = vi.hoisted(() => ({
 }))
 const syncInBackground = vi.hoisted(() => vi.fn())
 const prepareImport = vi.hoisted(() => vi.fn())
+const recordDiagnostic = vi.hoisted(() => vi.fn())
 
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/hooks/useVaultProtection', () => ({
@@ -26,6 +27,7 @@ vi.mock('~/hooks/useVaultProtection', () => ({
 }))
 vi.mock('~/components/AppBar', () => ({ default: () => <div>Header</div> }))
 vi.mock('~/utils/sync', () => ({ syncInBackground }))
+vi.mock('~/utils/diagnostics', () => ({ recordDiagnostic }))
 vi.mock('~/utils', () => ({ prepareImport, exportCodes: vi.fn(), commitPreparedImport: vi.fn() }))
 vi.mock('~/components/Modal', () => ({
   default: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
@@ -80,6 +82,7 @@ describe('vault initialization', () => {
     vault.unlock.mockResolvedValue(undefined)
     syncInBackground.mockReset()
     prepareImport.mockReset()
+    recordDiagnostic.mockReset()
   })
 
   it('sends a new user to onboarding without reading the vault', async () => {

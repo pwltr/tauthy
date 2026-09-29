@@ -1,4 +1,10 @@
 {
+  "diagnostics": {
+    "export": "Protokolle exportieren",
+    "description": "Letzte App-Ereignisse speichern.",
+    "exported": "Protokolle exportiert.",
+    "exportFailed": "Protokolle konnten nicht exportiert werden."
+  },
   "developer": {
     "pageTitle": "Entwicklereinstellungen",
     "previewBackup": "Sicherungserinnerung anzeigen",

@@ -5,6 +5,7 @@ use tauri::Manager;
 
 mod aegis;
 mod commands;
+mod diagnostics;
 mod ente;
 #[cfg_attr(feature = "file-vault", allow(dead_code))]
 mod legacy_vault;
@@ -85,6 +86,8 @@ fn main() {
     proton::decrypt_proton_export,
     commands::generate_totp,
     commands::generate_totps,
+    diagnostics::diagnostics_record,
+    diagnostics::diagnostics_export,
     #[cfg(feature = "file-vault")]
     vault_commands::vault_initialize,
     #[cfg(feature = "file-vault")]
@@ -116,6 +119,16 @@ fn main() {
 
   let builder = builder
     .setup(|app| {
+      // Diagnostics are best-effort: a log-directory problem must never block
+      // access to the vault. Only fixed event identifiers can enter the log.
+      let diagnostics = app
+        .path()
+        .app_log_dir()
+        .ok()
+        .and_then(|path| diagnostics::Diagnostics::new(&path).ok())
+        .unwrap_or_else(diagnostics::Diagnostics::memory_only);
+      let _ = diagnostics.record("app.start", None);
+      app.manage(diagnostics);
       if cfg!(feature = "migration-test")
         != (app.config().identifier == "com.pwltr.tauthy.migrationtest")
       {

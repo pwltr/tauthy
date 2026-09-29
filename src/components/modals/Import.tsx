@@ -11,6 +11,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import { ImportFormat, ImportPreview, prepareImport } from '~/utils'
 import Modal from '~/components/Modal'
 import { traceImport } from '~/utils/importDiagnostics'
+import { recordDiagnostic } from '~/utils/diagnostics'
 import ListItem from '~/components/ListItem'
 import ImportPasswordModal from '~/components/modals/ImportPassword'
 import twoFasIcon from '../../../assets/import-providers/2fas.svg'
@@ -105,6 +106,7 @@ const ImportModal = ({
 
   const showImportError = (err: unknown) => {
     traceImport('importErrorShown')
+    recordDiagnostic('import.error', err)
     const error =
       err instanceof Error && knownImportErrors.includes(err.message) ? err.message : 'importFailed'
     toast.error(t(`toasts.${error}`))
@@ -131,6 +133,7 @@ const ImportModal = ({
           err.message,
         )
       ) {
+        recordDiagnostic('import.error', err)
         setPasswordError(t(`toasts.${err.message}`))
       } else {
         closePasswordPrompt()
@@ -162,6 +165,7 @@ const ImportModal = ({
               traceImport(file ? 'fileSelected' : 'noFileSelected')
               if (!format) traceImport('formatMissing')
               if (format && file) {
+                recordDiagnostic('import.start')
                 try {
                   onReview(await prepareImport(file, format))
                 } catch (err) {
