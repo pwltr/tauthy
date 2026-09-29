@@ -57,9 +57,9 @@
     "generic": "La operación ha fallado. Inténtalo de nuevo."
   },
   "welcome": {
-    "intro": "Te damos la bienvenida a Tauthy: tu autenticador privado.",
-    "backup": "Me aseguraré de realizar copias de seguridad de mis datos.",
-    "start": "Empecemos"
+    "intro": "Te damos la bienvenida a Tauthy",
+    "subtitle": "Tus códigos, listos cuando los necesites.",
+    "continue": "Continuar"
   },
   "unlock": {
     "title": "Baúl bloqueado",
@@ -69,7 +69,7 @@
     "unlock": "Desbloquear"
   },
   "codes": {
-    "empty": "<add>Añadir entrada</add> o <import>importar una copia de seguridad</import>",
+    "empty": "<add>Añadir entrada</add>, <import>importar una copia de seguridad</import> o <sync>conectar la sincronización</sync>",
     "invalid": "Secreto incorrecto"
   },
   "appBar": {

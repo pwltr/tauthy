@@ -139,7 +139,7 @@ describe('vault initialization', () => {
     },
   )
 
-  it('goes directly from onboarding to accounts with passwordless file storage', async () => {
+  it('goes directly from onboarding to home with passwordless file storage', async () => {
     localStorage.setItem('showWelcome', 'true')
     vault.fileBackend = true
     let created = false
@@ -162,8 +162,7 @@ describe('vault initialization', () => {
     )
     await flushPromises()
     expect(vault.create).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('checkbox'))
-    fireEvent.click(screen.getByRole('button', { name: 'accept' }))
+    fireEvent.click(screen.getByRole('button', { name: 'welcome.continue' }))
     await flushPromises()
     expect(screen.getByText('Accounts')).toBeInTheDocument()
     expect(vault.create).toHaveBeenCalledExactlyOnceWith()

@@ -57,9 +57,9 @@
     "generic": "The vault operation failed. Please try again."
   },
   "welcome": {
-    "intro": "Welcome to Tauthy—your private authenticator.",
-    "backup": "I'll make sure to keep backups of my data.",
-    "start": "Let's get going"
+    "intro": "Welcome to Tauthy",
+    "subtitle": "Your codes, ready when you need them.",
+    "continue": "Continue"
   },
   "unlock": {
     "title": "Vault locked.",
@@ -69,7 +69,7 @@
     "unlock": "Unlock"
   },
   "codes": {
-    "empty": "<add>Add an entry</add> or <import>import a backup</import>",
+    "empty": "<add>Add an entry</add>, <import>import a backup</import>, or <sync>connect sync</sync>",
     "invalid": "Invalid secret"
   },
   "appBar": {

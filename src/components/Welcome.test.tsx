@@ -18,10 +18,9 @@ const renderWelcome = () =>
       </Routes>
     </MemoryRouter>,
   )
-const finish = () => {
-  fireEvent.click(screen.getByRole('checkbox'))
-  fireEvent.click(screen.getByRole('button', { name: 'accept' }))
-}
+
+const finish = () =>
+  fireEvent.click(screen.getByRole('button', { name: 'translated welcome.continue' }))
 
 describe('onboarding vault initialization', () => {
   beforeEach(() => {
@@ -31,11 +30,12 @@ describe('onboarding vault initialization', () => {
     vault.create.mockReset().mockResolvedValue(undefined)
   })
 
-  it('creates passwordless storage on the existing finish action, without an additional setup screen', async () => {
+  it('creates passwordless storage before opening the home screen', async () => {
     renderWelcome()
     expect(vault.prepare).not.toHaveBeenCalled()
     expect(vault.create).not.toHaveBeenCalled()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     finish()
     expect(await screen.findByText('Accounts')).toBeInTheDocument()
     expect(vault.create).toHaveBeenCalledExactlyOnceWith()
@@ -62,7 +62,7 @@ describe('onboarding vault initialization', () => {
     )
     expect(localStorage.getItem('showWelcome')).not.toBe('false')
     vault.prepare.mockResolvedValue({ lifecycle: 'active', status: 'unlocked' })
-    fireEvent.click(screen.getByRole('button', { name: 'accept' }))
+    finish()
     expect(await screen.findByText('Accounts')).toBeInTheDocument()
     expect(vault.create).toHaveBeenCalledTimes(1)
   })
@@ -85,5 +85,11 @@ describe('onboarding vault initialization', () => {
     expect(await screen.findByText('Accounts')).toBeInTheDocument()
     expect(vault.prepare).not.toHaveBeenCalled()
     expect(vault.create).not.toHaveBeenCalled()
+  })
+
+  it('does not reopen onboarding after it has been completed', async () => {
+    localStorage.setItem('showWelcome', 'false')
+    renderWelcome()
+    expect(await screen.findByText('Accounts')).toBeInTheDocument()
   })
 })

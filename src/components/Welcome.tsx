@@ -1,12 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
-import FormGroup from '@mui/material/FormGroup'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import Checkbox from '@mui/material/Checkbox'
-import MuiButton from '@mui/material/Button'
+import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 
 import { vault } from '~/utils/storage'
@@ -24,75 +21,65 @@ const Container = styled('div')`
   padding: 3rem;
 `
 
-const Button = styled(MuiButton)`
-  margin-top: 2.5rem;
-`
-
 const Welcome = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [checked, setChecked] = useState(false)
-  const [, setShowWelcome] = useLocalStorage('showWelcome', true)
+  const [showWelcome, setShowWelcome] = useLocalStorage('showWelcome', true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const navigating = useRef(false)
 
   const handleSubmit = async () => {
-    if (!checked || busy) return
+    if (busy) return
     setBusy(true)
     setError('')
     try {
       if (vault.fileBackend) {
-        // Finishing onboarding is the creation action. Only a genuinely new
-        // vault may be created; pending operations resume through prepare().
+        // The first action creates storage only for a genuinely new vault.
+        // Pending operations resume through prepare(), never a second create.
         const status = await vault.prepare()
         if (status.lifecycle === 'new') await vault.create()
       }
+      navigating.current = true
       setShowWelcome(false)
       navigate('/')
     } catch (error) {
+      navigating.current = false
       setError(vaultErrorMessage(error, t))
     } finally {
       setBusy(false)
     }
   }
 
+  // Don't reopen onboarding from browser history after setup is complete.
+  if (!showWelcome && !navigating.current) return <Navigate to="/" replace />
+
   return (
     <Container>
-      <img src={logo} width="140" />
+      <img src={logo} width="140" alt="" />
 
-      <Typography variant="h6" align="center" color="primary" sx={{ mt: 3, mb: 4 }}>
+      <Typography variant="h6" align="center" color="primary" sx={{ mt: 1 }}>
         {t('welcome.intro')}
       </Typography>
-
-      <FormGroup>
-        <FormControlLabel
-          label={
-            <Typography variant="body1" color="primary">
-              {t('welcome.backup')}
-            </Typography>
-          }
-          color="primary"
-          control={
-            <Checkbox checked={checked} onChange={(event) => setChecked(event.target.checked)} />
-          }
-        />
-      </FormGroup>
+      <Typography variant="body2" align="center" color="text.secondary" sx={{ mt: 0.5 }}>
+        {t('welcome.subtitle')}
+      </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mt: 2, width: '100%', maxWidth: 320 }}>
           {error}
         </Alert>
       )}
 
       <Button
-        aria-label="accept"
         color="primary"
         variant="contained"
-        disabled={!checked || busy}
+        disabled={busy}
         loading={busy}
-        onClick={handleSubmit}
+        onClick={() => void handleSubmit()}
+        sx={{ mt: 4, minWidth: 220 }}
       >
-        {t('welcome.start')}
+        {t('welcome.continue')}
       </Button>
     </Container>
   )

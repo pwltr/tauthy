@@ -57,9 +57,9 @@
     "generic": "Die Tresoroperation ist fehlgeschlagen. Versuche es erneut."
   },
   "welcome": {
-    "intro": "Willkommen bei Tauthy – deiner privaten Authenticator-App.",
-    "backup": "Ich stelle sicher jederzeit ein Backup zu haben",
-    "start": "Los geht's"
+    "intro": "Willkommen bei Tauthy",
+    "subtitle": "Deine Codes – bereit, wenn du sie brauchst.",
+    "continue": "Weiter"
   },
   "unlock": {
     "title": "Tresor gesperrt",
@@ -69,7 +69,7 @@
     "unlock": "Entsperren"
   },
   "codes": {
-    "empty": "<add>Konto hinzufügen</add> oder <import>Backup importieren</import>",
+    "empty": "<add>Konto hinzufügen</add>, <import>Backup importieren</import> oder <sync>Synchronisierung einrichten</sync>",
     "invalid": "Schlüssel ungültig"
   },
   "appBar": {

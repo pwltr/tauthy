@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('~/hooks/useBackupStatus', () => ({
   useBackupStatus: () => ({ reminder: true, dismiss: vi.fn(), snooze: vi.fn() }),
@@ -39,7 +40,13 @@ vi.mock('~/components/ProgressBar', () => ({
   ),
 }))
 vi.mock('react-i18next', () => ({
-  Trans: () => null,
+  Trans: ({ components }: { components: Record<string, ReactElement> }) => (
+    <>
+      {Object.entries(components).map(([key, element]) => (
+        <span key={key}>{element}</span>
+      ))}
+    </>
+  ),
   useTranslation: () => ({ t: mocks.translate }),
 }))
 
@@ -122,5 +129,19 @@ describe('code expiration timing', () => {
     expect(screen.getByTestId('account-list')).toBe(list)
     expect(list.scrollTop).toBe(120)
     expect(list).toHaveTextContent('222222')
+  })
+
+  it('offers sync from the empty home screen', async () => {
+    mocks.getVault.mockResolvedValue([])
+    render(
+      <MemoryRouter>
+        <Codes />
+      </MemoryRouter>,
+    )
+    await flushPromises()
+
+    expect(document.querySelector('a[href="/create"]')).toBeInTheDocument()
+    expect(document.querySelector('a[href="/import"]')).toBeInTheDocument()
+    expect(document.querySelector('a[href="/sync"]')).toBeInTheDocument()
   })
 })

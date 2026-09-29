@@ -115,6 +115,7 @@ const Codes = () => {
               components={{
                 add: <Link component={RouterLink} to="/create" />,
                 import: <Link component={RouterLink} to="/import" />,
+                sync: <Link component={RouterLink} to="/sync" />,
               }}
             />
           </Typography>

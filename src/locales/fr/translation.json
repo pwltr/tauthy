@@ -57,9 +57,9 @@
     "generic": "L'opération a échoué. Veuillez réessayer."
   },
   "welcome": {
-    "intro": "Bienvenue dans Tauthy, votre application d’authentification privée.",
-    "backup": "Je vais m'assurer de sauvegarder mes données.",
-    "start": "Commençons"
+    "intro": "Bienvenue dans Tauthy",
+    "subtitle": "Vos codes, prêts quand vous en avez besoin.",
+    "continue": "Continuer"
   },
   "unlock": {
     "title": "Coffre-fort verrouillé.",
@@ -69,7 +69,7 @@
     "unlock": "Déverrouiller"
   },
   "codes": {
-    "empty": "<add>Ajoutez une entrée</add> ou <import>importez une sauvegarde</import>",
+    "empty": "<add>Ajoutez une entrée</add>, <import>importez une sauvegarde</import> ou <sync>connectez la synchronisation</sync>",
     "invalid": "Secret invalide"
   },
   "appBar": {
