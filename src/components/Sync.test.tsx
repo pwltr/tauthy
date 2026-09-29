@@ -50,31 +50,16 @@ describe('sync location pickers', () => {
     mocks.getSyncStatus.mockResolvedValue({ enabled: false, path: null, lastSyncedAt: null })
   })
 
-  it.each(['sync.create', 'sync.join'])('reports a rejected %s picker', async (label) => {
-    mocks.open.mockRejectedValue(new Error('picker unavailable'))
+  it('offers folder and Pubky as separate sync methods', async () => {
     render(<Sync />)
 
-    fireEvent.click(await screen.findByText(label))
+    fireEvent.click(await screen.findByText('sync.folder'))
+    expect(mocks.navigate).toHaveBeenCalledWith('/sync/folder')
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncPickerFailed'))
-  })
-
-  it.each(['sync.create', 'sync.join'])('selects a folder for %s', async (label) => {
-    mocks.open.mockResolvedValue(null)
-    render(<Sync />)
-
-    fireEvent.click(await screen.findByText(label))
-
-    await waitFor(() =>
-      expect(mocks.open).toHaveBeenCalledWith({ multiple: false, directory: true }),
-    )
-  })
-
-  it('shows only one way to join', async () => {
-    render(<Sync />)
-
-    expect(await screen.findByText('sync.join')).toBeInTheDocument()
-    expect(screen.queryByText('sync.joinLegacy')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('sync.pubky'))
+    expect(mocks.navigate).toHaveBeenCalledWith('/sync/pubky')
+    expect(screen.queryByText('sync.create')).not.toBeInTheDocument()
+    expect(screen.queryByText('sync.join')).not.toBeInTheDocument()
   })
 
   it('offers conflicted-copy recovery when sync is connected', async () => {
@@ -182,9 +167,7 @@ describe('sync location pickers', () => {
   it('uses secondary body typography for the introduction', async () => {
     render(<Sync />)
 
-    expect(await screen.findByText('sync.description')).toHaveClass('MuiTypography-body2')
-    fireEvent.click(screen.getByText('sync.pubkyConnect'))
-    expect(mocks.navigate).toHaveBeenCalledWith('/sync/pubky')
+    expect(await screen.findByText('sync.chooseMethod')).toHaveClass('MuiTypography-body2')
   })
 
   it('shows Pubky settings without folder-only recovery tools', async () => {

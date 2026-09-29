@@ -18,23 +18,18 @@ import ListItem from '~/components/ListItem'
 import SettingsPage from '~/components/SettingsPage'
 import Modal, { Buttons } from '~/components/Modal'
 import { copyToClipboard } from '~/utils/helpers'
-import SyncPasswordModal from '~/components/modals/SyncPassword'
 import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
-  createSync,
   disconnectSync,
   getBackgroundSyncError,
   getSyncStatus,
   getPubkyRecoveryCode,
-  joinSync,
   mergeConflictedSyncCopy,
   syncNow,
   SYNC_BACKGROUND_ERROR_EVENT,
   SYNC_STATUS_EVENT,
   type SyncStatus,
 } from '~/utils/sync'
-
-type PendingAction = { mode: 'create' | 'join'; path: string }
 
 const errorText = (error: unknown) =>
   typeof error === 'string' ? error : error instanceof Error ? error.message : ''
@@ -61,7 +56,6 @@ const Sync = () => {
   const { t, i18n } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const [status, setStatus] = useState<SyncStatus>()
-  const [pending, setPending] = useState<PendingAction>()
   const [busy, setBusy] = useState(false)
   const [backgroundError, setBackgroundError] = useState<unknown>(getBackgroundSyncError)
   const showRecovery = developerSettingsEnabled()
@@ -105,42 +99,6 @@ const Sync = () => {
     window.addEventListener(SYNC_STATUS_EVENT, updateStatus)
     return () => window.removeEventListener(SYNC_STATUS_EVENT, updateStatus)
   }, [])
-
-  const chooseCreate = async () => {
-    try {
-      const path = await open({ multiple: false, directory: true })
-      if (typeof path === 'string') setPending({ mode: 'create', path })
-    } catch {
-      toast.error(t('toasts.syncPickerFailed'))
-    }
-  }
-
-  const chooseJoin = async () => {
-    try {
-      const path = await open({ multiple: false, directory: true })
-      if (typeof path === 'string') setPending({ mode: 'join', path })
-    } catch {
-      toast.error(t('toasts.syncPickerFailed'))
-    }
-  }
-
-  const configure = async (password: string) => {
-    if (!pending) return
-    setBusy(true)
-    try {
-      const next =
-        pending.mode === 'create'
-          ? await createSync(pending.path, password)
-          : await joinSync(pending.path, password)
-      setStatus(next)
-      setPending(undefined)
-      toast.success(t('toasts.syncConfigured'))
-    } catch (error) {
-      toast.error(syncErrorMessage(error))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   const synchronize = async () => {
     setBusy(true)
@@ -216,13 +174,13 @@ const Sync = () => {
   return (
     <>
       <SettingsPage>
-        <Box sx={{ px: 2, pt: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            {t(status.provider === 'pubky' ? 'sync.pubkyDescription' : 'sync.description')}
-          </Typography>
-        </Box>
         {status.enabled ? (
           <>
+            <Box sx={{ px: 2, pt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                {t(status.provider === 'pubky' ? 'sync.pubkyDescription' : 'sync.description')}
+              </Typography>
+            </Box>
             {backgroundError && (
               <Alert severity="warning" sx={{ mx: 2, mt: 2 }}>
                 {syncErrorMessage(backgroundError)}
@@ -290,26 +248,31 @@ const Sync = () => {
             </List>
           </>
         ) : (
-          <List>
-            <ListItem disablePadding onClick={() => void chooseCreate()}>
-              <ListItemButton>
-                <ListItemText primary={t('sync.create')} secondary={t('sync.createDescription')} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding onClick={() => void chooseJoin()}>
-              <ListItemButton>
-                <ListItemText primary={t('sync.join')} secondary={t('sync.joinDescription')} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding onClick={() => navigate('/sync/pubky')}>
-              <ListItemButton>
-                <ListItemText
-                  primary={t('sync.pubkyConnect')}
-                  secondary={t('sync.pubkyConnectDescription')}
-                />
-              </ListItemButton>
-            </ListItem>
-          </List>
+          <>
+            <Box sx={{ px: 2, pt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                {t('sync.chooseMethod')}
+              </Typography>
+            </Box>
+            <List>
+              <ListItem disablePadding onClick={() => navigate('/sync/folder')}>
+                <ListItemButton>
+                  <ListItemText
+                    primary={t('sync.folder')}
+                    secondary={t('sync.folderDescription')}
+                  />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding onClick={() => navigate('/sync/pubky')}>
+                <ListItemButton>
+                  <ListItemText
+                    primary={t('sync.pubky')}
+                    secondary={t('sync.pubkyMethodDescription')}
+                  />
+                </ListItemButton>
+              </ListItem>
+            </List>
+          </>
         )}
       </SettingsPage>
       <Modal
@@ -336,13 +299,6 @@ const Sync = () => {
           </Button>
         </Buttons>
       </Modal>
-      <SyncPasswordModal
-        mode={pending?.mode ?? 'create'}
-        open={!!pending}
-        busy={busy}
-        onClose={() => setPending(undefined)}
-        onSubmit={configure}
-      />
     </>
   )
 }
