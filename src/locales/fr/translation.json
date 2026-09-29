@@ -1,4 +1,10 @@
 {
+  "diagnostics": {
+    "export": "Exporter les journaux",
+    "description": "Enregistre les événements récents.",
+    "exported": "Journaux exportés.",
+    "exportFailed": "Impossible d’exporter les journaux."
+  },
   "developer": {
     "pageTitle": "Paramètres développeur",
     "previewBackup": "Afficher le rappel de sauvegarde",

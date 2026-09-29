@@ -1,4 +1,10 @@
 {
+  "diagnostics": {
+    "export": "Export logs",
+    "description": "Save recent app events.",
+    "exported": "Logs exported.",
+    "exportFailed": "Could not export logs."
+  },
   "developer": {
     "pageTitle": "Developer settings",
     "previewBackup": "Preview backup reminder",

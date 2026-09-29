@@ -1,4 +1,10 @@
 {
+  "diagnostics": {
+    "export": "Exportar registros",
+    "description": "Guarda los últimos eventos de la app.",
+    "exported": "Registros exportados.",
+    "exportFailed": "No se pudieron exportar los registros."
+  },
   "developer": {
     "pageTitle": "Ajustes de desarrollador",
     "previewBackup": "Mostrar recordatorio de copia de seguridad",

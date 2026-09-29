@@ -14,6 +14,7 @@ import { syncInBackground } from '~/utils/sync'
 import { useLocalStorage } from '~/hooks'
 import { useVaultProtection } from '~/hooks/useVaultProtection'
 import { vaultErrorCode, vaultErrorMessage } from '~/utils/vaultErrors'
+import { recordDiagnostic } from '~/utils/diagnostics'
 import { AppBarBackContext } from '~/context'
 import AppBar from '~/components/AppBar'
 import ResetModal from '~/components/modals/Reset'
@@ -69,6 +70,7 @@ const Main = () => {
 
       setIsLoading(true)
       setInitializationError('')
+      recordDiagnostic('vault.init.start')
 
       try {
         if (vault.fileBackend) {
@@ -81,11 +83,13 @@ const Main = () => {
             status = await vault.prepare()
           }
           if (status.status === 'locked') {
+            recordDiagnostic('vault.init.ok')
             navigateRef.current('/unlock')
             return
           }
         }
         if (isPasswordSet && !reload && !(await vault.isUnlocked())) {
+          recordDiagnostic('vault.init.ok')
           navigateRef.current('/unlock')
           return
         }
@@ -93,9 +97,11 @@ const Main = () => {
         if (reload && !vault.fileBackend) await vault.unlock('')
         console.info('looking for unlocked vault...')
         await vault.checkVault()
+        recordDiagnostic('vault.init.ok')
         console.info('successfully read vault')
         void syncInBackground()
       } catch (err) {
+        recordDiagnostic('vault.init.error', vaultErrorCode(err))
         try {
           if (vaultErrorCode(err) === 'vaultAuthenticationFailed') {
             console.info('found existing vault but password has been changed')

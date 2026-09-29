@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography'
 import { AppBarBackContext, AppBarTitleContext } from '~/context'
 import { commitPreparedImport, type ImportPreview } from '~/utils'
 import { traceImport } from '~/utils/importDiagnostics'
+import { recordDiagnostic } from '~/utils/diagnostics'
 
 type ImportReviewContext = {
   preview?: ImportPreview
@@ -66,9 +67,11 @@ const ImportReview = () => {
     setBackDisabled(true)
     try {
       const addedCount = await commitPreparedImport(preview)
+      recordDiagnostic('import.ok')
       toast.success(t(addedCount > 0 ? 'toasts.imported' : 'modals.importNoNew'))
       navigate('/', { replace: true })
     } catch (err) {
+      recordDiagnostic('import.error', err)
       const key =
         err instanceof Error && ['importIdConflict', 'importTauthyIdConflict'].includes(err.message)
           ? err.message

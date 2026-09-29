@@ -63,6 +63,6 @@ export const copyToClipboard = async (text: string) => {
   await writeText(String(text))
   toast.success(i18n.t('toasts.copied'), {
     id: 'clipboard',
-    duration: 1200,
+    duration: 2000,
   })
 }

@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ invoke: vi.fn(), toastError: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  toastError: vi.fn(),
+  recordDiagnostic: vi.fn(),
+}))
 const invoke = mocks.invoke
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError } }))
 vi.mock('~/utils/i18n', () => ({ default: { t: (key: string) => key } }))
+vi.mock('~/utils/diagnostics', () => ({ recordDiagnostic: mocks.recordDiagnostic }))
 
 import {
   createSync,
@@ -27,6 +32,7 @@ describe('sync commands', () => {
     await syncNow()
     invoke.mockReset()
     mocks.toastError.mockReset()
+    mocks.recordDiagnostic.mockReset()
   })
 
   it.each([
@@ -100,11 +106,13 @@ describe('sync commands', () => {
       duration: 8000,
     })
     expect(listener).toHaveBeenCalled()
+    expect(mocks.recordDiagnostic).toHaveBeenCalledWith('sync.now.error', 'syncUnavailable')
 
     invoke.mockResolvedValue({ enabled: true })
     await syncInBackground()
 
     expect(getBackgroundSyncError()).toBeUndefined()
+    expect(mocks.recordDiagnostic).toHaveBeenCalledWith('sync.now.ok')
     window.removeEventListener(SYNC_BACKGROUND_ERROR_EVENT, listener)
   })
 
@@ -137,6 +145,7 @@ describe('sync commands', () => {
 
       expect(getBackgroundSyncError()).toBeUndefined()
       expect(mocks.toastError).not.toHaveBeenCalled()
+      expect(mocks.recordDiagnostic).not.toHaveBeenCalled()
     },
   )
 })

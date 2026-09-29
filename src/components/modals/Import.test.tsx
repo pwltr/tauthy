@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
   setBackDisabled: vi.fn(),
+  recordDiagnostic: vi.fn(),
 }))
 
 vi.mock('~/utils', () => ({
@@ -19,6 +20,7 @@ vi.mock('~/utils', () => ({
 vi.mock('react-hot-toast', () => ({
   default: { success: mocks.toastSuccess, error: mocks.toastError },
 }))
+vi.mock('~/utils/diagnostics', () => ({ recordDiagnostic: mocks.recordDiagnostic }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { total?: number }) =>

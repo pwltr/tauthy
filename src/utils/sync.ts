@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import toast from 'react-hot-toast'
 
 import i18n from '~/utils/i18n'
+import { recordDiagnostic } from '~/utils/diagnostics'
 
 export const SYNC_COMPLETE_EVENT = 'tauthy:sync-complete'
 export const SYNC_BACKGROUND_ERROR_EVENT = 'tauthy:sync-background-error'
@@ -44,27 +45,53 @@ const withLatestCheck = (status: SyncStatus): SyncStatus =>
 export const getSyncStatus = async () => withLatestCheck(await invoke<SyncStatus>('sync_status'))
 
 export const createSync = async (path: string, password: string) => {
-  const status = await invoke<SyncStatus>('sync_create', { path, password })
-  lastSuccessfulCheckAt = undefined
-  announceSync()
-  return status
+  recordDiagnostic('sync.connect.start')
+  try {
+    const status = await invoke<SyncStatus>('sync_create', { path, password })
+    lastSuccessfulCheckAt = undefined
+    announceSync()
+    recordDiagnostic('sync.connect.ok')
+    return status
+  } catch (error) {
+    recordDiagnostic('sync.connect.error', error)
+    throw error
+  }
 }
 
 export const joinSync = async (path: string, password: string) => {
-  const status = await invoke<SyncStatus>('sync_join', { path, password })
-  lastSuccessfulCheckAt = undefined
-  announceSync()
-  return status
+  recordDiagnostic('sync.connect.start')
+  try {
+    const status = await invoke<SyncStatus>('sync_join', { path, password })
+    lastSuccessfulCheckAt = undefined
+    announceSync()
+    recordDiagnostic('sync.connect.ok')
+    return status
+  } catch (error) {
+    recordDiagnostic('sync.connect.error', error)
+    throw error
+  }
 }
 
 export const syncNow = async () => {
-  const status = await invoke<SyncStatus>('sync_now')
-  lastSuccessfulCheckAt = Date.now()
-  const currentStatus = withLatestCheck(status)
-  clearBackgroundSyncError()
-  if (status.vaultChanged) window.dispatchEvent(new Event(SYNC_COMPLETE_EVENT))
-  window.dispatchEvent(new CustomEvent(SYNC_STATUS_EVENT, { detail: currentStatus }))
-  return currentStatus
+  try {
+    const status = await invoke<SyncStatus>('sync_now')
+    lastSuccessfulCheckAt = Date.now()
+    const currentStatus = withLatestCheck(status)
+    const recoveredFromError = backgroundError !== undefined
+    clearBackgroundSyncError()
+    if (status.vaultChanged) window.dispatchEvent(new Event(SYNC_COMPLETE_EVENT))
+    window.dispatchEvent(new CustomEvent(SYNC_STATUS_EVENT, { detail: currentStatus }))
+    if (recoveredFromError) recordDiagnostic('sync.now.ok')
+    return currentStatus
+  } catch (error) {
+    // An unconfigured or locked vault is expected during startup. Logging it
+    // every minute would bury actual failures in the bounded history.
+    const message = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+    if (message !== 'syncNotConfigured' && message !== 'vault is locked') {
+      recordDiagnostic('sync.now.error', error)
+    }
+    throw error
+  }
 }
 
 export const syncInBackground = async () => {

@@ -1,6 +1,9 @@
-import { useContext, useEffect, useSyncExternalStore } from 'react'
+import { useContext, useEffect, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeTextFile } from '@tauri-apps/plugin-fs'
+import toast from 'react-hot-toast'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -11,7 +14,9 @@ import BackupIcon from '@mui/icons-material/Backup'
 import InfoIcon from '@mui/icons-material/Info'
 import SyncIcon from '@mui/icons-material/Sync'
 import BugReportIcon from '@mui/icons-material/BugReport'
+import DescriptionIcon from '@mui/icons-material/Description'
 import { developerSettingsEnabled, subscribeDeveloperSettings } from '~/utils/developerSettings'
+import { exportDiagnostics } from '~/utils/diagnostics'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
@@ -21,6 +26,7 @@ const Settings = () => {
   const { t } = useTranslation()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
   const navigate = useNavigate()
+  const [exportingDiagnostics, setExportingDiagnostics] = useState(false)
   const showDeveloperSettings = useSyncExternalStore(
     subscribeDeveloperSettings,
     developerSettingsEnabled,
@@ -29,6 +35,24 @@ const Settings = () => {
   useEffect(() => {
     setAppBarTitle(t('settings.pageTitle'))
   }, [])
+
+  const saveDiagnostics = async () => {
+    if (exportingDiagnostics) return
+    setExportingDiagnostics(true)
+    try {
+      const path = await save({
+        defaultPath: 'tauthy-logs.txt',
+        filters: [{ name: 'Text', extensions: ['txt'] }],
+      })
+      if (!path) return
+      await writeTextFile(path, await exportDiagnostics())
+      toast.success(t('diagnostics.exported'))
+    } catch {
+      toast.error(t('diagnostics.exportFailed'))
+    } finally {
+      setExportingDiagnostics(false)
+    }
+  }
 
   return (
     <SettingsPage>
@@ -75,6 +99,18 @@ const Settings = () => {
               <SyncIcon color="primary" />
             </ListItemIcon>
             <ListItemText primary={t('settings.sync')} secondary={t('settings.syncDescription')} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding onClick={() => !exportingDiagnostics && void saveDiagnostics()}>
+          <ListItemButton disabled={exportingDiagnostics}>
+            <ListItemIcon>
+              <DescriptionIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('diagnostics.export')}
+              secondary={t('diagnostics.description')}
+            />
           </ListItemButton>
         </ListItem>
 
