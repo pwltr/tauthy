@@ -189,10 +189,12 @@ const PubkyConnect = () => {
                 data-testid="pubky-qr-frame"
                 sx={{
                   display: 'inline-flex',
-                  p: 1,
+                  p: 1.5,
                   bgcolor: 'white',
-                  border: 0,
-                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
                   cursor: 'pointer',
                 }}
               >

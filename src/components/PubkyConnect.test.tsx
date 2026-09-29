@@ -44,7 +44,12 @@ describe('Pubky connection', () => {
     const { unmount } = render(<PubkyConnect />)
 
     expect(await screen.findByText('sync.pubkyApproval')).toHaveClass('MuiTypography-body2')
-    expect(screen.getByTestId('pubky-qr-frame')).toHaveStyle({ padding: '8px' })
+    expect(screen.getByTestId('pubky-qr-frame')).toHaveStyle({
+      padding: '8px',
+      borderWidth: '2px',
+      borderStyle: 'solid',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.18)',
+    })
     expect(screen.getByLabelText('Pubky QR code')).toHaveStyle({ display: 'block' })
     expect(screen.getByText('sync.pubkyWaiting')).toHaveClass('MuiTypography-alignCenter')
     fireEvent.click(screen.getByRole('button', { name: 'sync.pubkyCopyLink' }))

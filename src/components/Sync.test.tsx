@@ -137,6 +137,14 @@ describe('sync location pickers', () => {
     render(<Sync />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('toasts.syncDeviceFileLimit')
+    mocks.syncNow.mockResolvedValue({
+      enabled: true,
+      path: '/cloud/sync',
+      lastSyncedAt: Date.now(),
+    })
+
+    fireEvent.click(screen.getByText('sync.retry'))
+    await waitFor(() => expect(mocks.syncNow).toHaveBeenCalledOnce())
 
     mocks.getBackgroundSyncError.mockReturnValue(undefined)
     window.dispatchEvent(new Event('tauthy:sync-background-error'))
@@ -180,7 +188,9 @@ describe('sync location pickers', () => {
     })
     render(<Sync />)
 
-    expect(await screen.findByText('sync.pubkyConnected')).toBeInTheDocument()
+    expect(await screen.findByText('sync.pubky')).toBeInTheDocument()
+    expect(screen.getByText('sync.status')).toBeInTheDocument()
+    expect(screen.getByText('sync.recovery')).toBeInTheDocument()
     expect(screen.getByText('sync.pubkyShowCode')).toBeInTheDocument()
     expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
   })

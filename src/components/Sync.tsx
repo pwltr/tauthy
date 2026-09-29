@@ -12,9 +12,12 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
+import SyncIcon from '@mui/icons-material/Sync'
 
 import { AppBarTitleContext } from '~/context'
 import ListItem from '~/components/ListItem'
+import ListSection from '~/components/ListSection'
+import ListSubheader from '~/components/ListSubheader'
 import SettingsPage from '~/components/SettingsPage'
 import Modal, { Buttons } from '~/components/Modal'
 import { copyToClipboard } from '~/utils/helpers'
@@ -182,69 +185,95 @@ const Sync = () => {
               </Typography>
             </Box>
             {backgroundError && (
-              <Alert severity="warning" sx={{ mx: 2, mt: 2 }}>
+              <Alert
+                severity="warning"
+                sx={{ mx: 2, mt: 2 }}
+                action={
+                  <Button
+                    color="inherit"
+                    size="small"
+                    disabled={busy}
+                    onClick={() => void synchronize()}
+                  >
+                    {t('sync.retry')}
+                  </Button>
+                }
+              >
                 {syncErrorMessage(backgroundError)}
               </Alert>
             )}
             <List>
-              <ListItem>
-                <ListItemText
-                  primary={t(
-                    status.provider === 'pubky' ? 'sync.pubkyConnected' : 'sync.connected',
+              <ListSection>
+                <ListSubheader>{t('sync.status')}</ListSubheader>
+                <ListItem>
+                  <ListItemText
+                    primary={t(status.provider === 'pubky' ? 'sync.pubky' : 'sync.folder')}
+                    secondary={status.path}
+                    slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText
+                    primary={t('sync.lastSynced')}
+                    secondary={
+                      status.lastSyncedAt
+                        ? new Intl.DateTimeFormat(i18n.language, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          }).format(status.lastSyncedAt)
+                        : t('sync.never')
+                    }
+                  />
+                </ListItem>
+                <Box sx={{ px: 2, pt: 1 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<SyncIcon />}
+                    disabled={busy}
+                    onClick={() => void synchronize()}
+                  >
+                    {t('sync.syncNow')}
+                  </Button>
+                </Box>
+              </ListSection>
+
+              {(status.provider === 'pubky' || showRecovery) && (
+                <ListSection sx={{ mb: 0 }}>
+                  <ListSubheader>{t('sync.recovery')}</ListSubheader>
+                  {status.provider === 'pubky' && (
+                    <ListItem disablePadding onClick={() => !busy && void showPubkyRecoveryCode()}>
+                      <ListItemButton disabled={busy}>
+                        <ListItemText
+                          primary={t('sync.pubkyShowCode')}
+                          secondary={t('sync.pubkyShowCodeDescription')}
+                        />
+                      </ListItemButton>
+                    </ListItem>
                   )}
-                  secondary={status.path}
-                  slotProps={{ secondary: { sx: { overflowWrap: 'anywhere' } } }}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText
-                  primary={t('sync.lastSynced')}
-                  secondary={
-                    status.lastSyncedAt
-                      ? new Intl.DateTimeFormat(i18n.language, {
-                          dateStyle: 'medium',
-                          timeStyle: 'short',
-                        }).format(status.lastSyncedAt)
-                      : t('sync.never')
-                  }
-                />
-              </ListItem>
-              <ListItem disablePadding onClick={() => !busy && void synchronize()}>
-                <ListItemButton disabled={busy}>
-                  <ListItemText
-                    primary={t('sync.syncNow')}
-                    secondary={t('sync.syncNowDescription')}
-                  />
-                </ListItemButton>
-              </ListItem>
-              {status.provider === 'pubky' && (
-                <ListItem disablePadding onClick={() => !busy && void showPubkyRecoveryCode()}>
+                  {showRecovery && status.provider !== 'pubky' && (
+                    <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
+                      <ListItemButton disabled={busy}>
+                        <ListItemText
+                          primary={t('sync.mergeConflictedCopy')}
+                          secondary={t('sync.mergeConflictedCopyDescription')}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  )}
+                </ListSection>
+              )}
+
+              <ListSection>
+                <ListItem disablePadding onClick={() => !busy && void disconnect()}>
                   <ListItemButton disabled={busy}>
                     <ListItemText
-                      primary={t('sync.pubkyShowCode')}
-                      secondary={t('sync.pubkyShowCodeDescription')}
+                      primary={t('sync.disconnect')}
+                      secondary={t('sync.disconnectDescription')}
                     />
                   </ListItemButton>
                 </ListItem>
-              )}
-              {showRecovery && status.provider !== 'pubky' && (
-                <ListItem disablePadding onClick={() => !busy && void mergeConflictedCopy()}>
-                  <ListItemButton disabled={busy}>
-                    <ListItemText
-                      primary={t('sync.mergeConflictedCopy')}
-                      secondary={t('sync.mergeConflictedCopyDescription')}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              )}
-              <ListItem disablePadding onClick={() => !busy && void disconnect()}>
-                <ListItemButton disabled={busy}>
-                  <ListItemText
-                    primary={t('sync.disconnect')}
-                    secondary={t('sync.disconnectDescription')}
-                  />
-                </ListItemButton>
-              </ListItem>
+              </ListSection>
             </List>
           </>
         ) : (
