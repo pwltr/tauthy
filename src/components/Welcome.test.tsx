@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const vault = vi.hoisted(() => ({ fileBackend: true, prepare: vi.fn(), create: vi.fn() }))
 vi.mock('~/utils/storage', () => ({ vault }))
@@ -23,6 +23,8 @@ const finish = () =>
   fireEvent.click(screen.getByRole('button', { name: 'translated welcome.continue' }))
 
 describe('onboarding vault initialization', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
   beforeEach(() => {
     localStorage.clear()
     vault.fileBackend = true
@@ -31,7 +33,8 @@ describe('onboarding vault initialization', () => {
   })
 
   it('creates passwordless storage before opening the home screen', async () => {
-    renderWelcome()
+    const { container } = renderWelcome()
+    expect(container.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument()
     expect(vault.prepare).not.toHaveBeenCalled()
     expect(vault.create).not.toHaveBeenCalled()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
@@ -91,5 +94,25 @@ describe('onboarding vault initialization', () => {
     localStorage.setItem('showWelcome', 'false')
     renderWelcome()
     expect(await screen.findByText('Accounts')).toBeInTheDocument()
+  })
+
+  it('fades out after successful setup before opening home', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }))
+    renderWelcome()
+    finish()
+
+    await waitFor(() => expect(document.querySelector('[data-leaving="true"]')).toBeInTheDocument())
+    expect(screen.queryByText('Accounts')).not.toBeInTheDocument()
+    expect(localStorage.getItem('showWelcome')).not.toBe('false')
+    expect(await screen.findByText('Accounts')).toBeInTheDocument()
+  })
+
+  it('skips the transition when reduced motion is requested', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    renderWelcome()
+    finish()
+
+    expect(await screen.findByText('Accounts')).toBeInTheDocument()
+    expect(document.querySelector('[data-leaving="true"]')).not.toBeInTheDocument()
   })
 })

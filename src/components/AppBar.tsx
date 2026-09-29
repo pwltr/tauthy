@@ -83,6 +83,7 @@ const AppBar = () => {
       data-tauthy-app-bar
       position="fixed"
       color="secondary"
+      elevation={1}
       enableColorOnDark={osType() === 'macos'}
     >
       <Toolbar>
