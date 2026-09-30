@@ -65,7 +65,16 @@ impl<B: Backend> PlatformCredentials<B> {
       },
       selector.1,
     ));
-    #[cfg(not(feature = "migration-test"))]
+    #[cfg(feature = "isolated-preview")]
+    return Ok((
+      if self.development {
+        "tauthy-preview-dev.local-vault.v1"
+      } else {
+        "tauthy-preview.local-vault.v1"
+      },
+      selector.1,
+    ));
+    #[cfg(not(any(feature = "migration-test", feature = "isolated-preview")))]
     Ok(selector)
   }
 }

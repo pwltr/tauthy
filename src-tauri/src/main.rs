@@ -1,5 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#[cfg(all(feature = "migration-test", feature = "isolated-preview"))]
+compile_error!("migration-test and isolated-preview cannot be enabled together");
 
 use tauri::Manager;
 
@@ -74,8 +76,8 @@ fn main() {
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_shell::init());
 
-  // A disposable test app must never install a production update over itself.
-  #[cfg(not(feature = "migration-test"))]
+  // Isolated apps must never install a production update over themselves.
+  #[cfg(not(any(feature = "migration-test", feature = "isolated-preview")))]
   let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
   let builder = builder.invoke_handler(tauri::generate_handler![
@@ -139,13 +141,29 @@ fn main() {
           .into(),
         );
       }
+      if cfg!(feature = "isolated-preview")
+        != (app.config().identifier == "com.pwltr.tauthy.preview")
+      {
+        return Err(
+          std::io::Error::other(
+            "isolated-preview feature and isolated app configuration must be used together",
+          )
+          .into(),
+        );
+      }
       #[cfg(feature = "file-vault")]
       {
-        #[cfg(not(feature = "migration-test"))]
+        #[cfg(not(any(feature = "migration-test", feature = "isolated-preview")))]
         let name = if cfg!(debug_assertions) {
           "tauthy-dev"
         } else {
           "tauthy"
+        };
+        #[cfg(feature = "isolated-preview")]
+        let name = if cfg!(debug_assertions) {
+          "tauthy-preview-dev"
+        } else {
+          "tauthy-preview"
         };
         #[cfg(not(feature = "migration-test"))]
         let directory = app.path().data_dir()?.join(name);

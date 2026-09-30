@@ -1,0 +1,22 @@
+{
+  "productName": "Tauthy Preview",
+  "mainBinaryName": "Tauthy Preview",
+  "identifier": "com.pwltr.tauthy.preview",
+  "bundle": { "createUpdaterArtifacts": false },
+  "app": {
+    "windows": [{
+      "label": "main",
+      "title": "Tauthy Preview",
+      "width": 380,
+      "height": 700,
+      "resizable": false,
+      "fullscreen": false,
+      "center": true,
+      "contentProtected": true,
+      "hiddenTitle": true,
+      "acceptFirstMouse": true,
+      "scrollBarStyle": "fluentOverlay",
+      "useHttpsScheme": true
+    }]
+  }
+}

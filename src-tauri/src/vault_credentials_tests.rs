@@ -81,6 +81,23 @@ fn migration_test_credentials_never_select_the_regular_namespaces() {
 }
 
 #[test]
+#[cfg(feature = "isolated-preview")]
+fn preview_credentials_never_select_the_regular_namespaces() {
+  let mut keys = adapter();
+  let id = identity();
+  for (development, service) in [
+    (true, "tauthy-preview-dev.local-vault.v1"),
+    (false, "tauthy-preview.local-vault.v1"),
+  ] {
+    keys.development = development;
+    let selected = keys.selector(&id).unwrap();
+    assert_eq!(selected.0, service);
+    assert_ne!(selected.0, id.credential_selector(true).unwrap().0);
+    assert_ne!(selected.0, id.credential_selector(false).unwrap().0);
+  }
+}
+
+#[test]
 fn adapter_round_trips_all_key_bytes_and_deletes_idempotently() {
   let mut keys = adapter();
   let id = identity();
