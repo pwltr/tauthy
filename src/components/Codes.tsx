@@ -131,6 +131,8 @@ const Codes = () => {
 
       <Button
         aria-label="add account"
+        aria-keyshortcuts="Control+n Meta+n"
+        title={`${t('create.pageTitle')} (⌘/Ctrl+N)`}
         color="primary"
         size="medium"
         onClick={() => navigate('create')}

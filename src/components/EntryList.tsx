@@ -38,12 +38,23 @@ const EntryList = ({ className, entries, header }: ListProps) => {
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+      const target = event.target
+      const editing =
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable], [role="textbox"]')
+      if (
+        !event.defaultPrevented &&
+        !editing &&
+        !event.altKey &&
+        !window.getSelection()?.toString() &&
+        !document.querySelector('[role="dialog"], [aria-modal="true"]') &&
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'c' &&
+        filteredEntries.length === 1 &&
+        filteredEntries[0].token
+      ) {
         event.preventDefault()
-
-        if (filteredEntries.length === 1 && filteredEntries[0].token) {
-          onCopy(filteredEntries[0].uuid, filteredEntries[0].token)
-        }
+        void onCopy(filteredEntries[0].uuid, filteredEntries[0].token)
       }
     }
 
