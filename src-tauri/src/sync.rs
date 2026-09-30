@@ -1041,26 +1041,37 @@ async fn pubky_sync_at(
       error
     })?;
   }
-  state.with_records(|vault| {
-    // Edits may have happened while the network request was in flight.
-    let current = load_pubky_config(vault)?;
-    if current.public_key != config.public_key || current.device_id != config.device_id {
-      return Err(ERR_CONFLICT.into());
-    }
-    let latest_entries = current_entries(vault)?;
-    config.payload = rebase_pubky_local(
-      &config.payload,
-      latest_entries.clone(),
-      merged,
-      &config.device_id,
-    )?;
-    config.last_synced_at = Some(now_millis()?);
-    let entries = active_entries(&config.payload);
-    save_pubky_local(vault, &entries, &config)?;
-    let mut status = pubky_status_for(&config);
-    status.vault_changed = entries != latest_entries;
-    Ok(status)
-  })
+  state.with_records(|vault| commit_pubky_local(vault, config, merged))
+}
+
+fn commit_pubky_local(
+  vault: &dyn RecordAccess,
+  mut config: PubkySyncConfig,
+  merged: SyncPayload,
+) -> Result<SyncStatus, String> {
+  // Edits may have happened while the network request was in flight.
+  let current = load_pubky_config(vault)?;
+  if current.public_key != config.public_key || current.device_id != config.device_id {
+    return Err(ERR_CONFLICT.into());
+  }
+  let latest_entries = current_entries(vault)?;
+  config.payload = rebase_pubky_local(
+    &config.payload,
+    latest_entries.clone(),
+    merged,
+    &config.device_id,
+  )?;
+  let entries = active_entries(&config.payload);
+  let vault_changed = entries != latest_entries;
+  if config.payload == current.payload && !vault_changed {
+    // A successful no-op poll must not re-encrypt the local vault each minute.
+    return Ok(pubky_status_for(&current));
+  }
+  config.last_synced_at = Some(now_millis()?);
+  save_pubky_local(vault, &entries, &config)?;
+  let mut status = pubky_status_for(&config);
+  status.vault_changed = vault_changed;
+  Ok(status)
 }
 
 fn rebase_pubky_local(
@@ -2009,6 +2020,38 @@ mod tests {
 
     assert!(!status.vault_changed);
     assert_eq!(status.last_synced_at, last_synced_at);
+    assert_eq!(fs::read(&vault_path).unwrap(), before);
+  }
+
+  #[test]
+  fn unchanged_pubky_sync_does_not_rewrite_the_local_snapshot() {
+    let temporary = tempfile::tempdir().unwrap();
+    let vault_path = temporary.path().join("local.stronghold");
+    let entries = vec![entry("one", "One")];
+    let state = open_test_vault(temporary.path(), "local", entries.clone());
+    let device_id = "0123456789abcdef0123456789abcdef".to_string();
+    let payload = new_payload(entries.clone(), "vault".into(), &device_id);
+    let config = PubkySyncConfig {
+      public_key: "test-pubky".into(),
+      session_secret: "test-grant".into(),
+      recovery_code: "0".repeat(KEY_SIZE * 2),
+      device_id,
+      key: BASE64.encode(&[0; KEY_SIZE]),
+      wrapped_key: wrap_key(&[0; KEY_SIZE], b"recovery password").unwrap(),
+      payload: payload.clone(),
+      last_synced_at: Some(123),
+    };
+    state
+      .with_records(|vault| save_pubky_local(vault, &entries, &config))
+      .unwrap();
+    let before = fs::read(&vault_path).unwrap();
+
+    let status = state
+      .with_records(|vault| commit_pubky_local(vault, config, payload))
+      .unwrap();
+
+    assert!(!status.vault_changed);
+    assert_eq!(status.last_synced_at, Some(123));
     assert_eq!(fs::read(&vault_path).unwrap(), before);
   }
 
