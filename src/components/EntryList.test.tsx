@@ -85,7 +85,8 @@ describe('single-result copy shortcut', () => {
     expect(rows[0]).toHaveAttribute('data-drag-handle', 'true')
     expect(rows[0].parentElement).not.toHaveAttribute('data-drag-handle')
 
-    rows[0].focus()
+    fireEvent.keyDown(window, { key: 'ArrowDown' })
+    expect(rows[0]).toHaveFocus()
     fireEvent.keyDown(rows[0], { key: 'ArrowDown' })
     expect(rows[1]).toHaveFocus()
 
@@ -104,5 +105,29 @@ describe('single-result copy shortcut', () => {
 
     fireEvent.keyDown(rows[1], { key: 'ArrowUp' })
     expect(rows[0]).toHaveFocus()
+  })
+
+  it('leaves ArrowDown alone in text fields and dialogs', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <input aria-label="search input" />
+        <EntryList
+          entries={[{ uuid: 'first', name: 'First', secret: 'secret', token: '111111' }]}
+        />
+      </MemoryRouter>,
+    )
+    const row = container.querySelector<HTMLElement>('[data-code-row]')!
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'search input' }), {
+      key: 'ArrowDown',
+    })
+    expect(row).not.toHaveFocus()
+
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    document.body.appendChild(dialog)
+    fireEvent.keyDown(window, { key: 'ArrowDown' })
+    expect(row).not.toHaveFocus()
+    dialog.remove()
   })
 })

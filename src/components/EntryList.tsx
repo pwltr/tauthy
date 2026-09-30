@@ -38,6 +38,36 @@ const EntryList = ({ className, entries, header }: ListProps) => {
   })
 
   useEffect(() => {
+    const focusFirstRow = (event: KeyboardEvent) => {
+      if (
+        event.key !== 'ArrowDown' ||
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        !filteredEntries.length ||
+        document.querySelector('[role="dialog"], [aria-modal="true"]') ||
+        (event.target instanceof Element &&
+          event.target.closest(
+            'input, textarea, select, button, a, [contenteditable], [role="button"], [role="textbox"]',
+          ))
+      ) {
+        return
+      }
+
+      const firstRow = rowRefs.current[filteredEntries[0].uuid]
+      if (firstRow) {
+        event.preventDefault()
+        firstRow.focus()
+      }
+    }
+
+    window.addEventListener('keydown', focusFirstRow)
+    return () => window.removeEventListener('keydown', focusFirstRow)
+  }, [filteredEntries[0]?.uuid])
+
+  useEffect(() => {
     const singleResultToCopy = (event: KeyboardEvent | ClipboardEvent) => {
       const target = event.target
       const editing =
