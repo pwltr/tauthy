@@ -75,6 +75,25 @@ describe('native export choice', () => {
     expect(mocks.message).not.toHaveBeenCalled()
   })
 
+  it('opens the native export choice directly from a shortcut', async () => {
+    mocks.message.mockResolvedValue('modals.cancel')
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/import', state: { chooseExport: true } }]}>
+        <Import />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(mocks.message).toHaveBeenCalledOnce())
+    expect(mocks.message).toHaveBeenCalledWith('import.exportDescription', {
+      title: 'import.exportTitle',
+      buttons: {
+        yes: 'import.exportEncrypted',
+        no: 'import.exportPlaintext',
+        cancel: 'modals.cancel',
+      },
+    })
+    expect(mocks.exportCodes).not.toHaveBeenCalled()
+  })
+
   it('has one export row and a localized three-button native dialog', async () => {
     mocks.message.mockResolvedValue('modals.cancel')
     renderPage()

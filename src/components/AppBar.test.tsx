@@ -45,6 +45,7 @@ const ImportDestination = () => {
     <>
       <div>Import page</div>
       {location.state?.openImport && <div>Import modal requested</div>}
+      {location.state?.chooseExport && <div>Export choice requested</div>}
     </>
   )
 }
@@ -211,6 +212,21 @@ describe('AppBar actions', () => {
 
     act(() => nativeMenu.onAction?.({ payload: 'import' }))
     expect(screen.getByText('Import modal requested')).toBeInTheDocument()
+  })
+
+  it('opens the export choice from the native macOS menu', async () => {
+    os.platform = 'macos'
+    renderAppBar()
+    await waitFor(() => expect(nativeMenu.onAction).toBeTypeOf('function'))
+
+    act(() => nativeMenu.onAction?.({ payload: 'export' }))
+    expect(screen.getByText('Export choice requested')).toBeInTheDocument()
+  })
+
+  it('opens the export choice with Ctrl+Shift+E off macOS', () => {
+    renderAppBar()
+    fireEvent.keyDown(window, { key: 'E', ctrlKey: true, shiftKey: true })
+    expect(screen.getByText('Export choice requested')).toBeInTheDocument()
   })
 
   it('uses the native macOS Lock action and ignores actions while a dialog is open', async () => {

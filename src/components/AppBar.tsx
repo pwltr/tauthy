@@ -119,6 +119,8 @@ const AppBar = () => {
         navigate('/create')
       } else if (action === 'import') {
         navigate('/import', { state: { openImport: true } })
+      } else if (action === 'export') {
+        navigate('/import', { state: { chooseExport: true } })
       } else if (action === 'lock' && isPasswordSet) {
         void handleLock()
       } else {
@@ -144,9 +146,11 @@ const AppBar = () => {
       const action =
         key === 'l' && event.shiftKey
           ? 'lock'
-          : !event.shiftKey && ['f', 'n', 'o'].includes(key)
-            ? { f: 'search', n: 'create', o: 'import' }[key as 'f' | 'n' | 'o']
-            : undefined
+          : key === 'e' && event.shiftKey
+            ? 'export'
+            : !event.shiftKey && ['f', 'n', 'o'].includes(key)
+              ? { f: 'search', n: 'create', o: 'import' }[key as 'f' | 'n' | 'o']
+              : undefined
       if (action && runAction(action)) event.preventDefault()
     }
 

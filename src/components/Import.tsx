@@ -1,4 +1,4 @@
-import { useEffect, useContext, useState } from 'react'
+import { useEffect, useContext, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
@@ -29,6 +29,7 @@ const Import = () => {
   const [isExportPasswordModalOpen, setIsExportPasswordModalOpen] = useState(false)
   const [isExportingEncrypted, setIsExportingEncrypted] = useState(false)
   const [isChoosingExport, setIsChoosingExport] = useState(false)
+  const choosingExport = useRef(false)
 
   const handleOpenImportModal = () => setIsImportModalOpen(true)
   const handleCloseImportModal = () => setIsImportModalOpen(false)
@@ -68,7 +69,8 @@ const Import = () => {
   }
 
   const handleChooseExport = async () => {
-    if (isChoosingExport) return
+    if (choosingExport.current) return
+    choosingExport.current = true
     setIsChoosingExport(true)
     try {
       const encryptedLabel = t('import.exportEncrypted')
@@ -88,6 +90,7 @@ const Import = () => {
     } catch {
       toast.error(t('toasts.exportFailed'))
     } finally {
+      choosingExport.current = false
       setIsChoosingExport(false)
     }
   }
@@ -103,9 +106,14 @@ const Import = () => {
   }, [location.pathname])
 
   useEffect(() => {
-    if (location.state?.encryptedExport || location.state?.openImport) {
+    if (
+      location.state?.encryptedExport ||
+      location.state?.openImport ||
+      location.state?.chooseExport
+    ) {
       if (location.state.openImport) setIsImportModalOpen(true)
       if (location.state.encryptedExport) setIsExportPasswordModalOpen(true)
+      if (location.state.chooseExport) void handleChooseExport()
       navigate(location.pathname, { replace: true, state: null })
     }
   }, [location.state, location.pathname, navigate])

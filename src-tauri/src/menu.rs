@@ -9,6 +9,7 @@ pub(crate) struct ActionItems {
   search: MenuItem<Wry>,
   create: MenuItem<Wry>,
   import: MenuItem<Wry>,
+  export: MenuItem<Wry>,
   lock: MenuItem<Wry>,
 }
 
@@ -18,7 +19,7 @@ pub(crate) fn menu_set_enabled(
   available: bool,
   can_lock: bool,
 ) -> Result<(), String> {
-  for item in [&items.search, &items.create, &items.import] {
+  for item in [&items.search, &items.create, &items.import, &items.export] {
     item
       .set_enabled(available)
       .map_err(|error| error.to_string())?;
@@ -35,6 +36,7 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
   let search = MenuItem::with_id(app, "search", "Search", false, Some("Cmd+F"))?;
   let create = MenuItem::with_id(app, "create", "New Account", false, Some("Cmd+N"))?;
   let import = MenuItem::with_id(app, "import", "Import Codes…", false, Some("Cmd+O"))?;
+  let export = MenuItem::with_id(app, "export", "Export Codes…", false, Some("Cmd+Shift+E"))?;
   let lock = MenuItem::with_id(app, "lock", "Lock Tauthy", false, Some("Cmd+Shift+L"))?;
 
   let about = AboutMetadataBuilder::new()
@@ -55,6 +57,7 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
   let file_menu = SubmenuBuilder::new(app, "File")
     .item(&create)
     .item(&import)
+    .item(&export)
     .build()?;
   let edit_menu = SubmenuBuilder::new(app, "Edit")
     .undo()
@@ -75,11 +78,12 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     search,
     create,
     import,
+    export,
     lock,
   });
   app.on_menu_event(|app, event| {
     let action = event.id().as_ref();
-    if matches!(action, "search" | "create" | "import" | "lock") {
+    if matches!(action, "search" | "create" | "import" | "export" | "lock") {
       let _ = app.emit(MENU_EVENT, action);
     }
   });
