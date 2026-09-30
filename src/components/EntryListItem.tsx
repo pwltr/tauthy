@@ -1,5 +1,5 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { useContext } from 'react'
+import { useContext, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Draggable, DraggableStyle } from '@hello-pangea/dnd'
 import MuiListItem from '@mui/material/ListItem'
@@ -49,7 +49,8 @@ const ListItem = styled(MuiListItem)`
     display: none;
   }
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     .MuiListItemSecondaryAction-root {
       display: block;
     }
@@ -82,9 +83,18 @@ export type EntryListItemProps = {
   index: number
   isDragDisabled: boolean
   setQrEntry: (entry: ListEntry) => void
+  setRowRef: (element: HTMLDivElement | null) => void
+  moveFocus: (direction: -1 | 1) => void
 }
 
-const EntryListItem = ({ item, index, isDragDisabled, setQrEntry }: EntryListItemProps) => {
+const EntryListItem = ({
+  item,
+  index,
+  isDragDisabled,
+  setQrEntry,
+  setRowRef,
+  moveFocus,
+}: EntryListItemProps) => {
   const navigate = useNavigate()
   const { minimizeOnCopy } = useContext(AppSettingsContext)
   const { groupByTwos } = useContext(ListOptionsContext)
@@ -98,6 +108,44 @@ const EntryListItem = ({ item, index, isDragDisabled, setQrEntry }: EntryListIte
     }
   }
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || document.querySelector('[role="dialog"], [aria-modal="true"]')) {
+      return
+    }
+
+    if (!event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        moveFocus(event.key === 'ArrowDown' ? 1 : -1)
+      }
+    } else if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      !event.shiftKey &&
+      event.key.toLowerCase() === 'c' &&
+      item.token &&
+      !window.getSelection()?.toString()
+    ) {
+      event.preventDefault()
+      event.stopPropagation()
+      void onCopy(item.token)
+    }
+  }
+
+  const handleCopy = (event: ClipboardEvent<HTMLDivElement>) => {
+    if (
+      !item.token ||
+      event.defaultPrevented ||
+      window.getSelection()?.toString() ||
+      document.querySelector('[role="dialog"], [aria-modal="true"]')
+    ) {
+      return
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    void onCopy(item.token)
+  }
+
   return (
     <Draggable draggableId={item.uuid} index={index} isDragDisabled={isDragDisabled}>
       {(provided, snapshot) => (
@@ -109,7 +157,6 @@ const EntryListItem = ({ item, index, isDragDisabled, setQrEntry }: EntryListIte
               ? lockToVerticalAxis(provided.draggableProps.style)
               : provided.draggableProps.style
           }
-          {...provided.dragHandleProps}
           disablePadding
           secondaryAction={
             <>
@@ -147,7 +194,13 @@ const EntryListItem = ({ item, index, isDragDisabled, setQrEntry }: EntryListIte
             }
           }}
         >
-          <ListItemButton>
+          <ListItemButton
+            {...provided.dragHandleProps}
+            ref={setRowRef}
+            data-code-row
+            onKeyDown={handleKeyDown}
+            onCopy={handleCopy}
+          >
             <ListItemAvatar>
               <Avatar>
                 {item.icon ? (

@@ -82,7 +82,10 @@ const Settings = () => {
         </ListItem>
 
         <ListItem disablePadding onClick={() => navigate('/import')}>
-          <ListItemButton>
+          <ListItemButton
+            aria-keyshortcuts="Control+o Meta+o"
+            title={`${t('settings.import')} (⌘/Ctrl+O)`}
+          >
             <ListItemIcon>
               <BackupIcon color="primary" />
             </ListItemIcon>

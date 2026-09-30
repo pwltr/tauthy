@@ -1,7 +1,9 @@
-import { useState, useContext, ChangeEvent, useEffect } from 'react'
+import { useState, useContext, ChangeEvent, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { type as osType } from '@tauri-apps/plugin-os'
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { styled } from '@mui/material/styles'
 import MuiAppBar from '@mui/material/AppBar'
 import MuiToolbar from '@mui/material/Toolbar'
@@ -31,6 +33,10 @@ const Search = styled(InputBase)`
   color: inherit;
 `
 
+const isEditing = (target: EventTarget | null) =>
+  target instanceof Element &&
+  Boolean(target.closest('input, textarea, select, [contenteditable], [role="textbox"]'))
+
 const AppBar = () => {
   const { t } = useTranslation()
   const location = useLocation()
@@ -41,6 +47,7 @@ const AppBar = () => {
   const { searchTerm, setSearch } = useContext(SearchContext)
 
   const [isSearching, setIsSearching] = useState(!!searchTerm)
+  const searchInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (location.pathname !== '/' && searchTerm === '') {
@@ -48,11 +55,20 @@ const AppBar = () => {
     }
 
     const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return
       if (location.pathname === '/') {
         if (event.key === 'Escape') {
           setSearch('')
           setIsSearching(false)
-        } else {
+        } else if (
+          event.key.length === 1 &&
+          !(
+            event.target instanceof Element &&
+            event.target.closest(
+              'input, textarea, select, button, a, [contenteditable], [role="button"], [role="textbox"]',
+            )
+          )
+        ) {
           setIsSearching(true)
         }
       }
@@ -65,6 +81,10 @@ const AppBar = () => {
     }
   }, [location.pathname])
 
+  useEffect(() => {
+    if (isSearching && location.pathname === '/') searchInput.current?.focus()
+  }, [isSearching, location.pathname])
+
   const handleNavigate = (path: string) => {
     navigate(path)
   }
@@ -72,11 +92,98 @@ const AppBar = () => {
   const handleLock = async () => {
     try {
       await vault.lock()
-      handleNavigate('unlock')
+      handleNavigate('/unlock')
     } catch (err) {
       console.error(err)
     }
   }
+
+  useEffect(() => {
+    if (osType() !== 'macos') return
+
+    const available =
+      (location.pathname === '/' || location.pathname === '/settings') && !backDisabled
+    void invoke('menu_set_enabled', { available, canLock: isPasswordSet }).catch(console.error)
+    return () => {
+      void invoke('menu_set_enabled', { available: false, canLock: false }).catch(console.error)
+    }
+  }, [location.pathname, backDisabled, isPasswordSet])
+
+  useEffect(() => {
+    const runAction = (action: string) => {
+      if (
+        (location.pathname !== '/' && location.pathname !== '/settings') ||
+        backDisabled ||
+        document.querySelector('[role="dialog"], [aria-modal="true"]')
+      ) {
+        return false
+      }
+
+      if (action === 'search') {
+        setIsSearching(true)
+        if (location.pathname !== '/') navigate('/')
+        searchInput.current?.focus()
+      } else if (action === 'create') {
+        navigate('/create')
+      } else if (action === 'import') {
+        navigate('/import', { state: { openImport: true } })
+      } else if (action === 'export') {
+        navigate('/import', { state: { chooseExport: true } })
+      } else if (action === 'settings') {
+        navigate('/settings')
+      } else if (action === 'lock' && isPasswordSet) {
+        void handleLock()
+      } else {
+        return false
+      }
+      return true
+    }
+
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (
+        osType() === 'macos' ||
+        event.defaultPrevented ||
+        event.repeat ||
+        event.altKey ||
+        !(event.ctrlKey || event.metaKey) ||
+        isEditing(event.target) ||
+        document.querySelector('[role="dialog"], [aria-modal="true"]')
+      ) {
+        return
+      }
+
+      const key = event.key.toLowerCase()
+      const action =
+        key === 'l' && event.shiftKey
+          ? 'lock'
+          : key === 'e' && event.shiftKey
+            ? 'export'
+            : key === ',' && !event.shiftKey
+              ? 'settings'
+              : !event.shiftKey && ['f', 'n', 'o'].includes(key)
+                ? { f: 'search', n: 'create', o: 'import' }[key as 'f' | 'n' | 'o']
+                : undefined
+      if (action && runAction(action)) event.preventDefault()
+    }
+
+    window.addEventListener('keydown', handleShortcut)
+    let unlisten: (() => void) | undefined
+    let cancelled = false
+    if (osType() === 'macos') {
+      void listen<string>('tauthy://menu-action', ({ payload }) => runAction(payload)).then(
+        (remove) => {
+          if (cancelled) remove()
+          else unlisten = remove
+        },
+        console.error,
+      )
+    }
+    return () => {
+      cancelled = true
+      window.removeEventListener('keydown', handleShortcut)
+      unlisten?.()
+    }
+  }, [location.pathname, backDisabled, isPasswordSet, navigate])
 
   return (
     <MuiAppBar
@@ -105,10 +212,20 @@ const AppBar = () => {
           {isSearching && location.pathname === '/' ? (
             <Search
               autoFocus
+              inputRef={searchInput}
               placeholder={t('appBar.search')}
-              inputProps={{ 'aria-label': t('appBar.search') }}
+              inputProps={{ 'aria-label': t('appBar.search'), 'data-tauthy-search': 'true' }}
               value={searchTerm}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowDown' || event.altKey || event.ctrlKey || event.metaKey)
+                  return
+                const firstRow = document.querySelector<HTMLElement>('[data-code-row]')
+                if (firstRow) {
+                  event.preventDefault()
+                  firstRow.focus()
+                }
+              }}
             />
           ) : (
             <PageTitle variant="h6" noWrap>
@@ -124,6 +241,8 @@ const AppBar = () => {
                 <IconButton
                   size="large"
                   aria-label="filter entries"
+                  aria-keyshortcuts="Control+f Meta+f"
+                  title={`${t('appBar.search')} (${osType() === 'macos' ? '⌘F' : 'Ctrl+F'})`}
                   color="inherit"
                   onClick={() => {
                     setSearch('')
@@ -136,6 +255,8 @@ const AppBar = () => {
                 <IconButton
                   size="large"
                   aria-label="filter entries"
+                  aria-keyshortcuts="Control+f Meta+f"
+                  title={`${t('appBar.search')} (${osType() === 'macos' ? '⌘F' : 'Ctrl+F'})`}
                   color="inherit"
                   onClick={() => {
                     setIsSearching(true)
@@ -149,6 +270,8 @@ const AppBar = () => {
                 <IconButton
                   size="large"
                   aria-label={t('appBar.lock')}
+                  aria-keyshortcuts="Control+Shift+l Meta+Shift+l"
+                  title={`${t('appBar.lock')} (${osType() === 'macos' ? '⌘⇧L' : 'Ctrl+Shift+L'})`}
                   color="inherit"
                   onClick={handleLock}
                 >
