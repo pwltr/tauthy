@@ -46,7 +46,7 @@
   "identifier": "com.pwltr.tauthy",
   "plugins": {
     "shell": {
-      "open": "https://(github\\.com/pwltr/tauthy(?:/.*)?|www\\.buymeacoffee\\.com/pwltr)"
+      "open": "https://(github\\.com/pwltr/tauthy(?:/.*)?|www\\.buymeacoffee\\.com/pwltr|pubkyring\\.app(?:/.*)?)"
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE3MERFQUNBN0E3RUI2QjEKUldTeHRuNTZ5dW9ORjJTcTBhUFQrVU5ocUNuRVBMSkMxcXJsTS9qRnFjeGs5U1FjMWJMRmVheGwK",

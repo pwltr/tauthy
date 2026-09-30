@@ -323,6 +323,7 @@
     "syncFailed": "Sync failed. Your local vault was not lost.",
     "syncBackgroundFailed": "Automatic sync could not finish. Open Settings → Sync for details.",
     "pubkyUnavailable": "Pubky is unavailable or authorization failed. Your local vault was not changed.",
+    "pubkyRingOpenFailed": "Could not open Pubky Ring in your browser.",
     "error": "An error occured."
   }
 }

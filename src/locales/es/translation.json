@@ -323,6 +323,7 @@
     "syncFailed": "La sincronización falló. Tu baúl local no se ha perdido.",
     "syncBackgroundFailed": "La sincronización automática no pudo completarse. Consulta Ajustes → Sincronización para ver los detalles.",
     "pubkyUnavailable": "Pubky no está disponible o falló la autorización. Tu bóveda local no ha cambiado.",
+    "pubkyRingOpenFailed": "No se pudo abrir Pubky Ring en el navegador.",
     "error": "Ha ocurrido un error."
   }
 }

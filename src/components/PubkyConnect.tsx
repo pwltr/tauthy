@@ -191,10 +191,12 @@ const PubkyConnect = () => {
                 components={{
                   ring: (
                     <Link
-                      href="https://pubkyring.app/"
-                      onClick={(event) => {
-                        event.preventDefault()
-                        void open('https://pubkyring.app/')
+                      component="button"
+                      type="button"
+                      onClick={() => {
+                        void open('https://pubkyring.app/').catch(() => {
+                          toast.error(t('toasts.pubkyRingOpenFailed'))
+                        })
                       }}
                     />
                   ),

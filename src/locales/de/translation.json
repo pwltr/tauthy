@@ -323,6 +323,7 @@
     "syncFailed": "Synchronisierung fehlgeschlagen. Der lokale Tresor blieb erhalten.",
     "syncBackgroundFailed": "Die automatische Synchronisierung konnte nicht abgeschlossen werden. Details findest du unter Einstellungen → Synchronisierung.",
     "pubkyUnavailable": "Pubky ist nicht verfügbar oder die Autorisierung ist fehlgeschlagen. Dein lokaler Tresor wurde nicht verändert.",
+    "pubkyRingOpenFailed": "Pubky Ring konnte nicht im Browser geöffnet werden.",
     "error": "Ein Fehler ist aufgetreten."
   }
 }

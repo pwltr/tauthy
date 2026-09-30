@@ -46,16 +46,26 @@ describe('Pubky connection', () => {
     vi.clearAllMocks()
     mocks.start.mockResolvedValue('pubkyauth://example')
     mocks.cancel.mockResolvedValue(undefined)
+    mocks.open.mockResolvedValue(undefined)
   })
 
-  it('links the first Pubky Ring mention to the Ring website', async () => {
+  it('opens the first Pubky Ring mention in the default browser without WebView navigation', async () => {
     mocks.poll.mockResolvedValue({ approved: false, publicKey: null, hasRemote: null })
     render(<PubkyConnect />)
 
-    const link = await screen.findByRole('link', { name: 'Pubky Ring' })
-    expect(link).toHaveAttribute('href', 'https://pubkyring.app/')
+    const link = await screen.findByRole('button', { name: 'Pubky Ring' })
+    expect(link).not.toHaveAttribute('href')
     fireEvent.click(link)
     expect(mocks.open).toHaveBeenCalledWith('https://pubkyring.app/')
+  })
+
+  it('reports a browser-open failure instead of silently doing nothing', async () => {
+    mocks.poll.mockResolvedValue({ approved: false, publicKey: null, hasRemote: null })
+    mocks.open.mockRejectedValue(new Error('not allowed'))
+    render(<PubkyConnect />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Pubky Ring' }))
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('toasts.pubkyRingOpenFailed'))
   })
 
   it('creates sync only after approval and shows a 256-bit recovery code', async () => {

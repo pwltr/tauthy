@@ -323,6 +323,7 @@
     "syncFailed": "La synchronisation a échoué. Votre coffre local n’a pas été perdu.",
     "syncBackgroundFailed": "La synchronisation automatique n’a pas abouti. Consultez Paramètres → Synchronisation pour les détails.",
     "pubkyUnavailable": "Pubky est indisponible ou l’autorisation a échoué. Votre coffre local n’a pas été modifié.",
+    "pubkyRingOpenFailed": "Impossible d’ouvrir Pubky Ring dans votre navigateur.",
     "error": "Une erreur s'est produite."
   }
 }
