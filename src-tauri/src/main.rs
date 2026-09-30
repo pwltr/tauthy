@@ -90,6 +90,8 @@ fn main() {
     commands::generate_totps,
     diagnostics::diagnostics_record,
     diagnostics::diagnostics_export,
+    #[cfg(target_os = "macos")]
+    menu::menu_set_enabled,
     #[cfg(feature = "file-vault")]
     vault_commands::vault_initialize,
     #[cfg(feature = "file-vault")]

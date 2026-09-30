@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
@@ -7,8 +7,21 @@ import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 
 const vault = vi.hoisted(() => ({ lock: vi.fn() }))
 const os = vi.hoisted(() => ({ platform: 'linux' }))
+const nativeMenu = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  onAction: undefined as undefined | ((event: { payload: string }) => void),
+}))
 
 vi.mock('@tauri-apps/plugin-os', () => ({ type: () => os.platform }))
+vi.mock('@tauri-apps/api/core', () => ({ invoke: nativeMenu.invoke }))
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(async (_name, callback) => {
+    nativeMenu.onAction = callback
+    return () => {
+      nativeMenu.onAction = undefined
+    }
+  }),
+}))
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/hooks/useVaultProtection', () => ({
   useVaultProtection: () => localStorage.getItem('isPasswordSet') === 'true',
@@ -63,6 +76,9 @@ describe('AppBar actions', () => {
     window.localStorage.clear()
     vault.lock.mockReset()
     vault.lock.mockResolvedValue(undefined)
+    nativeMenu.invoke.mockReset()
+    nativeMenu.invoke.mockResolvedValue(undefined)
+    nativeMenu.onAction = undefined
   })
 
   it('opens Settings directly from the three-dot button', () => {
@@ -147,6 +163,51 @@ describe('AppBar actions', () => {
     renderAppBar()
     fireEvent.keyDown(window, { key: 'L', metaKey: true, shiftKey: true })
 
+    await waitFor(() => expect(vault.lock).toHaveBeenCalledOnce())
+    expect(await screen.findByText('Unlock page')).toBeInTheDocument()
+  })
+
+  it('routes a native macOS menu action without also handling its keydown', async () => {
+    os.platform = 'macos'
+    renderAppBar()
+    await waitFor(() => expect(nativeMenu.onAction).toBeTypeOf('function'))
+
+    fireEvent.keyDown(window, { key: 'n', metaKey: true })
+    expect(screen.queryByText('Create page')).not.toBeInTheDocument()
+
+    act(() => nativeMenu.onAction?.({ payload: 'create' }))
+    expect(screen.getByText('Create page')).toBeInTheDocument()
+    expect(nativeMenu.invoke).toHaveBeenCalledWith('menu_set_enabled', {
+      available: true,
+      canLock: false,
+    })
+  })
+
+  it('enables native Lock only while a protected vault is available', () => {
+    os.platform = 'macos'
+    window.localStorage.setItem('isPasswordSet', 'true')
+    renderAppBar('/settings')
+
+    expect(nativeMenu.invoke).toHaveBeenCalledWith('menu_set_enabled', {
+      available: true,
+      canLock: true,
+    })
+  })
+
+  it('uses the native macOS Lock action and ignores actions while a dialog is open', async () => {
+    os.platform = 'macos'
+    window.localStorage.setItem('isPasswordSet', 'true')
+    renderAppBar()
+    await waitFor(() => expect(nativeMenu.onAction).toBeTypeOf('function'))
+
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    document.body.appendChild(dialog)
+    act(() => nativeMenu.onAction?.({ payload: 'lock' }))
+    expect(vault.lock).not.toHaveBeenCalled()
+
+    dialog.remove()
+    act(() => nativeMenu.onAction?.({ payload: 'lock' }))
     await waitFor(() => expect(vault.lock).toHaveBeenCalledOnce())
     expect(await screen.findByText('Unlock page')).toBeInTheDocument()
   })

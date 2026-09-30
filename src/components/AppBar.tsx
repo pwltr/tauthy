@@ -2,6 +2,8 @@ import { useState, useContext, ChangeEvent, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { type as osType } from '@tauri-apps/plugin-os'
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { styled } from '@mui/material/styles'
 import MuiAppBar from '@mui/material/AppBar'
 import MuiToolbar from '@mui/material/Toolbar'
@@ -89,10 +91,45 @@ const AppBar = () => {
   }
 
   useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
+    if (osType() !== 'macos') return
+
+    const available =
+      (location.pathname === '/' || location.pathname === '/settings') && !backDisabled
+    void invoke('menu_set_enabled', { available, canLock: isPasswordSet }).catch(console.error)
+    return () => {
+      void invoke('menu_set_enabled', { available: false, canLock: false }).catch(console.error)
+    }
+  }, [location.pathname, backDisabled, isPasswordSet])
+
+  useEffect(() => {
+    const runAction = (action: string) => {
       if (
         (location.pathname !== '/' && location.pathname !== '/settings') ||
         backDisabled ||
+        document.querySelector('[role="dialog"], [aria-modal="true"]')
+      ) {
+        return false
+      }
+
+      if (action === 'search') {
+        setIsSearching(true)
+        if (location.pathname !== '/') navigate('/')
+        searchInput.current?.focus()
+      } else if (action === 'create') {
+        navigate('/create')
+      } else if (action === 'import') {
+        navigate('/import')
+      } else if (action === 'lock' && isPasswordSet) {
+        void handleLock()
+      } else {
+        return false
+      }
+      return true
+    }
+
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (
+        osType() === 'macos' ||
         event.defaultPrevented ||
         event.repeat ||
         event.altKey ||
@@ -104,25 +141,32 @@ const AppBar = () => {
       }
 
       const key = event.key.toLowerCase()
-      if (key === 'f' && !event.shiftKey) {
-        event.preventDefault()
-        setIsSearching(true)
-        if (location.pathname !== '/') navigate('/')
-        searchInput.current?.focus()
-      } else if (key === 'n' && !event.shiftKey) {
-        event.preventDefault()
-        navigate('/create')
-      } else if (key === 'o' && !event.shiftKey) {
-        event.preventDefault()
-        navigate('/import')
-      } else if (key === 'l' && event.shiftKey && isPasswordSet) {
-        event.preventDefault()
-        void handleLock()
-      }
+      const action =
+        key === 'l' && event.shiftKey
+          ? 'lock'
+          : !event.shiftKey && ['f', 'n', 'o'].includes(key)
+            ? { f: 'search', n: 'create', o: 'import' }[key as 'f' | 'n' | 'o']
+            : undefined
+      if (action && runAction(action)) event.preventDefault()
     }
 
     window.addEventListener('keydown', handleShortcut)
-    return () => window.removeEventListener('keydown', handleShortcut)
+    let unlisten: (() => void) | undefined
+    let cancelled = false
+    if (osType() === 'macos') {
+      void listen<string>('tauthy://menu-action', ({ payload }) => runAction(payload)).then(
+        (remove) => {
+          if (cancelled) remove()
+          else unlisten = remove
+        },
+        console.error,
+      )
+    }
+    return () => {
+      cancelled = true
+      window.removeEventListener('keydown', handleShortcut)
+      unlisten?.()
+    }
   }, [location.pathname, backDisabled, isPasswordSet, navigate])
 
   return (
