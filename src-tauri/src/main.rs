@@ -3,6 +3,8 @@
 #[cfg(all(feature = "migration-test", feature = "isolated-preview"))]
 compile_error!("migration-test and isolated-preview cannot be enabled together");
 
+#[cfg(target_os = "macos")]
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 
 mod aegis;
@@ -51,6 +53,44 @@ fn protect_window_content() -> bool {
   !cfg!(debug_assertions)
 }
 
+#[cfg(target_os = "macos")]
+#[derive(Default)]
+struct StartupVisibility(AtomicBool);
+
+#[cfg(target_os = "macos")]
+fn startup_background(value: &str) -> Result<tauri::window::Color, String> {
+  let hex = value
+    .strip_prefix('#')
+    .filter(|hex| hex.len() == 6 && hex.bytes().all(|byte| byte.is_ascii_hexdigit()))
+    .ok_or_else(|| "invalid startup background".to_string())?;
+  let channel = |index| {
+    u8::from_str_radix(&hex[index..index + 2], 16)
+      .map_err(|_| "invalid startup background".to_string())
+  };
+  Ok(tauri::window::Color(
+    channel(0)?,
+    channel(2)?,
+    channel(4)?,
+    255,
+  ))
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+fn startup_ready(
+  window: tauri::WebviewWindow,
+  visibility: tauri::State<'_, StartupVisibility>,
+  background: String,
+) -> Result<(), String> {
+  let color = startup_background(&background)?;
+  window
+    .set_background_color(Some(color))
+    .map_err(|error| error.to_string())?;
+  window.show().map_err(|error| error.to_string())?;
+  visibility.0.store(true, Ordering::Release);
+  Ok(())
+}
+
 fn main() {
   let builder = tauri::Builder::default();
 
@@ -63,6 +103,9 @@ fn main() {
 
   #[cfg(not(feature = "file-vault"))]
   let builder = builder.manage(legacy_vault::VaultState::default());
+
+  #[cfg(target_os = "macos")]
+  let builder = builder.manage(StartupVisibility::default());
 
   let builder = builder
     .manage(tray::TrayLabelState::default())
@@ -81,6 +124,8 @@ fn main() {
   let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
   let builder = builder.invoke_handler(tauri::generate_handler![
+    #[cfg(target_os = "macos")]
+    startup_ready,
     #[cfg(feature = "migration-test")]
     migration_test::import_diagnostic,
     aegis::decrypt_aegis_vault,
@@ -182,6 +227,23 @@ fn main() {
         .get_webview_window("main")
         .ok_or_else(|| std::io::Error::other("main window is unavailable"))?
         .set_content_protected(protect_window_content())?;
+      #[cfg(target_os = "macos")]
+      {
+        let handle = app.handle().clone();
+        std::thread::spawn(move || {
+          std::thread::sleep(std::time::Duration::from_secs(5));
+          if !handle
+            .state::<StartupVisibility>()
+            .0
+            .load(Ordering::Acquire)
+          {
+            // A frontend failure must not strand the only app window hidden.
+            if let Some(window) = handle.get_webview_window("main") {
+              let _ = window.show();
+            }
+          }
+        });
+      }
       // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
       #[cfg(target_os = "macos")]
       menu::setup(app)?;
@@ -197,14 +259,27 @@ fn main() {
       }
     });
 
+  let mut context = tauri::generate_context!();
+  #[cfg(target_os = "macos")]
+  if let Some(window) = context
+    .config_mut()
+    .app
+    .windows
+    .iter_mut()
+    .find(|window| window.label == "main")
+  {
+    window.visible = false;
+  }
   builder
-    .run(tauri::generate_context!())
+    .run(context)
     .expect("error while running application");
 }
 
 #[cfg(test)]
 mod tests {
   use super::protect_window_content;
+  #[cfg(target_os = "macos")]
+  use super::startup_background;
 
   #[test]
   fn screen_capture_policy_matches_the_build() {
@@ -213,5 +288,17 @@ mod tests {
     } else {
       assert!(protect_window_content());
     }
+  }
+
+  #[cfg(target_os = "macos")]
+  #[test]
+  fn startup_background_accepts_only_hex_colors() {
+    assert_eq!(
+      startup_background("#1e1e1e").unwrap(),
+      tauri::window::Color(30, 30, 30, 255)
+    );
+    assert!(startup_background("white").is_err());
+    assert!(startup_background("#ffffff00").is_err());
+    assert!(startup_background("#fff;url(x)").is_err());
   }
 }

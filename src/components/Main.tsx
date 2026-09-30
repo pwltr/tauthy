@@ -55,6 +55,7 @@ const Main = () => {
   const isPasswordSet = useVaultProtection()
   const [shouldAutoLock] = useLocalStorage('shouldAutoLock', false)
   const [isLoading, setIsLoading] = useState(true)
+  const [initializing, setInitializing] = useState(true)
   const [initializationError, setInitializationError] = useState('')
   const [backDisabled, setBackDisabled] = useState(false)
   const [openReset, setOpenReset] = useState(false)
@@ -71,6 +72,7 @@ const Main = () => {
       setIsLoading(true)
       setInitializationError('')
       recordDiagnostic('vault.init.start')
+      let redirecting = false
 
       try {
         if (vault.fileBackend) {
@@ -84,12 +86,14 @@ const Main = () => {
           }
           if (status.status === 'locked') {
             recordDiagnostic('vault.init.ok')
+            redirecting = true
             navigateRef.current('/unlock')
             return
           }
         }
         if (isPasswordSet && !reload && !(await vault.isUnlocked())) {
           recordDiagnostic('vault.init.ok')
+          redirecting = true
           navigateRef.current('/unlock')
           return
         }
@@ -106,6 +110,7 @@ const Main = () => {
           if (vaultErrorCode(err) === 'vaultAuthenticationFailed') {
             console.info('found existing vault but password has been changed')
             await vault.lock()
+            redirecting = true
             navigateRef.current('/unlock')
           } else if (vaultErrorCode(err) === 'vaultRecordMissing') {
             console.info('no vault found. initializing...')
@@ -122,7 +127,11 @@ const Main = () => {
           )
         }
       } finally {
-        setIsLoading(false)
+        // Keep the account outlet hidden until the unlock route has replaced it.
+        if (!redirecting) {
+          setIsLoading(false)
+          setInitializing(false)
+        }
       }
     },
     [isPasswordSet, showWelcome],
@@ -158,6 +167,16 @@ const Main = () => {
 
   if (showWelcome) {
     return null
+  }
+
+  // Do not paint the home shell while startup is still deciding its route.
+  // The outer router supplies the theme-matched full-window background.
+  if (initializing) {
+    return (
+      <InitializationState>
+        <CircularProgress size={28} />
+      </InitializationState>
+    )
   }
 
   return (

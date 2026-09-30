@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { type as osType } from '@tauri-apps/plugin-os'
 import { Toaster } from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -103,6 +104,7 @@ const App = () => {
     () => createTheme(getDesignTokens(mode, prefersReducedMotion)),
     [mode, prefersReducedMotion],
   )
+  const startupRevealSent = useRef(false)
 
   useLayoutEffect(() => {
     const background = theme.palette.background.default
@@ -113,6 +115,20 @@ const App = () => {
       // A disabled/full preference store must not interrupt startup.
     }
   }, [mode, theme])
+
+  useEffect(() => {
+    if (osType() !== 'macos' || startupRevealSent.current) return
+
+    // The macOS native window starts hidden so WebKit's unpainted white frame
+    // is never shown. Reveal only after React and the selected theme commit.
+    const timer = window.setTimeout(() => {
+      startupRevealSent.current = true
+      void invoke('startup_ready', { background: theme.palette.background.default }).catch(
+        console.error,
+      )
+    }, 100)
+    return () => window.clearTimeout(timer)
+  }, [theme.palette.background.default])
 
   return (
     <ThemeProvider theme={theme}>
