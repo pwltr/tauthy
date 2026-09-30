@@ -69,13 +69,20 @@ const EntryList = ({ className, entries, header }: ListProps) => {
 
   useEffect(() => {
     const singleResultToCopy = (event: KeyboardEvent | ClipboardEvent) => {
-      const target = event.target
+      // Native menu Copy can target the window, so inspect the focused element too.
+      const target = event.target instanceof Element ? event.target : document.activeElement
+      const searchInput = target instanceof Element && target.closest('[data-tauthy-search]')
       const editing =
         target instanceof Element &&
         target.closest('input, textarea, select, [contenteditable], [role="textbox"]')
+      const selectedInputText =
+        (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) &&
+        target.selectionStart !== null &&
+        target.selectionStart !== target.selectionEnd
       const eligible =
         !event.defaultPrevented &&
-        !editing &&
+        (!editing || searchInput) &&
+        !selectedInputText &&
         !window.getSelection()?.toString() &&
         !document.querySelector('[role="dialog"], [aria-modal="true"]') &&
         filteredEntries.length === 1 &&
@@ -111,7 +118,7 @@ const EntryList = ({ className, entries, header }: ListProps) => {
       window.removeEventListener('keydown', handleKeyPress)
       window.removeEventListener('copy', handleCopy)
     }
-  }, [filteredEntries.length, filteredEntries[0]?.uuid, filteredEntries[0]?.token])
+  }, [filteredEntries.length, filteredEntries[0]?.uuid, filteredEntries[0]?.token, minimizeOnCopy])
 
   const onCopy = async (uuid: string, token: string) => {
     await copyToClipboard(token)

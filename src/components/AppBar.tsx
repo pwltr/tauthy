@@ -214,7 +214,7 @@ const AppBar = () => {
               autoFocus
               inputRef={searchInput}
               placeholder={t('appBar.search')}
-              inputProps={{ 'aria-label': t('appBar.search') }}
+              inputProps={{ 'aria-label': t('appBar.search'), 'data-tauthy-search': 'true' }}
               value={searchTerm}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
               onKeyDown={(event) => {

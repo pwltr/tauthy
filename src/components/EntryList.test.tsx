@@ -30,6 +30,7 @@ vi.mock('~/utils', () => ({
 }))
 
 import EntryList from '~/components/EntryList'
+import { AppSettingsContext } from '~/context'
 
 describe('single-result copy shortcut', () => {
   beforeEach(() => {
@@ -67,6 +68,56 @@ describe('single-result copy shortcut', () => {
     mocks.copyToClipboard.mockClear()
     fireEvent.copy(window)
     expect(mocks.copyToClipboard).toHaveBeenCalledWith('123456')
+  })
+
+  it('copies the sole result from search unless its text is selected', () => {
+    render(
+      <MemoryRouter>
+        <input aria-label="search" data-tauthy-search="true" defaultValue="Account" />
+        <EntryList
+          entries={[{ uuid: 'account', name: 'Account', secret: 'secret', token: '123456' }]}
+        />
+      </MemoryRouter>,
+    )
+    const search = screen.getByRole('textbox', { name: 'search' }) as HTMLInputElement
+    search.focus()
+    search.setSelectionRange(7, 7)
+
+    fireEvent.keyDown(search, { key: 'c', metaKey: true })
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('123456')
+
+    mocks.copyToClipboard.mockClear()
+    fireEvent.copy(window)
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('123456')
+
+    mocks.copyToClipboard.mockClear()
+    search.setSelectionRange(0, 7)
+    fireEvent.keyDown(search, { key: 'c', metaKey: true })
+    fireEvent.copy(window)
+    expect(mocks.copyToClipboard).not.toHaveBeenCalled()
+  })
+
+  it('uses the current minimize-on-copy setting for the shortcut', async () => {
+    const view = (minimizeOnCopy: boolean) => (
+      <MemoryRouter>
+        <AppSettingsContext.Provider
+          value={{ minimizeOnCopy, showTrayIcon: false, setAppSettings: vi.fn() }}
+        >
+          <EntryList
+            entries={[{ uuid: 'account', name: 'Account', secret: 'secret', token: '123456' }]}
+          />
+        </AppSettingsContext.Provider>
+      </MemoryRouter>
+    )
+    const { rerender } = render(view(false))
+
+    fireEvent.keyDown(window, { key: 'c', metaKey: true })
+    await waitFor(() => expect(mocks.recordEntryUsage).toHaveBeenCalledOnce())
+    expect(mocks.minimize).not.toHaveBeenCalled()
+
+    rerender(view(true))
+    fireEvent.keyDown(window, { key: 'c', metaKey: true })
+    await waitFor(() => expect(mocks.minimize).toHaveBeenCalledOnce())
   })
 
   it('moves focus with arrows and copies the focused row with Cmd+C or Enter', async () => {
