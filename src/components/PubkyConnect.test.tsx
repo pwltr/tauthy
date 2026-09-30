@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { CSSProperties } from 'react'
+import { cloneElement, type CSSProperties, type ReactElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -11,10 +11,19 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   copy: vi.fn(),
   toastError: vi.fn(),
+  open: vi.fn(),
 }))
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+  Trans: ({ i18nKey, components }: { i18nKey: string; components: { ring: ReactElement } }) => (
+    <>
+      {i18nKey} {cloneElement(components.ring, {}, 'Pubky Ring')}
+    </>
+  ),
+}))
+vi.mock('@tauri-apps/plugin-shell', () => ({ open: mocks.open }))
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
 vi.mock('qrcode.react', () => ({
   QRCodeSVG: ({ style }: { style?: CSSProperties }) => (
@@ -37,6 +46,16 @@ describe('Pubky connection', () => {
     vi.clearAllMocks()
     mocks.start.mockResolvedValue('pubkyauth://example')
     mocks.cancel.mockResolvedValue(undefined)
+  })
+
+  it('links the first Pubky Ring mention to the Ring website', async () => {
+    mocks.poll.mockResolvedValue({ approved: false, publicKey: null, hasRemote: null })
+    render(<PubkyConnect />)
+
+    const link = await screen.findByRole('link', { name: 'Pubky Ring' })
+    expect(link).toHaveAttribute('href', 'https://pubkyring.app/')
+    fireEvent.click(link)
+    expect(mocks.open).toHaveBeenCalledWith('https://pubkyring.app/')
   })
 
   it('creates sync only after approval and shows a 256-bit recovery code', async () => {

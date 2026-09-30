@@ -1,11 +1,13 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
+import { open } from '@tauri-apps/plugin-shell'
 import toast from 'react-hot-toast'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
+import Link from '@mui/material/Link'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
@@ -184,7 +186,20 @@ const PubkyConnect = () => {
         {stage === 'approval' && (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {t('sync.pubkyApproval')}
+              <Trans
+                i18nKey="sync.pubkyApproval"
+                components={{
+                  ring: (
+                    <Link
+                      href="https://pubkyring.app/"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        void open('https://pubkyring.app/')
+                      }}
+                    />
+                  ),
+                }}
+              />
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Box

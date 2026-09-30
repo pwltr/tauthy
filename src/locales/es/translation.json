@@ -211,7 +211,7 @@
     "pubkyConnect": "Conectar con Pubky",
     "pubkyConnectDescription": "Sincroniza cuentas cifradas mediante tu servidor personal de Pubky",
     "pubkyTitle": "Conectar con Pubky",
-    "pubkyApproval": "Escanea este código con Pubky Ring y autoriza el acceso a la carpeta privada de sincronización de Tauthy. Tus cuentas siguen cifradas y Tauthy nunca ve tu clave de identidad.",
+    "pubkyApproval": "Escanea este código con <ring>Pubky Ring</ring> y autoriza el acceso a la carpeta privada de sincronización de Tauthy. Tus cuentas siguen cifradas y Tauthy nunca ve tu clave de identidad.",
     "pubkyWaiting": "Esperando la autorización en Pubky Ring…",
     "pubkyCopyLink": "Copiar enlace de Pubky Ring",
     "pubkyCreate": "Crear sincronización Pubky",
