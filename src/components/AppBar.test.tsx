@@ -100,6 +100,14 @@ describe('AppBar actions', () => {
     expect(screen.getByText('Settings page')).toBeInTheDocument()
   })
 
+  it('opens Settings with Ctrl+Comma off macOS', () => {
+    renderAppBar()
+
+    fireEvent.keyDown(window, { key: ',', ctrlKey: true })
+
+    expect(screen.getByText('Settings page')).toBeInTheDocument()
+  })
+
   it('inherits the header color instead of forcing white search text', () => {
     renderAppBar()
     fireEvent.click(screen.getByRole('button', { name: 'filter entries' }))
@@ -221,6 +229,15 @@ describe('AppBar actions', () => {
 
     act(() => nativeMenu.onAction?.({ payload: 'export' }))
     expect(screen.getByText('Export choice requested')).toBeInTheDocument()
+  })
+
+  it('opens Settings from the native macOS menu', async () => {
+    os.platform = 'macos'
+    renderAppBar()
+    await waitFor(() => expect(nativeMenu.onAction).toBeTypeOf('function'))
+
+    act(() => nativeMenu.onAction?.({ payload: 'settings' }))
+    expect(screen.getByText('Settings page')).toBeInTheDocument()
   })
 
   it('opens the export choice with Ctrl+Shift+E off macOS', () => {
