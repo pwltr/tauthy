@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 
@@ -39,6 +39,16 @@ vi.mock('react-i18next', () => ({
 
 import AppBar from '~/components/AppBar'
 
+const ImportDestination = () => {
+  const location = useLocation()
+  return (
+    <>
+      <div>Import page</div>
+      {location.state?.openImport && <div>Import modal requested</div>}
+    </>
+  )
+}
+
 const renderAppBar = (path = '/', backDisabled = false, theme = createTheme()) =>
   render(
     <ThemeProvider theme={theme}>
@@ -59,7 +69,7 @@ const renderAppBar = (path = '/', backDisabled = false, theme = createTheme()) =
                   <Route path="/import/review" element={<div>Review page</div>} />
                   <Route path="/settings" element={<div>Settings page</div>} />
                   <Route path="/create" element={<div>Create page</div>} />
-                  <Route path="/import" element={<div>Import page</div>} />
+                  <Route path="/import" element={<ImportDestination />} />
                 </Route>
                 <Route path="/unlock" element={<div>Unlock page</div>} />
               </Routes>
@@ -194,6 +204,15 @@ describe('AppBar actions', () => {
     })
   })
 
+  it('opens the import modal from the native macOS menu', async () => {
+    os.platform = 'macos'
+    renderAppBar()
+    await waitFor(() => expect(nativeMenu.onAction).toBeTypeOf('function'))
+
+    act(() => nativeMenu.onAction?.({ payload: 'import' }))
+    expect(screen.getByText('Import modal requested')).toBeInTheDocument()
+  })
+
   it('uses the native macOS Lock action and ignores actions while a dialog is open', async () => {
     os.platform = 'macos'
     window.localStorage.setItem('isPasswordSet', 'true')
@@ -259,6 +278,7 @@ describe('AppBar actions', () => {
     fireEvent.keyDown(window, { key: 'o', ctrlKey: true })
 
     expect(screen.getByText('Import page')).toBeInTheDocument()
+    expect(screen.getByText('Import modal requested')).toBeInTheDocument()
   })
 
   it('returns to the home search from Settings', async () => {

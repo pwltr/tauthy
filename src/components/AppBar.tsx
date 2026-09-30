@@ -118,7 +118,7 @@ const AppBar = () => {
       } else if (action === 'create') {
         navigate('/create')
       } else if (action === 'import') {
-        navigate('/import')
+        navigate('/import', { state: { openImport: true } })
       } else if (action === 'lock' && isPasswordSet) {
         void handleLock()
       } else {

@@ -16,7 +16,9 @@ vi.mock('@tauri-apps/plugin-os', () => ({ type: mocks.platform }))
 vi.mock('~/utils', () => ({ exportCodes: mocks.exportCodes }))
 vi.mock('react-hot-toast', () => ({ default: { success: mocks.success, error: mocks.error } }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
-vi.mock('~/components/modals/Import', () => ({ default: () => null }))
+vi.mock('~/components/modals/Import', () => ({
+  default: ({ open }: { open: boolean }) => (open ? <div>Import choices modal</div> : null),
+}))
 vi.mock('~/components/modals/ExportPassword', () => ({
   default: ({
     open,
@@ -60,6 +62,16 @@ describe('native export choice', () => {
     expect(
       await screen.findByRole('button', { name: 'Submit backup password' }),
     ).toBeInTheDocument()
+    expect(mocks.message).not.toHaveBeenCalled()
+  })
+
+  it('opens the import choices modal directly from a shortcut', async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/import', state: { openImport: true } }]}>
+        <Import />
+      </MemoryRouter>,
+    )
+    expect(await screen.findByText('Import choices modal')).toBeInTheDocument()
     expect(mocks.message).not.toHaveBeenCalled()
   })
 

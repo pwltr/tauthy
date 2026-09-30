@@ -103,8 +103,9 @@ const Import = () => {
   }, [location.pathname])
 
   useEffect(() => {
-    if (location.state?.encryptedExport) {
-      setIsExportPasswordModalOpen(true)
+    if (location.state?.encryptedExport || location.state?.openImport) {
+      if (location.state.openImport) setIsImportModalOpen(true)
+      if (location.state.encryptedExport) setIsExportPasswordModalOpen(true)
       navigate(location.pathname, { replace: true, state: null })
     }
   }, [location.state, location.pathname, navigate])
