@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('~/hooks/useBackupStatus', () => ({ useBackupStatus: () => undefined }))
@@ -50,14 +51,14 @@ const flushPromises = () =>
     for (let index = 0; index < 5; index += 1) await Promise.resolve()
   })
 
-const renderMain = () =>
+const renderMain = (indexElement: ReactNode = <div>Accounts</div>) =>
   render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/welcome" element={<div>Welcome</div>} />
         <Route path="/unlock" element={<div>Unlock</div>} />
         <Route path="/" element={<Main />}>
-          <Route index element={<div>Accounts</div>} />
+          <Route index element={indexElement} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -273,9 +274,14 @@ describe('vault initialization', () => {
       status: 'locked',
       protectionHint: 'password',
     })
-    renderMain()
+    const renderAccounts = vi.fn()
+    renderMain(<div ref={() => renderAccounts()}>Accounts</div>)
+    expect(screen.queryByText('Header')).not.toBeInTheDocument()
+    expect(screen.queryByText('Accounts')).not.toBeInTheDocument()
     await flushPromises()
     expect(screen.getByText('Unlock')).toBeInTheDocument()
+    expect(screen.queryByText('Header')).not.toBeInTheDocument()
+    expect(renderAccounts).not.toHaveBeenCalled()
     expect(vault.checkVault).not.toHaveBeenCalled()
     expect(vault.reset).not.toHaveBeenCalled()
   })
