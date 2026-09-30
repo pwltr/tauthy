@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   copyToClipboard: vi.fn(),
@@ -17,7 +17,10 @@ vi.mock('@hello-pangea/dnd', () => ({
   Droppable: ({ children }: { children: (provided: object) => ReactNode }) =>
     children({ innerRef: vi.fn(), droppableProps: {}, placeholder: null }),
   Draggable: ({ children }: { children: (provided: object, snapshot: object) => ReactNode }) =>
-    children({ innerRef: vi.fn(), draggableProps: {}, dragHandleProps: {} }, { isDragging: false }),
+    children(
+      { innerRef: vi.fn(), draggableProps: {}, dragHandleProps: { 'data-drag-handle': 'true' } },
+      { isDragging: false },
+    ),
 }))
 vi.mock('~/utils', () => ({
   copyToClipboard: mocks.copyToClipboard,
@@ -29,6 +32,10 @@ vi.mock('~/utils', () => ({
 import EntryList from '~/components/EntryList'
 
 describe('single-result copy shortcut', () => {
+  beforeEach(() => {
+    Object.values(mocks).forEach((mock) => mock.mockReset())
+  })
+
   it('copies only from the list, never while typing', async () => {
     render(
       <MemoryRouter>
@@ -43,6 +50,7 @@ describe('single-result copy shortcut', () => {
       key: 'c',
       metaKey: true,
     })
+    fireEvent.copy(screen.getByRole('textbox', { name: 'other text' }))
     expect(mocks.copyToClipboard).not.toHaveBeenCalled()
 
     const dialog = document.createElement('div')
@@ -55,5 +63,46 @@ describe('single-result copy shortcut', () => {
     fireEvent.keyDown(window, { key: 'c', metaKey: true })
     expect(mocks.copyToClipboard).toHaveBeenCalledWith('123456')
     await waitFor(() => expect(mocks.recordEntryUsage).toHaveBeenCalledWith('account'))
+
+    mocks.copyToClipboard.mockClear()
+    fireEvent.copy(window)
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('123456')
+  })
+
+  it('moves focus with arrows and copies the focused row with Cmd+C or Enter', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EntryList
+          entries={[
+            { uuid: 'first', name: 'First', secret: 'secret', token: '111111' },
+            { uuid: 'second', name: 'Second', secret: 'secret', token: '222222' },
+          ]}
+        />
+      </MemoryRouter>,
+    )
+    const rows = [...container.querySelectorAll<HTMLElement>('[data-code-row]')]
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toHaveAttribute('data-drag-handle', 'true')
+    expect(rows[0].parentElement).not.toHaveAttribute('data-drag-handle')
+
+    rows[0].focus()
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown' })
+    expect(rows[1]).toHaveFocus()
+
+    fireEvent.keyDown(rows[1], { key: 'c', metaKey: true })
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('222222')
+    await waitFor(() => expect(mocks.recordEntryUsage).toHaveBeenCalledWith('second'))
+
+    mocks.copyToClipboard.mockClear()
+    fireEvent.keyDown(rows[1], { key: 'Enter' })
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('222222')
+
+    mocks.copyToClipboard.mockClear()
+    fireEvent.copy(rows[1])
+    expect(mocks.copyToClipboard).toHaveBeenCalledOnce()
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('222222')
+
+    fireEvent.keyDown(rows[1], { key: 'ArrowUp' })
+    expect(rows[0]).toHaveFocus()
   })
 })

@@ -60,7 +60,15 @@ const AppBar = () => {
         if (event.key === 'Escape') {
           setSearch('')
           setIsSearching(false)
-        } else {
+        } else if (
+          event.key.length === 1 &&
+          !(
+            event.target instanceof Element &&
+            event.target.closest(
+              'input, textarea, select, button, a, [contenteditable], [role="button"], [role="textbox"]',
+            )
+          )
+        ) {
           setIsSearching(true)
         }
       }
@@ -209,6 +217,15 @@ const AppBar = () => {
               inputProps={{ 'aria-label': t('appBar.search') }}
               value={searchTerm}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowDown' || event.altKey || event.ctrlKey || event.metaKey)
+                  return
+                const firstRow = document.querySelector<HTMLElement>('[data-code-row]')
+                if (firstRow) {
+                  event.preventDefault()
+                  firstRow.focus()
+                }
+              }}
             />
           ) : (
             <PageTitle variant="h6" noWrap>

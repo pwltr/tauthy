@@ -160,6 +160,30 @@ describe('AppBar actions', () => {
     )
   })
 
+  it('moves from Search into the first code with ArrowDown', async () => {
+    renderAppBar()
+    fireEvent.keyDown(window, { key: 'f', metaKey: true })
+
+    const input = await screen.findByPlaceholderText('Search')
+    const firstRow = document.createElement('button')
+    firstRow.dataset.codeRow = ''
+    document.body.appendChild(firstRow)
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(firstRow).toHaveFocus()
+    firstRow.remove()
+  })
+
+  it('does not open Search when activating a focused code row', () => {
+    renderAppBar()
+    const row = document.createElement('div')
+    row.setAttribute('role', 'button')
+    document.body.appendChild(row)
+
+    fireEvent.keyPress(row, { key: 'Enter', charCode: 13 })
+    expect(screen.queryByPlaceholderText('Search')).not.toBeInTheDocument()
+    row.remove()
+  })
+
   it.each([
     ['n', 'Create page'],
     ['o', 'Import page'],

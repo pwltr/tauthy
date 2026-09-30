@@ -1,5 +1,5 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { useContext, useEffect, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
 import Box from '@mui/material/Box'
 import MuiList from '@mui/material/List'
@@ -25,6 +25,7 @@ const EntryList = ({ className, entries, header }: ListProps) => {
   const { minimizeOnCopy } = useContext(AppSettingsContext)
   const { dense } = useContext(ListOptionsContext)
   const [qrEntry, setQrEntry] = useState<ListEntry | null>(null)
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const sortedEntries = sortEntries(entries, sortOption, customOrder, entryUsage)
 
@@ -37,31 +38,48 @@ const EntryList = ({ className, entries, header }: ListProps) => {
   })
 
   useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
+    const singleResultToCopy = (event: KeyboardEvent | ClipboardEvent) => {
       const target = event.target
       const editing =
         target instanceof Element &&
         target.closest('input, textarea, select, [contenteditable], [role="textbox"]')
-      if (
+      const eligible =
         !event.defaultPrevented &&
         !editing &&
-        !event.altKey &&
         !window.getSelection()?.toString() &&
         !document.querySelector('[role="dialog"], [aria-modal="true"]') &&
-        (event.ctrlKey || event.metaKey) &&
-        event.key.toLowerCase() === 'c' &&
         filteredEntries.length === 1 &&
-        filteredEntries[0].token
+        Boolean(filteredEntries[0].token)
+      return eligible ? filteredEntries[0] : undefined
+    }
+
+    const handleKeyPress = (event: KeyboardEvent) => {
+      const entry = singleResultToCopy(event)
+      if (
+        entry?.token &&
+        !event.altKey &&
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'c'
       ) {
         event.preventDefault()
-        void onCopy(filteredEntries[0].uuid, filteredEntries[0].token)
+        void onCopy(entry.uuid, entry.token)
+      }
+    }
+
+    const handleCopy = (event: ClipboardEvent) => {
+      const entry = singleResultToCopy(event)
+      if (entry?.token) {
+        event.preventDefault()
+        void onCopy(entry.uuid, entry.token)
       }
     }
 
     window.addEventListener('keydown', handleKeyPress)
+    window.addEventListener('copy', handleCopy)
 
     return () => {
       window.removeEventListener('keydown', handleKeyPress)
+      window.removeEventListener('copy', handleCopy)
     }
   }, [filteredEntries.length, filteredEntries[0]?.uuid, filteredEntries[0]?.token])
 
@@ -100,6 +118,13 @@ const EntryList = ({ className, entries, header }: ListProps) => {
                         index={index}
                         isDragDisabled={sortOption !== 'custom' || Boolean(searchTerm)}
                         setQrEntry={setQrEntry}
+                        setRowRef={(element) => {
+                          rowRefs.current[entry.uuid] = element
+                        }}
+                        moveFocus={(direction) => {
+                          const next = filteredEntries[index + direction]
+                          if (next) rowRefs.current[next.uuid]?.focus()
+                        }}
                       />
                     ))}
                     {provided.placeholder as string}
