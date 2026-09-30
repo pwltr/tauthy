@@ -78,6 +78,15 @@
     "empty": "<add>Añadir entrada</add>, <import>importar una copia de seguridad</import> o <sync>conectar la sincronización</sync>",
     "invalid": "Secreto incorrecto"
   },
+  "contextMenu": {
+    "copyCode": "Copiar código",
+    "edit": "Editar",
+    "showQrCode": "Mostrar código QR",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar {{name}} de esta bóveda?",
+    "deleteFailed": "No se pudo eliminar la cuenta",
+    "unavailable": "No se pudo abrir el menú de la cuenta"
+  },
   "appBar": {
     "search": "Buscar",
     "lock": "Bloquear",

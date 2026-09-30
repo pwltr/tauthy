@@ -7,7 +7,7 @@ import AddIcon from '@mui/icons-material/Add'
 import { Link, Typography } from '@mui/material'
 
 import { vault } from '~/utils/storage'
-import { generateTOTPs, getTOTPRefreshDelay, SYNC_COMPLETE_EVENT } from '~/utils'
+import { deleteCode, generateTOTPs, getTOTPRefreshDelay, SYNC_COMPLETE_EVENT } from '~/utils'
 import ProgressBar from '~/components/ProgressBar'
 import EntryList from '~/components/EntryList'
 import BackupReminder from '~/components/BackupReminder'
@@ -125,7 +125,14 @@ const Codes = () => {
       {items.length > 0 && (
         <>
           <StyledProgressBar key={progressKey} durationMs={progressDuration} />
-          <StyledList entries={items} header={<BackupReminder />} />
+          <StyledList
+            entries={items}
+            header={<BackupReminder />}
+            onDelete={async (uuid: string) => {
+              await deleteCode(uuid)
+              await getEntries()
+            }}
+          />
         </>
       )}
 

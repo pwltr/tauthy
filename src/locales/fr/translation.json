@@ -78,6 +78,15 @@
     "empty": "<add>Ajoutez une entrée</add>, <import>importez une sauvegarde</import> ou <sync>connectez la synchronisation</sync>",
     "invalid": "Secret invalide"
   },
+  "contextMenu": {
+    "copyCode": "Copier le code",
+    "edit": "Modifier",
+    "showQrCode": "Afficher le code QR",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer {{name}} de ce coffre ?",
+    "deleteFailed": "Impossible de supprimer le compte",
+    "unavailable": "Impossible d’ouvrir le menu du compte"
+  },
   "appBar": {
     "search": "Chercher",
     "lock": "Verrouiller",

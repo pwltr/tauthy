@@ -1,5 +1,5 @@
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { useContext, type ClipboardEvent, type KeyboardEvent } from 'react'
+import { useContext, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Draggable, DraggableStyle } from '@hello-pangea/dnd'
 import MuiListItem from '@mui/material/ListItem'
@@ -83,6 +83,7 @@ export type EntryListItemProps = {
   index: number
   isDragDisabled: boolean
   setQrEntry: (entry: ListEntry) => void
+  onContextMenu: (event: MouseEvent<HTMLLIElement>, uuid: string) => void
   setRowRef: (element: HTMLDivElement | null) => void
   moveFocus: (direction: -1 | 1) => void
 }
@@ -92,6 +93,7 @@ const EntryListItem = ({
   index,
   isDragDisabled,
   setQrEntry,
+  onContextMenu,
   setRowRef,
   moveFocus,
 }: EntryListItemProps) => {
@@ -158,6 +160,7 @@ const EntryListItem = ({
               : provided.draggableProps.style
           }
           disablePadding
+          onContextMenu={(event) => onContextMenu(event, item.uuid)}
           secondaryAction={
             <>
               {item.token && (

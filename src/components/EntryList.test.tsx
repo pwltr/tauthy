@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -7,8 +7,26 @@ const mocks = vi.hoisted(() => ({
   copyToClipboard: vi.fn(),
   recordEntryUsage: vi.fn(),
   minimize: vi.fn(),
+  menuNew: vi.fn(),
+  menuPopup: vi.fn(),
+  menuClose: vi.fn(),
+  menuGet: vi.fn(),
+  menuSetEnabled: vi.fn(),
+  menuItems: [] as Array<{ id?: string; action?: () => void }>,
+  confirm: vi.fn(),
+  toastError: vi.fn(),
 }))
 
+vi.mock('@tauri-apps/api/menu', () => ({
+  Menu: { new: mocks.menuNew },
+}))
+vi.mock('@tauri-apps/plugin-dialog', () => ({ confirm: mocks.confirm }))
+vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError } }))
+vi.mock('~/components/modals/QRCode', () => ({
+  default: ({ entry }: { entry: { name: string } }) => (
+    <div data-testid="qr-modal">{entry.name}</div>
+  ),
+}))
 vi.mock('@tauri-apps/api/webviewWindow', () => ({
   getCurrentWebviewWindow: () => ({ minimize: mocks.minimize }),
 }))
@@ -34,7 +52,16 @@ import { AppSettingsContext } from '~/context'
 
 describe('single-result copy shortcut', () => {
   beforeEach(() => {
-    Object.values(mocks).forEach((mock) => mock.mockReset())
+    Object.values(mocks).forEach((mock) => {
+      if (vi.isMockFunction(mock)) mock.mockReset()
+    })
+    mocks.menuItems = []
+    mocks.menuNew.mockImplementation(async ({ items }) => {
+      mocks.menuItems = items
+      return { popup: mocks.menuPopup, close: mocks.menuClose, get: mocks.menuGet }
+    })
+    mocks.menuGet.mockImplementation(async () => ({ setEnabled: mocks.menuSetEnabled }))
+    mocks.confirm.mockResolvedValue(false)
   })
 
   it('copies only from the list, never while typing', async () => {
@@ -180,5 +207,91 @@ describe('single-result copy shortcut', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' })
     expect(row).not.toHaveFocus()
     dialog.remove()
+  })
+
+  it('opens the native menu for the right-clicked account and reuses its copy action', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EntryList
+          entries={[
+            { uuid: 'first', name: 'First', secret: 'secret', token: '111111' },
+            { uuid: 'second', name: 'Second', secret: 'secret', token: '222222' },
+          ]}
+        />
+      </MemoryRouter>,
+    )
+    const rows = [...container.querySelectorAll<HTMLElement>('[data-code-row]')]
+    await waitFor(() => expect(mocks.menuNew).toHaveBeenCalledOnce())
+
+    fireEvent.contextMenu(rows[1])
+    await waitFor(() => expect(mocks.menuPopup).toHaveBeenCalledOnce())
+    expect(mocks.menuSetEnabled).toHaveBeenCalledWith(true)
+    mocks.menuItems.find((item) => item.id === 'account-copy')?.action?.()
+
+    await waitFor(() => expect(mocks.copyToClipboard).toHaveBeenCalledWith('222222'))
+    expect(mocks.recordEntryUsage).toHaveBeenCalledWith('second')
+    expect(mocks.copyToClipboard).not.toHaveBeenCalledWith('111111')
+  })
+
+  it('disables code actions for entries with invalid secrets', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EntryList entries={[{ uuid: 'invalid', name: 'Invalid', secret: 'bad', token: '' }]} />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(mocks.menuNew).toHaveBeenCalledOnce())
+    fireEvent.contextMenu(container.querySelector('[data-code-row]')!)
+    await waitFor(() => expect(mocks.menuPopup).toHaveBeenCalledOnce())
+    expect(mocks.menuSetEnabled).toHaveBeenCalledWith(false)
+  })
+
+  it('opens the selected account QR or Edit screen from the menu', async () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <EntryList
+                entries={[{ uuid: 'account', name: 'Account', secret: 'secret', token: '123456' }]}
+              />
+            }
+          />
+          <Route path="/edit/:id" element={<div data-testid="edit-screen" />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(mocks.menuNew).toHaveBeenCalledOnce())
+    fireEvent.contextMenu(container.querySelector('[data-code-row]')!)
+    await waitFor(() => expect(mocks.menuPopup).toHaveBeenCalledOnce())
+
+    mocks.menuItems.find((item) => item.id === 'account-qr')?.action?.()
+    await waitFor(() => expect(screen.getByTestId('qr-modal')).toHaveTextContent('Account'))
+
+    mocks.menuItems.find((item) => item.id === 'account-edit')?.action?.()
+    await waitFor(() => expect(screen.getByTestId('edit-screen')).toBeInTheDocument())
+  })
+
+  it('requires confirmation before deleting the selected account', async () => {
+    const onDelete = vi.fn().mockResolvedValue(undefined)
+    const { container } = render(
+      <MemoryRouter>
+        <EntryList
+          entries={[{ uuid: 'account', name: 'Account', secret: 'secret', token: '123456' }]}
+          onDelete={onDelete}
+        />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(mocks.menuNew).toHaveBeenCalledOnce())
+    fireEvent.contextMenu(container.querySelector('[data-code-row]')!)
+    await waitFor(() => expect(mocks.menuPopup).toHaveBeenCalledOnce())
+
+    mocks.menuItems.find((item) => item.id === 'account-delete')?.action?.()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledOnce())
+    expect(onDelete).not.toHaveBeenCalled()
+
+    mocks.confirm.mockResolvedValue(true)
+    mocks.menuItems.find((item) => item.id === 'account-delete')?.action?.()
+    await waitFor(() => expect(onDelete).toHaveBeenCalledWith('account'))
   })
 })

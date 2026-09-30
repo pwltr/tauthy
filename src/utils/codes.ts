@@ -539,13 +539,11 @@ export const editCode = async (uuid: string, formData: FormData) => {
 
 export const deleteCode = async (id: string) => {
   const currentVault = await vault.getVault()
-  const filteredVault = currentVault.filter((entry: VaultEntry) => entry.uuid !== id)
-
-  try {
-    await vault.save(JSON.stringify(filteredVault))
-  } catch (err) {
-    console.error(err)
+  if (!currentVault.some((entry: VaultEntry) => entry.uuid === id)) {
+    throw Error(`No entry found for uuid ${id}`)
   }
+  const filteredVault = currentVault.filter((entry: VaultEntry) => entry.uuid !== id)
+  await vault.save(JSON.stringify(filteredVault))
 }
 
 const parseImportFile = async (file: File, format: ImportFormat, password?: string) => {

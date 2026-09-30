@@ -78,6 +78,15 @@
     "empty": "<add>Add an entry</add>, <import>import a backup</import>, or <sync>connect sync</sync>",
     "invalid": "Invalid secret"
   },
+  "contextMenu": {
+    "copyCode": "Copy Code",
+    "edit": "Edit",
+    "showQrCode": "Show QR Code",
+    "delete": "Delete",
+    "deleteConfirm": "Delete {{name}} from this vault?",
+    "deleteFailed": "Could not delete account",
+    "unavailable": "Could not open account menu"
+  },
   "appBar": {
     "search": "Search",
     "lock": "Lock",

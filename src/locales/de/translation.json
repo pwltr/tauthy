@@ -78,6 +78,15 @@
     "empty": "<add>Konto hinzufügen</add>, <import>Backup importieren</import> oder <sync>Synchronisierung einrichten</sync>",
     "invalid": "Schlüssel ungültig"
   },
+  "contextMenu": {
+    "copyCode": "Code kopieren",
+    "edit": "Bearbeiten",
+    "showQrCode": "QR-Code anzeigen",
+    "delete": "Löschen",
+    "deleteConfirm": "{{name}} aus diesem Tresor löschen?",
+    "deleteFailed": "Konto konnte nicht gelöscht werden",
+    "unavailable": "Kontomenü konnte nicht geöffnet werden"
+  },
   "appBar": {
     "search": "Suchen",
     "lock": "Sperren",
