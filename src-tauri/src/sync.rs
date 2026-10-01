@@ -44,6 +44,8 @@ const MAX_ENVELOPE_SIZE: usize = MAX_PAYLOAD_SIZE * 2;
 const MAX_RECORDS: usize = 100_000;
 const MAX_ICON_LENGTH: usize = 512 * 1024;
 const MAX_DEVICE_FILES: usize = 32;
+const MAX_PUBKY_DELETE_FILES: usize = 1024;
+const PUBKY_DELETE_PAGE_SIZE: u16 = 128;
 const SYNC_FOLDER_NAME: &str = "Tauthy Sync";
 const FOLDER_ANCHOR_NAME: &str = "anchor.tauthy-sync";
 const WRAP_AAD: &[u8] = b"tauthy-sync-key:v1";
@@ -64,6 +66,8 @@ const ERR_MULTIPLE_FILES: &str = "syncMultipleFiles";
 const ERR_NOT_CONFIGURED: &str = "syncNotConfigured";
 const ERR_UNAVAILABLE: &str = "syncUnavailable";
 const ERR_UNSUPPORTED: &str = "syncUnsupported";
+const ERR_REMOTE_DELETE_UNSAFE: &str = "syncRemoteDeleteUnsafe";
+const ERR_REMOTE_DELETE_INCOMPLETE: &str = "syncRemoteDeleteIncomplete";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -882,6 +886,88 @@ fn pubky_device_path(device_id: &str) -> Result<String, String> {
   Ok(format!("{PUBKY_DEVICES}{device_id}.json"))
 }
 
+fn pubky_deletable_path(path: &str) -> bool {
+  if path == PUBKY_ANCHOR {
+    return true;
+  }
+  path
+    .strip_prefix(PUBKY_DEVICES)
+    .and_then(|suffix| suffix.strip_suffix(".json"))
+    .and_then(|id| pubky_device_path(id).ok())
+    .is_some_and(|expected| expected == path)
+}
+
+async fn pubky_remote_files(session: &PubkySession) -> Result<Vec<String>, String> {
+  let mut paths = Vec::new();
+  let mut seen = HashSet::new();
+  let mut cursor: Option<String> = None;
+  loop {
+    let storage = session.storage();
+    let mut list = storage
+      .list(PUBKY_ROOT)
+      .map_err(|_| ERR_UNAVAILABLE.to_string())?
+      .limit(PUBKY_DELETE_PAGE_SIZE);
+    if let Some(cursor) = cursor.as_deref() {
+      list = list.cursor(cursor);
+    }
+    let page = match list.send().await {
+      Ok(page) => page,
+      Err(pubky::Error::Request(pubky::errors::RequestError::Server { status, .. }))
+        if status.as_u16() == 404 && paths.is_empty() =>
+      {
+        return Ok(paths);
+      }
+      Err(_) => return Err(ERR_UNAVAILABLE.into()),
+    };
+    if page.is_empty() {
+      return Ok(paths);
+    }
+    cursor = page.last().map(|resource| resource.to_pubky_url());
+    for resource in page {
+      let path = resource.path.as_str();
+      if !pubky_deletable_path(path) || !seen.insert(path.to_string()) {
+        return Err(ERR_REMOTE_DELETE_UNSAFE.into());
+      }
+      paths.push(path.to_string());
+      if paths.len() > MAX_PUBKY_DELETE_FILES {
+        return Err(ERR_REMOTE_DELETE_UNSAFE.into());
+      }
+    }
+  }
+}
+
+async fn pubky_delete_remote_files(session: &PubkySession) -> Result<(), String> {
+  let mut paths = pubky_remote_files(session).await?;
+  // The user explicitly requested deletion of this identity's Tauthy v1
+  // namespace. Deletion must also work when an encrypted file is damaged or
+  // the locally configured sync set is stale.
+  // Remove the anchor first: normal syncs must read it before publishing, so
+  // other devices will stop rather than start a fresh sync set automatically.
+  paths.sort_by_key(|path| if path == PUBKY_ANCHOR { 0 } else { 1 });
+  for path in paths {
+    match session.storage().delete(&path).await {
+      Ok(_) => {}
+      Err(pubky::Error::Request(pubky::errors::RequestError::Server { status, .. }))
+        if status.as_u16() == 404 => {}
+      Err(_) => return Err(ERR_REMOTE_DELETE_INCOMPLETE.into()),
+    }
+  }
+  // An in-flight write from another device can race the deletion. Keep the
+  // local grant for a retry unless the namespace is actually empty.
+  let remaining = pubky_remote_files(session)
+    .await
+    .map_err(|_| ERR_REMOTE_DELETE_INCOMPLETE.to_string())?;
+  let anchor_exists = session
+    .storage()
+    .exists(PUBKY_ANCHOR)
+    .await
+    .map_err(|_| ERR_REMOTE_DELETE_INCOMPLETE.to_string())?;
+  if !remaining.is_empty() || anchor_exists {
+    return Err(ERR_REMOTE_DELETE_INCOMPLETE.into());
+  }
+  Ok(())
+}
+
 async fn pubky_read_envelope(session: &PubkySession, path: &str) -> Result<SyncEnvelope, String> {
   let mut response = session
     .storage()
@@ -1617,6 +1703,24 @@ fn disconnect_at(state: &impl VaultAccess) -> Result<SyncStatus, String> {
   })
 }
 
+fn finish_pubky_remote_delete(
+  state: &impl VaultAccess,
+  expected: &PubkySyncConfig,
+) -> Result<SyncStatus, String> {
+  state.with_records(|vault| {
+    let current = load_pubky_config(vault).map_err(|_| ERR_REMOTE_DELETE_INCOMPLETE.to_string())?;
+    if current.public_key != expected.public_key
+      || current.device_id != expected.device_id
+      || current.wrapped_key != expected.wrapped_key
+      || vault.get_record(SYNC_STORE_NAME)?.is_some()
+    {
+      return Err(ERR_REMOTE_DELETE_INCOMPLETE.into());
+    }
+    vault.save_records(vec![(PUBKY_SYNC_STORE_NAME, None)])?;
+    Ok(status_for(None))
+  })
+}
+
 #[tauri::command]
 pub async fn sync_status(state: State<'_, ApplicationVault>) -> Result<SyncStatus, String> {
   let state = state.inner().clone();
@@ -1642,6 +1746,27 @@ pub async fn sync_disconnect(
     *pubky_state.session.lock().await = None;
   }
   status
+}
+
+#[tauri::command]
+pub async fn pubky_sync_delete_remote(
+  app: AppHandle,
+  state: State<'_, ApplicationVault>,
+  pubky_state: State<'_, PubkySyncState>,
+  confirmed: bool,
+) -> Result<SyncStatus, String> {
+  if !confirmed {
+    return Err(ERR_REMOTE_DELETE_UNSAFE.into());
+  }
+  let _operation = pubky_state.operation.lock().await;
+  let config = state.with_records(|vault| load_pubky_config(vault))?;
+  let session = pubky_restore(&config, &pubky_state).await?;
+  pubky_delete_remote_files(&session).await?;
+  let status = finish_pubky_remote_delete(&state.inner().clone(), &config)
+    .map_err(|_| ERR_REMOTE_DELETE_INCOMPLETE.to_string())?;
+  *pubky_state.session.lock().await = None;
+  let _ = crate::tray::refresh_menu(&app);
+  Ok(status)
 }
 
 #[cfg(test)]
@@ -2053,6 +2178,69 @@ mod tests {
     assert!(!status.vault_changed);
     assert_eq!(status.last_synced_at, Some(123));
     assert_eq!(fs::read(&vault_path).unwrap(), before);
+  }
+
+  #[test]
+  fn pubky_remote_delete_accepts_only_the_v1_anchor_and_generated_device_paths() {
+    assert!(pubky_deletable_path(PUBKY_ANCHOR));
+    assert!(pubky_deletable_path(
+      "/priv/tauthy/sync/v1/devices/0123456789abcdef0123456789abcdef.json"
+    ));
+    for path in [
+      "/priv/tauthy/sync/v1/devices/0123456789ABCDEF0123456789abcdef.json",
+      "/priv/tauthy/sync/v1/devices/../anchor.json",
+      "/priv/tauthy/sync/v1/devices/unexpected.json",
+      "/priv/tauthy/sync/v1/other.json",
+      "/priv/tauthy/sync/v2/anchor.json",
+      "/pub/tauthy/sync/v1/anchor.json",
+    ] {
+      assert!(!pubky_deletable_path(path), "unexpectedly accepted {path}");
+    }
+  }
+
+  #[test]
+  fn pubky_remote_delete_local_finish_requires_the_same_connection_and_keeps_accounts() {
+    let temporary = tempfile::tempdir().unwrap();
+    let entries = vec![entry("one", "One")];
+    let state = open_test_vault(temporary.path(), "local", entries.clone());
+    let device_id = "0123456789abcdef0123456789abcdef".to_string();
+    let config = PubkySyncConfig {
+      public_key: "test-pubky".into(),
+      session_secret: "test-grant".into(),
+      recovery_code: "0".repeat(KEY_SIZE * 2),
+      device_id: device_id.clone(),
+      key: BASE64.encode(&[0; KEY_SIZE]),
+      wrapped_key: wrap_key(&[0; KEY_SIZE], b"recovery password").unwrap(),
+      payload: new_payload(entries.clone(), "vault".into(), &device_id),
+      last_synced_at: Some(123),
+    };
+    state
+      .with_records(|vault| save_pubky_local(vault, &entries, &config))
+      .unwrap();
+    let other = PubkySyncConfig {
+      public_key: "different-pubky".into(),
+      session_secret: String::new(),
+      recovery_code: String::new(),
+      device_id,
+      key: String::new(),
+      wrapped_key: config.wrapped_key.clone(),
+      payload: config.payload.clone(),
+      last_synced_at: None,
+    };
+    assert_eq!(
+      finish_pubky_remote_delete(&state, &other).err(),
+      Some(ERR_REMOTE_DELETE_INCOMPLETE.into())
+    );
+    assert_eq!(stored_entries(&state), entries);
+    assert!(state.with_records(|vault| load_pubky_config(vault)).is_ok());
+
+    let status = finish_pubky_remote_delete(&state, &config).unwrap();
+    assert!(!status.enabled);
+    assert_eq!(stored_entries(&state), entries);
+    assert_eq!(
+      state.with_records(|vault| vault.get_record(PUBKY_SYNC_STORE_NAME)),
+      Ok(None)
+    );
   }
 
   #[test]

@@ -163,6 +163,7 @@ fn main() {
     sync::pubky_sync_recovery_code,
     sync::sync_create,
     sync::sync_disconnect,
+    sync::pubky_sync_delete_remote,
     sync::sync_join,
     sync::sync_merge_conflicted_copy,
     sync::sync_now,

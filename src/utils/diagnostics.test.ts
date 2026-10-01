@@ -14,6 +14,7 @@ it('records only an allowlisted code, never a raw provider error', async () => {
   recordDiagnostic('sync.now.error', 'syncUnavailable')
   recordDiagnostic('sync.now.error', 'syncDeviceFileInvalid: private filename')
   recordDiagnostic('import.error', new Error('importEncryptedWrongPassword'))
+  recordDiagnostic('pubky.delete.error', 'syncRemoteDeleteIncomplete')
   await exportDiagnostics()
 
   expect(invoke).toHaveBeenCalledWith('diagnostics_record', {
@@ -27,6 +28,10 @@ it('records only an allowlisted code, never a raw provider error', async () => {
   expect(invoke).toHaveBeenCalledWith('diagnostics_record', {
     stage: 'import.error',
     code: 'importEncryptedWrongPassword',
+  })
+  expect(invoke).toHaveBeenCalledWith('diagnostics_record', {
+    stage: 'pubky.delete.error',
+    code: 'syncRemoteDeleteIncomplete',
   })
   expect(invoke).toHaveBeenLastCalledWith('diagnostics_export')
 })

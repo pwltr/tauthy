@@ -40,6 +40,9 @@ fn valid_stage(stage: &str) -> bool {
       | "pubky.read.error"
       | "pubky.merge.error"
       | "pubky.publish.error"
+      | "pubky.delete.start"
+      | "pubky.delete.ok"
+      | "pubky.delete.error"
       | "import.start"
       | "import.ok"
       | "import.error"
@@ -75,6 +78,8 @@ fn valid_code(code: &str) -> bool {
       | "syncLocalConflict"
       | "syncMultipleFiles"
       | "syncNotConfigured"
+      | "syncRemoteDeleteIncomplete"
+      | "syncRemoteDeleteUnsafe"
       | "syncUnavailable"
       | "syncUnsupported"
       | "importEncryptedAuthenticationFailed"
@@ -258,6 +263,7 @@ mod tests {
       .is_err());
     diagnostics.record_error("pubky.read.error", "syncLocalConflict");
     diagnostics.record_error("pubky.publish.error", "syncUnavailable: /private/path");
+    diagnostics.record_error("pubky.delete.error", "syncRemoteDeleteIncomplete");
     fs::write(
       directory.path().join(LOG_NAME),
       format!(
@@ -277,6 +283,10 @@ mod tests {
       .export()
       .unwrap()
       .contains("pubky.publish.error other"));
+    assert!(diagnostics
+      .export()
+      .unwrap()
+      .contains("pubky.delete.error syncRemoteDeleteIncomplete"));
     assert!(!diagnostics.export().unwrap().contains("/private/path"));
   }
 

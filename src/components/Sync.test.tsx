@@ -2,8 +2,11 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  confirm: vi.fn(),
   open: vi.fn(),
   toastError: vi.fn(),
+  toastSuccess: vi.fn(),
+  deletePubkySyncData: vi.fn(),
   getSyncStatus: vi.fn(),
   getBackgroundSyncError: vi.fn(),
   syncNow: vi.fn(),
@@ -15,10 +18,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-  confirm: vi.fn(),
+  confirm: mocks.confirm,
   open: mocks.open,
 }))
-vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: vi.fn() } }))
+vi.mock('react-hot-toast', () => ({
+  default: { error: mocks.toastError, success: mocks.toastSuccess },
+}))
 vi.mock('~/utils/helpers', () => ({ copyToClipboard: mocks.copy }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -29,6 +34,7 @@ vi.mock('react-i18next', () => ({
 }))
 vi.mock('~/utils/sync', () => ({
   createSync: vi.fn(),
+  deletePubkySyncData: mocks.deletePubkySyncData,
   disconnectSync: vi.fn(),
   getSyncStatus: mocks.getSyncStatus,
   getPubkyRecoveryCode: mocks.getPubkyRecoveryCode,
@@ -46,7 +52,10 @@ describe('sync location pickers', () => {
   beforeEach(() => {
     window.sessionStorage.clear()
     mocks.open.mockReset()
+    mocks.confirm.mockReset()
     mocks.toastError.mockReset()
+    mocks.toastSuccess.mockReset()
+    mocks.deletePubkySyncData.mockReset()
     mocks.syncNow.mockReset()
     mocks.getPubkyRecoveryCode.mockReset()
     mocks.copy.mockReset()
@@ -197,7 +206,41 @@ describe('sync location pickers', () => {
     expect(screen.getByText('sync.status')).toBeInTheDocument()
     expect(screen.getByText('sync.recovery')).toBeInTheDocument()
     expect(screen.getByText('sync.pubkyShowCode')).toBeInTheDocument()
+    expect(screen.getByText('sync.pubkyDelete')).toBeInTheDocument()
     expect(screen.queryByText('sync.mergeConflictedCopy')).not.toBeInTheDocument()
+  })
+
+  it('only deletes Pubky data after confirmation, then disconnects this device', async () => {
+    mocks.getSyncStatus.mockResolvedValue({ enabled: true, provider: 'pubky', path: 'user' })
+    mocks.confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    mocks.deletePubkySyncData.mockResolvedValue({ enabled: false })
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.pubkyDelete'))
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledOnce())
+    expect(mocks.deletePubkySyncData).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('sync.pubkyDelete'))
+    await waitFor(() => expect(mocks.deletePubkySyncData).toHaveBeenCalledOnce())
+    expect(mocks.confirm).toHaveBeenCalledWith(
+      'sync.pubkyDeleteWarning',
+      expect.objectContaining({ okLabel: 'sync.pubkyDelete', kind: 'warning' }),
+    )
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('toasts.pubkyDeleted')
+    expect(await screen.findByText('sync.chooseMethod')).toBeInTheDocument()
+  })
+
+  it('keeps Pubky connected and explains an incomplete remote deletion', async () => {
+    mocks.getSyncStatus.mockResolvedValue({ enabled: true, provider: 'pubky', path: 'user' })
+    mocks.confirm.mockResolvedValue(true)
+    mocks.deletePubkySyncData.mockRejectedValue('syncRemoteDeleteIncomplete')
+    render(<Sync />)
+
+    fireEvent.click(await screen.findByText('sync.pubkyDelete'))
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith('toasts.syncRemoteDeleteIncomplete'),
+    )
+    expect(screen.getByText('sync.pubkyDelete')).toBeInTheDocument()
   })
 
   it('shows the Pubky recovery code as selectable text rather than a field', async () => {
