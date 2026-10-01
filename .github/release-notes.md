@@ -1,8 +1,12 @@
-## What's new in 0.5.0
+## What's new in 0.6.0
 
-- Faster startup and unlock with new encrypted local storage. Existing accounts
-  and sync settings migrate automatically; passwords remain optional.
-- Improved Windows export dialog and removed the artificial unlock delay.
+- Pubky sync: connect with Pubky Ring and sync encrypted accounts through
+  your homeserver. A recovery code lets another device join.
+- New keyboard shortcuts, code-list navigation, native macOS menu commands, and
+  account right-click actions make common tasks quicker.
+- Backup status and reminders help you keep an up-to-date export.
+- Smoother startup and onboarding, with fewer theme flashes and UI polish.
+- Export privacy-safe diagnostic logs from Settings when troubleshooting.
 
 ### Windows upgrade notice
 
