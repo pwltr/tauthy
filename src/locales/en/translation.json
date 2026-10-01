@@ -225,7 +225,10 @@
     "pubkyDescription": "Sync encrypted accounts through your Pubky homeserver. Each device writes its own file; local changes work offline.",
     "pubkyShowCode": "Show recovery code",
     "pubkyShowCodeDescription": "Use this to connect another device",
-    "pubkyDisconnectWarning": "This device will stop syncing with Pubky. Local accounts and encrypted homeserver data remain. You can revoke Tauthy's access in Pubky Ring. Continue?"
+    "pubkyDisconnectWarning": "This device will stop syncing with Pubky. Local accounts and encrypted homeserver data remain. You can revoke Tauthy's access in Pubky Ring. Continue?",
+    "pubkyDelete": "Delete Pubky sync data",
+    "pubkyDeleteDescription": "Permanently remove all Tauthy sync files for this identity",
+    "pubkyDeleteWarning": "Disconnect Tauthy on your other devices first. Delete all Tauthy sync data for this Pubky identity from its homeserver? Local accounts remain, but syncing stops. This cannot be undone. Revoke access in Pubky Ring afterward if desired."
   },
   "about": {
     "pageTitle": "About",
@@ -323,6 +326,9 @@
     "syncFailed": "Sync failed. Your local vault was not lost.",
     "syncBackgroundFailed": "Automatic sync could not finish. Open Settings → Sync for details.",
     "pubkyUnavailable": "Pubky is unavailable or authorization failed. Your local vault was not changed.",
+    "pubkyDeleted": "Pubky sync data deleted. Local accounts remain.",
+    "syncRemoteDeleteUnsafe": "Unexpected files prevent safe deletion. Nothing was deleted.",
+    "syncRemoteDeleteIncomplete": "Could not confirm complete deletion. Some sync files may remain; this device is still connected. Retry before revoking access in Pubky Ring.",
     "pubkyRingOpenFailed": "Could not open Pubky Ring in your browser.",
     "error": "An error occured."
   }

@@ -149,6 +149,20 @@ export const disconnectSync = async () => {
   return status
 }
 
+export const deletePubkySyncData = async () => {
+  recordDiagnostic('pubky.delete.start')
+  try {
+    const status = await invoke<SyncStatus>('pubky_sync_delete_remote', { confirmed: true })
+    lastSuccessfulCheckAt = undefined
+    clearBackgroundSyncError()
+    recordDiagnostic('pubky.delete.ok')
+    return status
+  } catch (error) {
+    recordDiagnostic('pubky.delete.error', error)
+    throw error
+  }
+}
+
 export const startPubkySync = async () => {
   recordDiagnostic('pubky.approval.start')
   try {

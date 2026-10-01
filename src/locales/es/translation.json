@@ -225,7 +225,10 @@
     "pubkyDescription": "Sincroniza cuentas cifradas mediante tu servidor personal de Pubky. Cada dispositivo escribe su propio archivo; los cambios locales funcionan sin conexión.",
     "pubkyShowCode": "Mostrar código de recuperación",
     "pubkyShowCodeDescription": "Úsalo para conectar otro dispositivo",
-    "pubkyDisconnectWarning": "Este dispositivo dejará de sincronizarse con Pubky. Las cuentas locales y los datos cifrados del servidor permanecerán. Puedes revocar el acceso de Tauthy en Pubky Ring. ¿Continuar?"
+    "pubkyDisconnectWarning": "Este dispositivo dejará de sincronizarse con Pubky. Las cuentas locales y los datos cifrados del servidor permanecerán. Puedes revocar el acceso de Tauthy en Pubky Ring. ¿Continuar?",
+    "pubkyDelete": "Eliminar datos de sincronización de Pubky",
+    "pubkyDeleteDescription": "Eliminar definitivamente todos los archivos de Tauthy de esta identidad",
+    "pubkyDeleteWarning": "Desconecta Tauthy en tus otros dispositivos primero. ¿Eliminar todos los datos de sincronización de Tauthy de esta identidad Pubky? Las cuentas locales permanecerán, pero la sincronización se detendrá. Esta acción no se puede deshacer. Después puedes revocar el acceso en Pubky Ring."
   },
   "about": {
     "pageTitle": "Acerca de",
@@ -323,6 +326,9 @@
     "syncFailed": "La sincronización falló. Tu baúl local no se ha perdido.",
     "syncBackgroundFailed": "La sincronización automática no pudo completarse. Consulta Ajustes → Sincronización para ver los detalles.",
     "pubkyUnavailable": "Pubky no está disponible o falló la autorización. Tu bóveda local no ha cambiado.",
+    "pubkyDeleted": "Datos de sincronización de Pubky eliminados. Las cuentas locales permanecen.",
+    "syncRemoteDeleteUnsafe": "Hay archivos inesperados que impiden eliminarlos de forma segura. No se eliminó nada.",
+    "syncRemoteDeleteIncomplete": "No se pudo confirmar la eliminación completa. Puede que queden archivos; este dispositivo sigue conectado. Reinténtalo antes de revocar el acceso en Pubky Ring.",
     "pubkyRingOpenFailed": "No se pudo abrir Pubky Ring en el navegador.",
     "error": "Ha ocurrido un error."
   }

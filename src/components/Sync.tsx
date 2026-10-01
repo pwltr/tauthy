@@ -23,6 +23,7 @@ import RecoveryCodeDisplay from '~/components/RecoveryCodeDisplay'
 import { copyToClipboard } from '~/utils/helpers'
 import { developerSettingsEnabled } from '~/utils/developerSettings'
 import {
+  deletePubkySyncData,
   disconnectSync,
   getBackgroundSyncError,
   getSyncStatus,
@@ -47,6 +48,8 @@ const errorKey = (error: unknown) => {
     'syncFileExists',
     'syncMultipleFiles',
     'syncNotConfigured',
+    'syncRemoteDeleteIncomplete',
+    'syncRemoteDeleteUnsafe',
     'syncUnavailable',
     'syncUnsupported',
   ].includes(key)
@@ -149,6 +152,25 @@ const Sync = () => {
     try {
       setStatus(await disconnectSync())
       toast.success(t('toasts.syncDisconnected'))
+    } catch (error) {
+      toast.error(syncErrorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const deleteRemotePubkySync = async () => {
+    const confirmed = await confirm(t('sync.pubkyDeleteWarning'), {
+      title: t('sync.pubkyDelete'),
+      kind: 'warning',
+      okLabel: t('sync.pubkyDelete'),
+      cancelLabel: t('modals.cancel'),
+    })
+    if (!confirmed) return
+    setBusy(true)
+    try {
+      setStatus(await deletePubkySyncData())
+      toast.success(t('toasts.pubkyDeleted'))
     } catch (error) {
       toast.error(syncErrorMessage(error))
     } finally {
@@ -273,6 +295,17 @@ const Sync = () => {
                     />
                   </ListItemButton>
                 </ListItem>
+                {status.provider === 'pubky' && (
+                  <ListItem disablePadding onClick={() => !busy && void deleteRemotePubkySync()}>
+                    <ListItemButton disabled={busy}>
+                      <ListItemText
+                        primary={t('sync.pubkyDelete')}
+                        secondary={t('sync.pubkyDeleteDescription')}
+                        sx={{ '& .MuiListItemText-primary': { color: 'error.main' } }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                )}
               </ListSection>
             </List>
           </>

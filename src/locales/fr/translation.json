@@ -225,7 +225,10 @@
     "pubkyDescription": "Synchronisez les comptes chiffrés via votre homeserver Pubky. Chaque appareil écrit son propre fichier ; les modifications locales fonctionnent hors ligne.",
     "pubkyShowCode": "Afficher le code de récupération",
     "pubkyShowCodeDescription": "Utilisez-le pour connecter un autre appareil",
-    "pubkyDisconnectWarning": "Cet appareil cessera de se synchroniser avec Pubky. Les comptes locaux et les données chiffrées du homeserver resteront. Vous pouvez révoquer l’accès de Tauthy dans Pubky Ring. Continuer ?"
+    "pubkyDisconnectWarning": "Cet appareil cessera de se synchroniser avec Pubky. Les comptes locaux et les données chiffrées du homeserver resteront. Vous pouvez révoquer l’accès de Tauthy dans Pubky Ring. Continuer ?",
+    "pubkyDelete": "Supprimer les données de synchronisation Pubky",
+    "pubkyDeleteDescription": "Supprimer définitivement tous les fichiers Tauthy de cette identité",
+    "pubkyDeleteWarning": "Déconnectez d’abord Tauthy sur vos autres appareils. Supprimer toutes les données de synchronisation Tauthy de cette identité Pubky ? Les comptes locaux restent disponibles, mais la synchronisation s’arrête. Cette action est irréversible. Vous pourrez ensuite révoquer l’accès dans Pubky Ring."
   },
   "about": {
     "pageTitle": "À propos",
@@ -323,6 +326,9 @@
     "syncFailed": "La synchronisation a échoué. Votre coffre local n’a pas été perdu.",
     "syncBackgroundFailed": "La synchronisation automatique n’a pas abouti. Consultez Paramètres → Synchronisation pour les détails.",
     "pubkyUnavailable": "Pubky est indisponible ou l’autorisation a échoué. Votre coffre local n’a pas été modifié.",
+    "pubkyDeleted": "Données de synchronisation Pubky supprimées. Les comptes locaux restent disponibles.",
+    "syncRemoteDeleteUnsafe": "Des fichiers inattendus empêchent une suppression sûre. Rien n’a été supprimé.",
+    "syncRemoteDeleteIncomplete": "La suppression complète n’a pas pu être confirmée. Des fichiers peuvent rester ; cet appareil est toujours connecté. Réessayez avant de révoquer l’accès dans Pubky Ring.",
     "pubkyRingOpenFailed": "Impossible d’ouvrir Pubky Ring dans votre navigateur.",
     "error": "Une erreur s'est produite."
   }

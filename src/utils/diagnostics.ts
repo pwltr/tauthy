@@ -28,6 +28,8 @@ const safeCodes = new Set([
   'syncLocalConflict',
   'syncMultipleFiles',
   'syncNotConfigured',
+  'syncRemoteDeleteIncomplete',
+  'syncRemoteDeleteUnsafe',
   'syncUnavailable',
   'syncUnsupported',
   'importEncryptedAuthenticationFailed',
