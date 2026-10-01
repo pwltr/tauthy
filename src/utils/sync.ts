@@ -20,6 +20,17 @@ export type SyncStatus = {
   path?: string
   lastSyncedAt?: number
   vaultChanged?: boolean
+  provider?: 'folder' | 'pubky'
+}
+
+export type PubkyApproval = {
+  approved: boolean
+  publicKey?: string
+  hasRemote?: boolean
+}
+
+export type PubkySetupResult = {
+  status: SyncStatus
 }
 
 export const getBackgroundSyncError = () => backgroundError
@@ -137,3 +148,53 @@ export const disconnectSync = async () => {
   clearBackgroundSyncError()
   return status
 }
+
+export const startPubkySync = async () => {
+  recordDiagnostic('pubky.approval.start')
+  try {
+    return await invoke<string>('pubky_sync_start')
+  } catch (error) {
+    recordDiagnostic('pubky.approval.error', error)
+    throw error
+  }
+}
+
+export const pollPubkySync = async () => {
+  try {
+    const result = await invoke<PubkyApproval>('pubky_sync_poll')
+    if (result.approved) recordDiagnostic('pubky.approval.ok')
+    return result
+  } catch (error) {
+    recordDiagnostic('pubky.approval.error', error)
+    throw error
+  }
+}
+export const cancelPubkySync = () => invoke<void>('pubky_sync_cancel')
+
+export const createPubkySync = async (recoveryCode: string) => {
+  recordDiagnostic('pubky.create.start')
+  try {
+    const result = await invoke<PubkySetupResult>('pubky_sync_create', { recoveryCode })
+    announceSync()
+    recordDiagnostic('pubky.create.ok')
+    return result
+  } catch (error) {
+    recordDiagnostic('pubky.create.error', error)
+    throw error
+  }
+}
+
+export const joinPubkySync = async (recoveryCode: string) => {
+  recordDiagnostic('pubky.join.start')
+  try {
+    const result = await invoke<PubkySetupResult>('pubky_sync_join', { recoveryCode })
+    announceSync()
+    recordDiagnostic('pubky.join.ok')
+    return result
+  } catch (error) {
+    recordDiagnostic('pubky.join.error', error)
+    throw error
+  }
+}
+
+export const getPubkyRecoveryCode = () => invoke<string>('pubky_sync_recovery_code')

@@ -16,6 +16,8 @@ const Security = lazy(() => import('~/components/Security'))
 const Import = lazy(() => import('~/components/Import'))
 const ImportReview = lazy(() => import('~/components/ImportReview'))
 const Sync = lazy(() => import('~/components/Sync'))
+const FolderSync = lazy(() => import('~/components/FolderSync'))
+const PubkyConnect = lazy(() => import('~/components/PubkyConnect'))
 const About = lazy(() => import('~/components/About'))
 const VaultRecovery = lazy(() => import('~/components/VaultRecovery'))
 
@@ -51,6 +53,8 @@ const AppRouter = () => (
             <Route path="review" element={deferred(<ImportReview />)} />
           </Route>
           <Route path="sync" element={deferred(<Sync />)} />
+          <Route path="sync/folder" element={deferred(<FolderSync />)} />
+          <Route path="sync/pubky" element={deferred(<PubkyConnect />)} />
           <Route path="about" element={deferred(<About />)} />
         </Route>
       </Routes>

@@ -34,6 +34,7 @@ argon2 = { version = "0.5.3", default-features = false, features = ["alloc"] }
 chacha20poly1305 = { version = "0.10.1", default-features = false, features = ["alloc"] }
 scrypt = { version = "0.11.0", default-features = false }
 tempfile = "3.27.0"
+pubky = "=0.14.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring-core = { version = "1.0.0", default-features = false }

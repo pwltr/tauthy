@@ -108,6 +108,7 @@ fn main() {
   let builder = builder.manage(StartupVisibility::default());
 
   let builder = builder
+    .manage(sync::PubkySyncState::default())
     .manage(tray::TrayLabelState::default())
     .manage(tray::TrayMenuState::default())
     .manage(tray::TrayEnabledState::default())
@@ -154,6 +155,12 @@ fn main() {
     application_commands::vault_unload,
     vault_commands::vault_backend,
     application_commands::vault_status,
+    sync::pubky_sync_start,
+    sync::pubky_sync_poll,
+    sync::pubky_sync_cancel,
+    sync::pubky_sync_create,
+    sync::pubky_sync_join,
+    sync::pubky_sync_recovery_code,
     sync::sync_create,
     sync::sync_disconnect,
     sync::sync_join,

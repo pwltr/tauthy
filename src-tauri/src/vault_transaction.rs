@@ -394,6 +394,66 @@ impl<'a> Coordinator<'a> {
     self.advance(&mut journal, Phase::InstallIntent)
   }
 
+  /// Runtime creation always starts with an empty record map. If credential
+  /// setup was interrupted before any vault file existed, rebuild that empty
+  /// candidate under the journaled identity, reusing a key already staged in
+  /// the credential store. This must not be used for arbitrary create callers
+  /// whose original records cannot be reconstructed from the journal.
+  pub(crate) fn resume_empty_create(&mut self, password: Option<&str>) -> Result<(), Error> {
+    require_supported_durability(self.directory)?;
+    let journal = self.load()?;
+    if journal.operation != Operation::Create
+      || !matches!(
+        journal.phase,
+        Phase::Prepared
+          | Phase::CredentialStageIntent
+          | Phase::CredentialVerified
+          | Phase::FilePrepareIntent
+      )
+      || regular_file(&self.directory.join(ACTIVE))?
+      || regular_file(&self.directory.join(STAGED))?
+    {
+      return Err(Error::ReconciliationFailed);
+    }
+    let target = journal.target.as_ref().ok_or(Error::ReconciliationFailed)?;
+    let candidate = if target.credential {
+      let key = self.credentials.get(target)?;
+      match key {
+        Some(key) => Vault::restore_credential_candidate(
+          Records::default(),
+          target.vault_id,
+          target.key_generation,
+          key,
+        )?,
+        None
+          if matches!(
+            journal.phase,
+            Phase::Prepared | Phase::CredentialStageIntent
+          ) =>
+        {
+          (self.candidate_create)(
+            Records::default(),
+            None,
+            target.vault_id,
+            target.key_generation,
+          )?
+        }
+        None => return Err(Error::CredentialMissing),
+      }
+    } else {
+      let password = password
+        .filter(|password| !password.is_empty())
+        .ok_or(Error::PendingUnlock)?;
+      (self.candidate_create)(
+        Records::default(),
+        Some(password),
+        target.vault_id,
+        target.key_generation,
+      )?
+    };
+    self.prepare(&candidate)
+  }
+
   fn stage_credentials(&mut self, journal: &mut Journal, vault: &Vault) -> Result<(), Error> {
     if journal.phase == Phase::Prepared {
       self.advance(

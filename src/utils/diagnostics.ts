@@ -25,6 +25,7 @@ const safeCodes = new Set([
   'syncCorrupt',
   'syncDeviceFileLimit',
   'syncFileExists',
+  'syncLocalConflict',
   'syncMultipleFiles',
   'syncNotConfigured',
   'syncUnavailable',

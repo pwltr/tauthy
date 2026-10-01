@@ -94,6 +94,89 @@ fn locked_new_runtime_never_creates_or_exposes_records_implicitly() {
 }
 
 #[test]
+fn interrupted_empty_creation_reuses_its_journaled_credential() {
+  for key_was_staged in [false, true] {
+    let directory = tempfile::tempdir().unwrap();
+    let runtime = Runtime::new(directory.path().into());
+    let mut keys = Keys {
+      unavailable: !key_was_staged,
+      deny_after_set: key_was_staged,
+      ..Keys::default()
+    };
+    assert!(runtime.create(None, &mut keys).is_err());
+    let journal = vault_journal::read(directory.path()).unwrap().unwrap();
+    assert_eq!(journal.operation, Operation::Create);
+    assert_eq!(journal.phase, Phase::CredentialStageIntent);
+    assert!(!directory.path().join("vault.tauthy").exists());
+    let selector = journal.target.unwrap().credential_selector(true).unwrap().1;
+    let staged_key = keys.entries.get(&selector).map(|key| **key);
+
+    keys.unavailable = false;
+    keys.denied = false;
+    keys.deny_after_set = false;
+    runtime
+      .unlock(None, None, &mut keys, &mut no_source)
+      .unwrap();
+    assert!(!runtime.status().unwrap().locked);
+    assert!(directory.path().join("vault.tauthy").is_file());
+    assert_eq!(keys.entries.len(), 1);
+    if let Some(staged_key) = staged_key {
+      assert_eq!(**keys.entries.get(&selector).unwrap(), staged_key);
+    }
+  }
+}
+
+#[test]
+fn interrupted_empty_password_creation_resumes_with_entered_password() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  let candidate = Vault::create(Records::default(), Some("test-password")).unwrap();
+  let mut stop_before_stage = |point| {
+    if point == "beforeStageWrite" {
+      Err(TxError::Interrupted)
+    } else {
+      Ok(())
+    }
+  };
+  assert_eq!(
+    Coordinator::new(directory.path(), &mut keys, &mut stop_before_stage).begin_create(&candidate),
+    Err(TxError::Interrupted)
+  );
+  assert!(!directory.path().join("vault.tauthy").exists());
+  runtime
+    .unlock(Some("test-password"), None, &mut keys, &mut no_source)
+    .unwrap();
+  assert!(!runtime.status().unwrap().locked);
+  assert!(keys.entries.is_empty());
+}
+
+#[test]
+fn interrupted_create_with_staged_file_uses_normal_resume() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = Runtime::new(directory.path().into());
+  let mut keys = Keys::default();
+  let candidate = Vault::create(Records::default(), None).unwrap();
+  let mut stop_after_stage = |point| {
+    if point == "afterStagePersist" {
+      Err(TxError::Interrupted)
+    } else {
+      Ok(())
+    }
+  };
+  assert_eq!(
+    Coordinator::new(directory.path(), &mut keys, &mut stop_after_stage).begin_create(&candidate),
+    Err(TxError::Interrupted)
+  );
+  assert!(directory.path().join("vault.pending.tauthy").is_file());
+  runtime
+    .unlock(None, None, &mut keys, &mut no_source)
+    .unwrap();
+  assert!(!runtime.status().unwrap().locked);
+  assert!(directory.path().join("vault.tauthy").is_file());
+}
+
+#[test]
 fn saves_rotate_nonce_but_keep_identity_wrapping_and_all_opaque_records() {
   let directory = tempfile::tempdir().unwrap();
   let runtime = Runtime::new(directory.path().into());

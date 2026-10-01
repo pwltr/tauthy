@@ -12,11 +12,15 @@ vi.mock('~/utils/i18n', () => ({ default: { t: (key: string) => key } }))
 vi.mock('~/utils/diagnostics', () => ({ recordDiagnostic: mocks.recordDiagnostic }))
 
 import {
+  createPubkySync,
   createSync,
   getBackgroundSyncError,
   getSyncStatus,
+  joinPubkySync,
   joinSync,
   mergeConflictedSyncCopy,
+  pollPubkySync,
+  startPubkySync,
   SYNC_BACKGROUND_ERROR_EVENT,
   SYNC_COMPLETE_EVENT,
   SYNC_STATUS_EVENT,
@@ -148,4 +152,57 @@ describe('sync commands', () => {
       expect(mocks.recordDiagnostic).not.toHaveBeenCalled()
     },
   )
+})
+
+describe('Pubky sync commands', () => {
+  beforeEach(() => {
+    invoke.mockReset()
+    mocks.recordDiagnostic.mockReset()
+  })
+
+  it('records approval without logging the authorization URL or public key', async () => {
+    invoke.mockResolvedValueOnce('pubkyauth://private').mockResolvedValueOnce({
+      approved: true,
+      publicKey: 'private-identity',
+      hasRemote: true,
+    })
+
+    await startPubkySync()
+    await pollPubkySync()
+
+    expect(mocks.recordDiagnostic.mock.calls).toEqual([
+      ['pubky.approval.start'],
+      ['pubky.approval.ok'],
+    ])
+  })
+
+  it.each([
+    ['pubky_sync_create', () => createPubkySync('a'.repeat(64))],
+    ['pubky_sync_join', () => joinPubkySync('a'.repeat(64))],
+  ])('announces a completed %s operation', async (command, run) => {
+    invoke.mockResolvedValue({ status: { enabled: true, provider: 'pubky' } })
+    const listener = vi.fn()
+    window.addEventListener(SYNC_COMPLETE_EVENT, listener)
+
+    await run()
+
+    expect(invoke).toHaveBeenCalledWith(command, { recoveryCode: 'a'.repeat(64) })
+    expect(listener).toHaveBeenCalledOnce()
+    expect(mocks.recordDiagnostic.mock.calls).toEqual([
+      [command === 'pubky_sync_create' ? 'pubky.create.start' : 'pubky.join.start'],
+      [command === 'pubky_sync_create' ? 'pubky.create.ok' : 'pubky.join.ok'],
+    ])
+    window.removeEventListener(SYNC_COMPLETE_EVENT, listener)
+  })
+
+  it('records a join failure as a fixed stage and error code', async () => {
+    invoke.mockRejectedValue('syncLocalConflict')
+
+    await expect(joinPubkySync('a'.repeat(64))).rejects.toBe('syncLocalConflict')
+
+    expect(mocks.recordDiagnostic.mock.calls).toEqual([
+      ['pubky.join.start'],
+      ['pubky.join.error', 'syncLocalConflict'],
+    ])
+  })
 })
