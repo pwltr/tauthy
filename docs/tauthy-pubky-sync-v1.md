@@ -38,6 +38,8 @@ account data independently. The random recovery code protects against offline gu
 authenticated encryption rejects altered content.
 The homeserver can still delete or replay older valid files. A new device cannot independently
 detect a complete rollback, so an encrypted export remains important as a recovery backup.
+Tauthy checks that deleted sync files no longer appear on the homeserver, but a dishonest server
+could retain hidden copies of the ciphertext; remote erasure cannot be guaranteed.
 Moving a Pubky identity to a different homeserver may require a new Ring grant and re-uploading
 the local vault; Tauthy does not automate homeserver migration in v1.
 
