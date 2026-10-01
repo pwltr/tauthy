@@ -228,7 +228,7 @@
     "pubkyDisconnectWarning": "Dieses Gerät wird nicht mehr mit Pubky synchronisiert. Lokale Konten und verschlüsselte Homeserver-Daten bleiben erhalten. Du kannst Tauthys Zugriff in Pubky Ring widerrufen. Fortfahren?",
     "pubkyDelete": "Pubky-Sync-Daten löschen",
     "pubkyDeleteDescription": "Alle Tauthy-Sync-Dateien dieser Identität dauerhaft entfernen",
-    "pubkyDeleteWarning": "Trenne Tauthy zuerst auf deinen anderen Geräten. Alle Tauthy-Sync-Daten dieser Pubky-Identität vom Homeserver löschen? Lokale Konten bleiben erhalten, aber die Synchronisierung endet. Dies kann nicht rückgängig gemacht werden. Danach kannst du den Zugriff in Pubky Ring widerrufen."
+    "pubkyDeleteWarning": "Pubky-Sync-Daten vom Homeserver löschen? Deine Konten bleiben auf jedem Gerät erhalten, aber die Synchronisierung endet."
   },
   "about": {
     "pageTitle": "Über",
@@ -326,7 +326,7 @@
     "syncFailed": "Synchronisierung fehlgeschlagen. Der lokale Tresor blieb erhalten.",
     "syncBackgroundFailed": "Die automatische Synchronisierung konnte nicht abgeschlossen werden. Details findest du unter Einstellungen → Synchronisierung.",
     "pubkyUnavailable": "Pubky ist nicht verfügbar oder die Autorisierung ist fehlgeschlagen. Dein lokaler Tresor wurde nicht verändert.",
-    "pubkyDeleted": "Pubky-Sync-Daten gelöscht. Lokale Konten bleiben erhalten.",
+    "pubkyDeleted": "Pubky-Sync-Daten gelöscht.",
     "syncRemoteDeleteUnsafe": "Unerwartete Dateien verhindern eine sichere Löschung. Nichts wurde gelöscht.",
     "syncRemoteDeleteIncomplete": "Die vollständige Löschung konnte nicht bestätigt werden. Einige Sync-Dateien könnten verbleiben; dieses Gerät ist noch verbunden. Versuche es erneut, bevor du den Zugriff in Pubky Ring widerrufst.",
     "pubkyRingOpenFailed": "Pubky Ring konnte nicht im Browser geöffnet werden.",
