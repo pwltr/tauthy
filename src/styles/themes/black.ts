@@ -21,7 +21,7 @@ export default {
       },
       text: {
         primary: '#ffffff',
-        secondary: '#ffffff',
+        secondary: '#acacac',
       },
     },
     status: {

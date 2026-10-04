@@ -19,9 +19,9 @@ A fast, private, local-first desktop authenticator that stays out of your way.
 ## Screenshots
 
 <div align="center">
-  <img src="./screenshots/light1.png" alt="Tauthy in light mode" width="32%" />
-  <img src="./screenshots/dark1.png" alt="Tauthy in dark mode" width="31.9%" />
-  <img src="./screenshots/black1.png" alt="Tauthy in true black mode" width="32%" />
+  <img src="./screenshots/light.png" alt="Tauthy in light mode" width="32%" />
+  <img src="./screenshots/dark.png" alt="Tauthy in dark mode" width="32%" />
+  <img src="./screenshots/black.png" alt="Tauthy in true black mode" width="32%" />
 </div>
 
 ## Features
