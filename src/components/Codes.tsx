@@ -18,9 +18,7 @@ export type ListEntry = VaultEntry & {
 }
 
 const StyledProgressBar = styled(ProgressBar)`
-  position: fixed;
-  top: 3.5rem;
-  z-index: 1;
+  flex-shrink: 0;
 `
 
 const StyledList = styled(EntryList)`

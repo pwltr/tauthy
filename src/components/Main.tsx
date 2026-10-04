@@ -24,7 +24,6 @@ const Wrapper = styled('div')`
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding-top: 3.7rem;
 `
 
 const InitializationState = styled('div')`

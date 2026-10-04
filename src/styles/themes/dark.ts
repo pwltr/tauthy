@@ -7,7 +7,7 @@ let secondary = '#31363b'
 let background = '#232629'
 
 if (platform === 'macos') {
-  secondary = '#191919'
+  secondary = '#262626'
   background = '#1e1e1e'
 }
 

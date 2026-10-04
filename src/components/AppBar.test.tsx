@@ -11,6 +11,7 @@ const nativeMenu = vi.hoisted(() => ({
   invoke: vi.fn(),
   onAction: undefined as undefined | ((event: { payload: string }) => void),
 }))
+const nativeWindow = vi.hoisted(() => ({ startDragging: vi.fn() }))
 
 vi.mock('@tauri-apps/plugin-os', () => ({ type: () => os.platform }))
 vi.mock('@tauri-apps/api/core', () => ({ invoke: nativeMenu.invoke }))
@@ -22,6 +23,7 @@ vi.mock('@tauri-apps/api/event', () => ({
     }
   }),
 }))
+vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => nativeWindow }))
 vi.mock('~/utils/storage', () => ({ vault }))
 vi.mock('~/hooks/useVaultProtection', () => ({
   useVaultProtection: () => localStorage.getItem('isPasswordSet') === 'true',
@@ -90,6 +92,8 @@ describe('AppBar actions', () => {
     nativeMenu.invoke.mockReset()
     nativeMenu.invoke.mockResolvedValue(undefined)
     nativeMenu.onAction = undefined
+    nativeWindow.startDragging.mockReset()
+    nativeWindow.startDragging.mockResolvedValue(undefined)
   })
 
   it('opens Settings directly from the three-dot button', () => {
@@ -126,7 +130,7 @@ describe('AppBar actions', () => {
         status: { danger: '#ff0000' },
         palette: {
           mode: 'dark',
-          secondary: { main: '#191919' },
+          secondary: { main: '#262626' },
           neutral: { main: '#64748b' },
         },
       }),
@@ -134,7 +138,33 @@ describe('AppBar actions', () => {
 
     expect(
       getComputedStyle(screen.getByRole('banner')).getPropertyValue('--AppBar-background'),
-    ).toBe('#191919')
+    ).toBe('#262626')
+    expect(getComputedStyle(screen.getByRole('banner')).backgroundImage).toBe('none')
+  })
+
+  it('drags the macOS overlay without treating controls as drag handles', () => {
+    os.platform = 'macos'
+    renderAppBar()
+
+    const toolbar = screen.getByRole('banner').querySelector('.MuiToolbar-root')!
+    fireEvent.mouseDown(toolbar, { button: 0, detail: 1 })
+    expect(nativeWindow.startDragging).toHaveBeenCalledOnce()
+
+    fireEvent.mouseDown(screen.getByText('Tauthy'), { button: 0, detail: 1 })
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'filter entries' }), {
+      button: 0,
+      detail: 1,
+    })
+    expect(nativeWindow.startDragging).toHaveBeenCalledOnce()
+  })
+
+  it('opens Search when the macOS home title is clicked', async () => {
+    os.platform = 'macos'
+    renderAppBar()
+
+    fireEvent.click(screen.getByText('Tauthy'))
+
+    expect(await screen.findByPlaceholderText('Search')).toHaveFocus()
   })
 
   it('shows a dedicated lock button for password-protected vaults', async () => {

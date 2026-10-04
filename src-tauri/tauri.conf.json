@@ -69,6 +69,7 @@
         "center": true,
         "contentProtected": true,
         "hiddenTitle": true,
+        "titleBarStyle": "Overlay",
         "acceptFirstMouse": true,
         "scrollBarStyle": "fluentOverlay",
         "useHttpsScheme": true

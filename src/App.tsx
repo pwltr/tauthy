@@ -33,7 +33,7 @@ const App = () => {
   const { t, i18n } = useTranslation()
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
-  const [appBarTitle, setAppBarTitle] = useState('Tauthy')
+  const [appBarTitle, setAppBarTitle] = useState('')
   const showDeveloperToolbar = useSyncExternalStore(
     subscribeDeveloperSettings,
     developerSettingsEnabled,

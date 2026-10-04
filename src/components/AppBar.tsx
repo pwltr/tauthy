@@ -1,9 +1,17 @@
-import { useState, useContext, ChangeEvent, useEffect, useRef } from 'react'
+import {
+  useState,
+  useContext,
+  ChangeEvent,
+  useEffect,
+  useRef,
+  MouseEvent as ReactMouseEvent,
+} from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { type as osType } from '@tauri-apps/plugin-os'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { styled } from '@mui/material/styles'
 import MuiAppBar from '@mui/material/AppBar'
 import MuiToolbar from '@mui/material/Toolbar'
@@ -23,6 +31,13 @@ import { AppBarBackContext, AppBarTitleContext, SearchContext } from '~/context'
 
 const Toolbar = styled(MuiToolbar)`
   padding-right: 0;
+
+  &[data-macos-titlebar='true'] {
+    position: relative;
+    min-height: 84px;
+    padding-top: 28px;
+    padding-left: 16px;
+  }
 `
 
 const PageTitle = styled(Typography)`
@@ -45,6 +60,7 @@ const AppBar = () => {
   const { appBarTitle } = useContext(AppBarTitleContext)
   const { backDisabled } = useContext(AppBarBackContext)
   const { searchTerm, setSearch } = useContext(SearchContext)
+  const isMacOS = osType() === 'macos'
 
   const [isSearching, setIsSearching] = useState(!!searchTerm)
   const searchInput = useRef<HTMLInputElement>(null)
@@ -96,6 +112,23 @@ const AppBar = () => {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const handleTitleBarMouseDown = (event: ReactMouseEvent<HTMLElement>) => {
+    if (
+      !isMacOS ||
+      event.button !== 0 ||
+      event.detail !== 1 ||
+      (event.target instanceof Element &&
+        event.target.closest(
+          'button, input, textarea, select, a, [contenteditable], [data-tauthy-search-trigger]',
+        ))
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    void getCurrentWindow().startDragging().catch(console.error)
   }
 
   useEffect(() => {
@@ -188,12 +221,16 @@ const AppBar = () => {
   return (
     <MuiAppBar
       data-tauthy-app-bar
-      position="fixed"
+      position="static"
       color="secondary"
       elevation={1}
-      enableColorOnDark={osType() === 'macos'}
+      enableColorOnDark={isMacOS}
+      sx={{ backgroundImage: 'none' }}
     >
-      <Toolbar>
+      <Toolbar
+        data-macos-titlebar={isMacOS ? 'true' : undefined}
+        onMouseDown={handleTitleBarMouseDown}
+      >
         {location.pathname !== '/' && (
           <IconButton
             size="large"
@@ -208,7 +245,14 @@ const AppBar = () => {
           </IconButton>
         )}
 
-        <Box sx={{ flexGrow: 1 }} onClick={() => setIsSearching(true)}>
+        <Box
+          data-tauthy-search-trigger
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+          }}
+          onClick={() => setIsSearching(true)}
+        >
           {isSearching && location.pathname === '/' ? (
             <Search
               autoFocus

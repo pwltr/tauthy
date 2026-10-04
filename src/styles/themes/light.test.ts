@@ -26,7 +26,7 @@ describe('platform theme colors', () => {
     vi.resetModules()
     const { default: dark } = await import('./dark')
 
-    expect(dark.mui.palette.secondary.main).toBe('#191919')
+    expect(dark.mui.palette.secondary.main).toBe('#262626')
     expect(dark.mui.palette.background.default).toBe('#1e1e1e')
   })
 
