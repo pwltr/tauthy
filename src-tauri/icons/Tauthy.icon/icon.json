@@ -1,0 +1,29 @@
+{
+  "fill": {
+    "solid": "srgb:0.93725,0.93725,0.93725,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "bull.svg",
+          "name": "Tauthy",
+          "glass": false,
+          "position": { "scale": 1.25, "translation-in-points": [0, 0] }
+        }
+      ],
+      "shadow": {
+        "kind": "none",
+        "opacity": 0
+      },
+      "specular": false,
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": ["macOS"]
+  }
+}
