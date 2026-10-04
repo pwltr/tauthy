@@ -48,6 +48,8 @@ use vault_commands as application_commands;
 
 #[cfg(target_os = "macos")]
 mod menu;
+#[cfg(target_os = "macos")]
+mod quick_picker;
 
 fn protect_window_content() -> bool {
   !cfg!(debug_assertions)
@@ -107,6 +109,9 @@ fn main() {
   #[cfg(target_os = "macos")]
   let builder = builder.manage(StartupVisibility::default());
 
+  #[cfg(target_os = "macos")]
+  let builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
+
   let builder = builder
     .manage(sync::PubkySyncState::default())
     .manage(tray::TrayLabelState::default())
@@ -127,6 +132,18 @@ fn main() {
   let builder = builder.invoke_handler(tauri::generate_handler![
     #[cfg(target_os = "macos")]
     startup_ready,
+    #[cfg(target_os = "macos")]
+    quick_picker::quick_picker_configure,
+    #[cfg(target_os = "macos")]
+    quick_picker::quick_picker_ready,
+    #[cfg(target_os = "macos")]
+    quick_picker::quick_picker_snapshot,
+    #[cfg(target_os = "macos")]
+    quick_picker::quick_picker_copy,
+    #[cfg(target_os = "macos")]
+    quick_picker::quick_picker_dismiss,
+    #[cfg(target_os = "macos")]
+    quick_picker::quick_picker_open_main,
     #[cfg(feature = "migration-test")]
     migration_test::import_diagnostic,
     aegis::decrypt_aegis_vault,
@@ -254,15 +271,24 @@ fn main() {
       }
       // Needed on macOS to enable basic operations, like copy & paste and select-all via keyboard shortcuts.
       #[cfg(target_os = "macos")]
-      menu::setup(app)?;
+      {
+        quick_picker::setup(app)?;
+        menu::setup(app)?;
+      }
 
       Ok(())
     })
     .on_window_event(|window, event| {
-      if window.label() == "main" && tray::is_enabled(window.app_handle()) {
+      if window.label() == "main" {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-          api.prevent_close();
-          let _ = window.hide();
+          if tray::is_enabled(window.app_handle()) {
+            api.prevent_close();
+            let _ = window.hide();
+          } else {
+            // The hidden picker must not keep a windowless app running after
+            // the main window closes when background/tray mode is disabled.
+            window.app_handle().exit(0);
+          }
         }
       }
     });

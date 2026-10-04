@@ -11,6 +11,7 @@ import {
   AppSettingsContext,
   ListOptionsContext,
   SortContext,
+  QuickPickerContext,
 } from '~/context'
 import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
@@ -35,6 +36,7 @@ const Appearance = () => {
   const { minimizeOnCopy, showTrayIcon, setAppSettings } = useContext(AppSettingsContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
   const { sortOption } = useContext(SortContext)
+  const quickPicker = useContext(QuickPickerContext)
   const [openThemeModal, setOpenThemeModal] = useState(false)
   const [openLanguageModal, setOpenLanguageModal] = useState(false)
   const [openSortModal, setOpenSortModal] = useState(false)
@@ -112,6 +114,24 @@ const Appearance = () => {
 
           <ListSection>
             <ListSubheader>{t('appearance.usage')}</ListSubheader>
+            {quickPicker.supported && (
+              <ListItem
+                disablePadding
+                secondaryAction={<Switch checked={quickPicker.enabled} />}
+                onClick={() => quickPicker.setEnabled(!quickPicker.enabled)}
+              >
+                <ListItemButton>
+                  <ListItemText
+                    primary={t('quickPicker.setting')}
+                    secondary={t(
+                      quickPicker.error
+                        ? 'quickPicker.shortcutUnavailable'
+                        : 'quickPicker.settingDescription',
+                    )}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
             <ListItem
               disablePadding
               secondaryAction={<Switch checked={minimizeOnCopy} />}

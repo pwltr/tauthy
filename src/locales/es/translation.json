@@ -1,4 +1,21 @@
 {
+  "quickPicker": {
+    "title": "Copia rápida",
+    "search": "Buscar cuentas…",
+    "accounts": "Cuentas",
+    "locked": "Tu bóveda está bloqueada.",
+    "unlock": "Desbloquear en Tauthy",
+    "loading": "Cargando cuentas…",
+    "noResults": "No hay cuentas coincidentes",
+    "empty": "Añade tu primera cuenta en Tauthy.",
+    "unavailable": "No se pudieron cargar las cuentas.",
+    "copyFailed": "No se pudo copiar el código. Inténtalo de nuevo.",
+    "openMain": "Abrir Tauthy",
+    "hint": "↑ ↓ Seleccionar   ↵ Copiar   esc Cerrar",
+    "setting": "Atajo de copia rápida",
+    "settingDescription": "⌘⇧C abre el selector desde cualquier aplicación.",
+    "shortcutUnavailable": "⌘⇧C no está disponible. Desactiva y activa esta opción, o usa View → Quick Copy."
+  },
   "diagnostics": {
     "export": "Exportar registros",
     "description": "Guarda los últimos eventos de la app.",

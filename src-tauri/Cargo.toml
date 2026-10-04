@@ -37,6 +37,8 @@ tempfile = "3.27.0"
 pubky = "=0.14.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
+tauri-plugin-global-shortcut = "2.4.0"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["std", "libc", "NSWorkspace", "NSRunningApplication"] }
 keyring-core = { version = "1.0.0", default-features = false }
 apple-native-keyring-store = { version = "1.0.2", default-features = false, features = ["keychain"] }
 security-framework = { version = "3.7.0", default-features = false }

@@ -1,0 +1,60 @@
+# Adding a second window makes explicit command boundaries necessary.
+# Keep the main list in sync with main.rs: the picker cannot read/export/mutate
+# vault records or unlock the vault through the main app commands.
+[[permission]]
+identifier = "main-commands"
+description = "Application commands available only to the main window."
+commands.allow = [
+  "startup_ready",
+  "quick_picker_configure",
+  "import_diagnostic",
+  "decrypt_aegis_vault",
+  "decrypt_ente_export",
+  "decrypt_proton_export",
+  "generate_totp",
+  "generate_totps",
+  "diagnostics_record",
+  "diagnostics_export",
+  "menu_set_enabled",
+  "vault_initialize",
+  "vault_create",
+  "vault_migrate",
+  "vault_delete",
+  "vault_import_foreign",
+  "vault_load",
+  "vault_change_password",
+  "vault_get",
+  "vault_save",
+  "vault_unload",
+  "vault_backend",
+  "vault_status",
+  "pubky_sync_start",
+  "pubky_sync_poll",
+  "pubky_sync_cancel",
+  "pubky_sync_create",
+  "pubky_sync_join",
+  "pubky_sync_recovery_code",
+  "sync_create",
+  "sync_disconnect",
+  "pubky_sync_delete_remote",
+  "sync_join",
+  "sync_merge_conflicted_copy",
+  "sync_now",
+  "sync_status",
+  "decrypt_tauthy_backup",
+  "encrypt_tauthy_backup",
+  "decrypt_twofas_backup",
+  "tray_configure",
+]
+
+[[permission]]
+identifier = "picker-commands"
+description = "Read account labels/codes, copy a current code, dismiss, or open the main window."
+commands.allow = [
+  "quick_picker_ready",
+  "quick_picker_snapshot",
+  "quick_picker_copy",
+  "quick_picker_dismiss",
+  "quick_picker_open_main",
+]
+

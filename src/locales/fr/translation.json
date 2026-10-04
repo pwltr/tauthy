@@ -1,4 +1,21 @@
 {
+  "quickPicker": {
+    "title": "Copie rapide",
+    "search": "Rechercher des comptes…",
+    "accounts": "Comptes",
+    "locked": "Votre coffre est verrouillé.",
+    "unlock": "Déverrouiller dans Tauthy",
+    "loading": "Chargement des comptes…",
+    "noResults": "Aucun compte correspondant",
+    "empty": "Ajoutez votre premier compte dans Tauthy.",
+    "unavailable": "Impossible de charger les comptes.",
+    "copyFailed": "Impossible de copier le code. Réessayez.",
+    "openMain": "Ouvrir Tauthy",
+    "hint": "↑ ↓ Sélectionner   ↵ Copier   esc Fermer",
+    "setting": "Raccourci de copie rapide",
+    "settingDescription": "⌘⇧C ouvre le sélecteur depuis toute application.",
+    "shortcutUnavailable": "⌘⇧C est indisponible. Désactivez puis réactivez cette option, ou utilisez View → Quick Copy."
+  },
   "diagnostics": {
     "export": "Exporter les journaux",
     "description": "Enregistre les événements récents.",

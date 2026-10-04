@@ -1,4 +1,21 @@
 {
+  "quickPicker": {
+    "title": "Schnell kopieren",
+    "search": "Konten suchen…",
+    "accounts": "Konten",
+    "locked": "Dein Tresor ist gesperrt.",
+    "unlock": "In Tauthy entsperren",
+    "loading": "Konten werden geladen…",
+    "noResults": "Keine passenden Konten",
+    "empty": "Füge dein erstes Konto in Tauthy hinzu.",
+    "unavailable": "Konten konnten nicht geladen werden.",
+    "copyFailed": "Code konnte nicht kopiert werden. Versuche es erneut.",
+    "openMain": "Tauthy öffnen",
+    "hint": "↑ ↓ Auswählen   ↵ Kopieren   esc Schließen",
+    "setting": "Kurzbefehl zum schnellen Kopieren",
+    "settingDescription": "⌘⇧C öffnet die Kontoauswahl aus jeder App.",
+    "shortcutUnavailable": "⌘⇧C ist nicht verfügbar. Zum erneuten Versuch aus- und einschalten oder Ansicht → Quick Copy verwenden."
+  },
   "diagnostics": {
     "export": "Protokolle exportieren",
     "description": "Letzte App-Ereignisse speichern.",

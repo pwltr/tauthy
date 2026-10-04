@@ -33,6 +33,10 @@ A fast, private, local-first desktop authenticator that stays out of your way.
 - **Secure local vault:** Add password protection and automatically lock Tauthy when it is idle.
 - **Ready when you need it:** Search, arrange, and recognize accounts at a glance, then copy a code
   with one click.
+- **Quick Copy on macOS:** Press `⌘⇧C` from any app, search for an account, and press Enter to copy
+  its current code and return to your previous app. Use arrow keys to select and Escape to dismiss.
+  The shortcut can be disabled in Settings → Appearance; View → Quick Copy remains available.
+  Tauthy must be running, and a locked vault must be unlocked in the main window first.
 - **Easy migration:** Bring existing accounts with you, display transfer QR codes, and create
   portable backups.
 - **At home on your desktop:** Runs on macOS, Windows, and Linux with automatic updates,

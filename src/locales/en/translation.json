@@ -1,4 +1,21 @@
 {
+  "quickPicker": {
+    "title": "Quick Copy",
+    "search": "Search accounts…",
+    "accounts": "Accounts",
+    "locked": "Your vault is locked.",
+    "unlock": "Unlock in Tauthy",
+    "loading": "Loading accounts…",
+    "noResults": "No matching accounts",
+    "empty": "Add your first account in Tauthy.",
+    "unavailable": "Could not load accounts.",
+    "copyFailed": "Could not copy the code. Try again.",
+    "openMain": "Open Tauthy",
+    "hint": "↑ ↓ Select   ↵ Copy   esc Close",
+    "setting": "Quick Copy shortcut",
+    "settingDescription": "⌘⇧C opens the account picker from any app.",
+    "shortcutUnavailable": "⌘⇧C is unavailable. Turn this off and on to retry, or use View → Quick Copy."
+  },
   "diagnostics": {
     "export": "Export logs",
     "description": "Save recent app events.",

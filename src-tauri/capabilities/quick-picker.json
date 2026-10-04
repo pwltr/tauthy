@@ -1,0 +1,8 @@
+{
+  "identifier": "quick-picker",
+  "description": "Events for the macOS quick-copy window. Vault access and copying are handled by dedicated Rust commands.",
+  "local": true,
+  "platforms": ["macOS"],
+  "windows": ["quick-picker"],
+  "permissions": ["picker-commands", "core:event:default", "os:allow-os-type"]
+}

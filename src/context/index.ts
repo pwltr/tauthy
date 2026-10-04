@@ -4,6 +4,13 @@ import type { EntryUsageMap, SortOption } from '~/utils/sorting'
 
 export type { SortOption } from '~/utils/sorting'
 
+export const QuickPickerContext = createContext<{
+  supported: boolean
+  enabled: boolean
+  setEnabled: (enabled: boolean) => void
+  error: string
+}>({ supported: false, enabled: true, setEnabled: () => {}, error: '' })
+
 export const AppBarTitleContext = createContext<{
   appBarTitle: string
   setAppBarTitle: (title: string) => void
