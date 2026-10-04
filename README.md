@@ -54,6 +54,40 @@ deleted when no longer needed. The formats are documented in
 
 [Download](https://github.com/pwltr/tauthy/releases/latest) or [Build it from source](./Build.md).
 
+### Linux
+
+Tauthy provides x86-64 packages for the main Linux distribution families. Download the appropriate
+file from the [latest release](https://github.com/pwltr/tauthy/releases/latest), then install it from
+your download directory.
+
+Debian, Ubuntu, Linux Mint, Pop!_OS, and derivatives:
+
+```sh
+sudo apt install ./Tauthy_*_amd64.deb
+```
+
+Fedora and derivatives:
+
+```sh
+sudo dnf install ./Tauthy-*.x86_64.rpm
+```
+
+openSUSE:
+
+```sh
+sudo zypper install ./Tauthy-*.x86_64.rpm
+```
+
+For other x86-64 distributions, use the AppImage:
+
+```sh
+chmod +x Tauthy_*_amd64.AppImage
+./Tauthy_*_amd64.AppImage
+```
+
+If the AppImage reports a FUSE error, install your distribution's FUSE 2 compatibility package
+(usually `libfuse2` or `fuse2`) and try again.
+
 ### Upgrading from 0.2.8 or earlier
 
 Export a backup before upgrading. Tauthy 0.3 migrates the encrypted vault to the current Stronghold
