@@ -10,6 +10,7 @@
       "width": 380,
       "height": 700,
       "resizable": false,
+      "maximizable": false,
       "fullscreen": false,
       "center": true,
       "contentProtected": false,

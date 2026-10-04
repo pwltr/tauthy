@@ -5,16 +5,17 @@ import { grey } from '@mui/material/colors'
 const platform = await type()
 
 let primary = '#31363b'
+let secondary = '#31363b'
 
 if (platform === 'macos') {
   primary = '#363636'
+  secondary = '#ffffff'
 }
 
 if (platform === 'windows') {
   primary = '#191919'
+  secondary = '#e8e8e9'
 }
-
-const secondary = platform === 'macos' ? '#ffffff' : platform === 'windows' ? '#e4e4e5' : primary
 
 export default {
   mui: {

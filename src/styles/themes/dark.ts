@@ -12,7 +12,7 @@ if (platform === 'macos') {
 }
 
 if (platform === 'windows') {
-  secondary = '#191919'
+  secondary = '#2b2b2b'
   background = '#202020'
 }
 
