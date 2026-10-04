@@ -11,16 +11,23 @@ export const checkUpdate = async () => {
     console.log('shouldUpdate', shouldUpdate)
 
     if (update) {
-      const accepted = await ask(`Tauthy ${update.version} is available. Install it now?`, {
-        title: 'Tauthy update',
-        kind: 'info',
-        okLabel: 'Update',
-        cancelLabel: 'Later',
-      })
+      // Update holds a Rust-side resource even when the user postpones it.
+      // Tauri 2.12 makes resources disposable; close explicitly for compatibility
+      // with webviews that do not yet support `await using`.
+      try {
+        const accepted = await ask(`Tauthy ${update.version} is available. Install it now?`, {
+          title: 'Tauthy update',
+          kind: 'info',
+          okLabel: 'Update',
+          cancelLabel: 'Later',
+        })
 
-      if (accepted) {
-        await update.downloadAndInstall()
-        await relaunch()
+        if (accepted) {
+          await update.downloadAndInstall()
+          await relaunch()
+        }
+      } finally {
+        await update.close()
       }
     }
 
