@@ -12,6 +12,10 @@ if (process.platform === 'darwin' && args[0] === 'dev') {
   env[`CARGO_TARGET_${target}_RUNNER`] = '../scripts/macos-dev-runner.mjs'
 }
 
+if (process.platform === 'darwin' && args[0] === 'build') {
+  env.PATH = `${path.join(projectRoot, 'scripts', 'build-tools')}${path.delimiter}${env.PATH ?? ''}`
+}
+
 const child = spawn(process.execPath, [tauriCli, ...args], {
   cwd: projectRoot,
   env,

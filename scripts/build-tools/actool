@@ -1,0 +1,5 @@
+#!/bin/sh
+# Tauri's Node CLI can launch actool with stdin closed. Apple's ibtoold then
+# crashes while compiling Icon Composer .icon files. Give it an explicit stdin
+# until tauri-apps/tauri#15991 is released and adopted.
+exec /usr/bin/xcrun actool "$@" </dev/null
