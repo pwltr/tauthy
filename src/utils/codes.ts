@@ -8,6 +8,7 @@ import { createTauthyBackup, mergeTauthyImport, parseTauthyBackup } from '~/util
 import { generateUUID } from '~/utils'
 import { traceImport } from '~/utils/importDiagnostics'
 import { recordBackupExport } from '~/utils/backupStatus'
+import type { GoogleAccount } from '~/utils/googleAuthenticator'
 import type {
   FormData,
   VaultEntry,
@@ -547,6 +548,7 @@ export const deleteCode = async (id: string) => {
 }
 
 const parseImportFile = async (file: File, format: ImportFormat, password?: string) => {
+  if (format === 'google') throw Error('importFailed')
   if (format === 'otpauth') return parseOtpAuthImport(file)
   if (
     (format === 'bitwarden' || format === 'proton' || format === 'andotp') &&
@@ -598,12 +600,11 @@ const parseImportFile = async (file: File, format: ImportFormat, password?: stri
     : entries
 }
 
-export const prepareImport = async (
-  file: File,
+const previewImportedEntries = async (
+  entries: VaultEntry[],
   format: ImportFormat,
-  password?: string,
+  sourceName: string,
 ): Promise<ImportPreview> => {
-  const entries = await parseImportFile(file, format, password)
   traceImport('vaultReadStarted')
   const currentVault = await vault.getVault()
   traceImport('vaultReadFinished')
@@ -612,12 +613,31 @@ export const prepareImport = async (
   traceImport('previewReady')
   return {
     format,
-    sourceName: file.name,
+    sourceName,
     entries,
     newCount: entries.length - duplicateIndices.length,
     duplicateCount: duplicateIndices.length,
     duplicateIndices,
   }
+}
+
+export const prepareImport = async (
+  file: File,
+  format: ImportFormat,
+  password?: string,
+): Promise<ImportPreview> =>
+  previewImportedEntries(await parseImportFile(file, format, password), format, file.name)
+
+export const prepareGoogleImport = async (accounts: GoogleAccount[]): Promise<ImportPreview> => {
+  if (!accounts.length || accounts.length > MAX_OTP_AUTH_ENTRIES) {
+    throw Error('importGoogleTooMany')
+  }
+  const entries = accounts.map((account) => ({ ...account, uuid: generateUUID() }))
+  return previewImportedEntries(
+    await validateOtpAuthEntries(entries),
+    'google',
+    'Google Authenticator',
+  )
 }
 
 export const commitPreparedImport = async (preview: ImportPreview) => {

@@ -15,6 +15,7 @@ const Appearance = lazy(() => import('~/components/Appearance'))
 const Security = lazy(() => import('~/components/Security'))
 const Import = lazy(() => import('~/components/Import'))
 const ImportReview = lazy(() => import('~/components/ImportReview'))
+const GoogleImport = lazy(() => import('~/components/GoogleImport'))
 const Sync = lazy(() => import('~/components/Sync'))
 const FolderSync = lazy(() => import('~/components/FolderSync'))
 const PubkyConnect = lazy(() => import('~/components/PubkyConnect'))
@@ -51,6 +52,7 @@ const AppRouter = () => (
           <Route path="security" element={deferred(<Security />)} />
           <Route path="import" element={deferred(<Import />)}>
             <Route path="review" element={deferred(<ImportReview />)} />
+            <Route path="google" element={deferred(<GoogleImport />)} />
           </Route>
           <Route path="sync" element={deferred(<Sync />)} />
           <Route path="sync/folder" element={deferred(<FolderSync />)} />

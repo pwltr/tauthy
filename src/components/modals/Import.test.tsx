@@ -6,16 +6,26 @@ import { AppBarBackContext } from '~/context'
 
 const mocks = vi.hoisted(() => ({
   prepareImport: vi.fn(),
+  prepareGoogleImport: vi.fn(),
+  scanGoogleQrImage: vi.fn(),
   commitPreparedImport: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
   setBackDisabled: vi.fn(),
   recordDiagnostic: vi.fn(),
+  platform: vi.fn(),
 }))
+
+vi.mock('@tauri-apps/plugin-os', () => ({ type: mocks.platform }))
 
 vi.mock('~/utils', () => ({
   prepareImport: mocks.prepareImport,
+  prepareGoogleImport: mocks.prepareGoogleImport,
   commitPreparedImport: mocks.commitPreparedImport,
+}))
+vi.mock('~/utils/googleAuthenticator', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~/utils/googleAuthenticator')>()),
+  scanGoogleQrImage: mocks.scanGoogleQrImage,
 }))
 vi.mock('react-hot-toast', () => ({
   default: { success: mocks.toastSuccess, error: mocks.toastError },
@@ -23,8 +33,14 @@ vi.mock('react-hot-toast', () => ({
 vi.mock('~/utils/diagnostics', () => ({ recordDiagnostic: mocks.recordDiagnostic }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { total?: number }) =>
-      options?.total === undefined ? key : `${key}: ${options.total}`,
+    t: (key: string, options?: { total?: number; shortcut?: string }) =>
+      options?.total !== undefined
+        ? `${key}: ${options.total}`
+        : options?.shortcut
+          ? `${key}: ${options.shortcut}`
+          : key === 'import.googlePasteControl'
+            ? 'Ctrl+V'
+            : key,
   }),
 }))
 vi.mock('~/components/Modal', () => ({
@@ -49,6 +65,7 @@ vi.mock('~/components/modals/ExportPassword', () => ({ default: () => null }))
 
 import Import from '~/components/Import'
 import ImportReview from '~/components/ImportReview'
+import GoogleImport from '~/components/GoogleImport'
 
 const entries = [
   { uuid: 'one', issuer: 'Example', name: 'alice', secret: 'JBSWY3DPEHPK3PXP' },
@@ -64,6 +81,7 @@ const renderImport = (initialPath = '/import') =>
         <Routes>
           <Route path="/import" element={<Import />}>
             <Route path="review" element={<ImportReview />} />
+            <Route path="google" element={<GoogleImport />} />
           </Route>
           <Route path="/" element={<div>Home</div>} />
         </Routes>
@@ -82,6 +100,7 @@ const chooseFile = (label: string) => {
 describe('import review', () => {
   beforeEach(() => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
+    mocks.platform.mockReturnValue('macos')
     mocks.prepareImport.mockImplementation(async (_file, format) => ({
       format,
       sourceName: 'accounts.txt',
@@ -91,6 +110,14 @@ describe('import review', () => {
       duplicateIndices: [0],
     }))
     mocks.commitPreparedImport.mockResolvedValue(1)
+    mocks.prepareGoogleImport.mockImplementation(async () => ({
+      format: 'google',
+      sourceName: 'Google Authenticator',
+      entries,
+      newCount: 2,
+      duplicateCount: 0,
+      duplicateIndices: [],
+    }))
   })
 
   it('shows locally bundled, decorative provider logos beside accessible labels', () => {
@@ -104,6 +131,7 @@ describe('import review', () => {
       'Authy',
       'Bitwarden',
       'Ente Auth',
+      'Google Authenticator',
       'Proton Authenticator',
       'Tauthy',
     ]) {
@@ -115,6 +143,107 @@ describe('import review', () => {
       expect(logo?.parentElement).toHaveAttribute('aria-hidden', 'true')
     }
     expect(screen.getByRole('button', { name: 'import.otpAuth' })).toBeInTheDocument()
+  })
+
+  it.each([
+    ['macos', '⌘V'],
+    ['windows', 'Ctrl+V'],
+    ['linux', 'Ctrl+V'],
+  ])('shows only the %s paste shortcut', (platform, shortcut) => {
+    mocks.platform.mockReturnValue(platform)
+    renderImport('/import/google')
+    expect(screen.getByText(`import.googlePaste: ${shortcut}`)).toBeInTheDocument()
+  })
+
+  it('collects all Google QR images before opening review', async () => {
+    renderImport()
+    fireEvent.click(screen.getByText('import.import'))
+    fireEvent.click(screen.getByRole('button', { name: 'Google Authenticator' }))
+    expect(screen.getByText('import.googleChooseImages')).toBeInTheDocument()
+    const input = document.querySelector('input[type="file"][multiple]') as HTMLInputElement
+    const first = new File(['first'], 'first.png', { type: 'image/png' })
+    const second = new File(['second'], 'second.png', { type: 'image/png' })
+    mocks.scanGoogleQrImage
+      .mockResolvedValueOnce({
+        batchId: 123,
+        batchSize: 2,
+        batchIndex: 0,
+        data: 'first',
+        accounts: [{ name: 'alice', secret: 'JBSWY3DP' }],
+      })
+      .mockResolvedValueOnce({
+        batchId: 123,
+        batchSize: 2,
+        batchIndex: 1,
+        data: 'second',
+        accounts: [{ name: 'bob', secret: 'MZXW6YTB' }],
+      })
+
+    fireEvent.change(input, { target: { files: [first] } })
+    expect(await screen.findByText('import.googleProgress: 2')).toBeInTheDocument()
+    expect(mocks.prepareGoogleImport).not.toHaveBeenCalled()
+    fireEvent.change(input, { target: { files: [second] } })
+    expect(await screen.findByText('alice')).toBeInTheDocument()
+    expect(mocks.prepareGoogleImport).toHaveBeenCalledWith([
+      { name: 'alice', secret: 'JBSWY3DP' },
+      { name: 'bob', secret: 'MZXW6YTB' },
+    ])
+    expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+  })
+
+  it('accepts a pasted Google QR image', async () => {
+    renderImport()
+    fireEvent.click(screen.getByText('import.import'))
+    fireEvent.click(screen.getByRole('button', { name: 'Google Authenticator' }))
+    const image = new File(['qr'], 'clipboard.png', { type: 'image/png' })
+    mocks.scanGoogleQrImage.mockResolvedValue({
+      batchId: 123,
+      batchSize: 1,
+      batchIndex: 0,
+      data: 'single',
+      accounts: [{ name: 'alice', secret: 'JBSWY3DP' }],
+    })
+
+    fireEvent.paste(window, {
+      clipboardData: { items: [{ type: 'image/png', getAsFile: () => image }] },
+    })
+    await waitFor(() => expect(mocks.scanGoogleQrImage).toHaveBeenCalledWith(image))
+    expect(await screen.findByText('alice')).toBeInTheDocument()
+    expect(mocks.commitPreparedImport).not.toHaveBeenCalled()
+  })
+
+  it('keeps an incomplete transfer intact after a different export is selected', async () => {
+    renderImport()
+    fireEvent.click(screen.getByText('import.import'))
+    fireEvent.click(screen.getByRole('button', { name: 'Google Authenticator' }))
+    const input = document.querySelector('input[type="file"][multiple]') as HTMLInputElement
+    const image = new File(['qr'], 'part.png', { type: 'image/png' })
+    mocks.scanGoogleQrImage
+      .mockResolvedValueOnce({
+        batchId: 123,
+        batchSize: 2,
+        batchIndex: 0,
+        data: 'first',
+        accounts: [{ name: 'alice', secret: 'JBSWY3DP' }],
+      })
+      .mockResolvedValueOnce({
+        batchId: 456,
+        batchSize: 2,
+        batchIndex: 1,
+        data: 'foreign',
+        accounts: [{ name: 'bob', secret: 'MZXW6YTB' }],
+      })
+
+    fireEvent.change(input, { target: { files: [image] } })
+    expect(await screen.findByText('import.googleProgress: 2')).toBeInTheDocument()
+    fireEvent.change(input, { target: { files: [image] } })
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith('toasts.importGoogleDifferentTransfer'),
+    )
+    expect(screen.getByText('import.googleProgress: 2')).toBeInTheDocument()
+    expect(mocks.prepareGoogleImport).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'import.googleStartOver' }))
+    expect(screen.queryByText('import.googleProgress: 2')).not.toBeInTheDocument()
   })
 
   it.each([

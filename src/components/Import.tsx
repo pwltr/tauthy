@@ -127,8 +127,8 @@ const Import = () => {
 
   return (
     <>
-      {location.pathname === '/import/review' ? (
-        <Outlet context={{ preview }} />
+      {location.pathname === '/import/review' || location.pathname === '/import/google' ? (
+        <Outlet context={{ preview, onReview: reviewImport }} />
       ) : (
         <SettingsPage>
           <List>
@@ -169,6 +169,10 @@ const Import = () => {
         open={isImportModalOpen && location.pathname === '/import'}
         onClose={handleCloseImportModal}
         onReview={reviewImport}
+        onGoogle={() => {
+          setIsImportModalOpen(false)
+          navigate('/import/google')
+        }}
       />
       <ExportPasswordModal
         open={isExportPasswordModalOpen}
