@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn, spawnSync } from 'node:child_process'
+import { localSigningIdentity } from './macos-local-signing.mjs'
 
 const [executable, ...args] = process.argv.slice(2)
 
@@ -9,22 +10,25 @@ if (!executable) {
   process.exit(1)
 }
 
-// Linker-signed debug binaries use their changing CDHash as their identity.
-// Give Tauthy dev builds an explicit, stable requirement so a Keychain
-// "Always Allow" decision survives Rust rebuilds. This identity is deliberately
-// development-only and does not affect packaged or production applications.
+// A certificate-backed signature gives rebuilt debug binaries a stable
+// Keychain identity. Ad-hoc signing remains available to contributors without
+// a local certificate, but it cannot reliably preserve Keychain authorization.
 const identifier = 'com.pwltr.tauthy.dev'
-const requirement = `=designated => identifier "${identifier}"`
+const identity = localSigningIdentity()
+if (identity) {
+  console.log(`Signing Tauthy Debug with ${identity.name}.`)
+} else {
+  console.warn('No local Tauthy signing identity found; Keychain may ask again after rebuilds.')
+}
 const signed = spawnSync(
   'codesign',
   [
     '--force',
     '--sign',
-    '-',
+    identity?.hash ?? '-',
     '--identifier',
     identifier,
-    '--requirements',
-    requirement,
+    ...(identity ? [] : ['--requirements', `=designated => identifier "${identifier}"`]),
     executable,
   ],
   { stdio: 'inherit' },

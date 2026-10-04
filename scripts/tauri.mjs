@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { localSigningIdentity } from './macos-local-signing.mjs'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const tauriCli = path.join(projectRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js')
@@ -14,6 +15,15 @@ if (process.platform === 'darwin' && args[0] === 'dev') {
 
 if (process.platform === 'darwin' && args[0] === 'build') {
   env.PATH = `${path.join(projectRoot, 'scripts', 'build-tools')}${path.delimiter}${env.PATH ?? ''}`
+
+  // Preview has its own bundle ID and vault. Sign only local Preview builds
+  // with the developer's persistent identity, never production/release builds.
+  const isPreview = args.some((arg) => arg.includes('tauri.preview.conf.json'))
+  const identity = isPreview && !env.APPLE_SIGNING_IDENTITY ? localSigningIdentity() : null
+  if (identity) {
+    env.APPLE_SIGNING_IDENTITY = identity.hash
+    console.log(`Signing Tauthy Preview with ${identity.name}.`)
+  }
 }
 
 const child = spawn(process.execPath, [tauriCli, ...args], {
