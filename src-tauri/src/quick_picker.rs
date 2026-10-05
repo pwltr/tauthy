@@ -143,7 +143,7 @@ fn copy_code(
       .iter()
       .find(|entry| entry.uuid == uuid)
       .ok_or("Account not found")?;
-    write(crate::commands::generate_totp(entry.secret.clone())?)
+    write(crate::commands::generate_totp_for(&entry.secret)?)
   })
 }
 
@@ -420,6 +420,34 @@ mod tests {
     .unwrap();
     assert!(resolved.has_app_acl);
     let authority = tauri::runtime_authority!(manifests, resolved);
+    for command in [
+      "plugin:event|emit",
+      "plugin:event|emit_to",
+      "plugin:os|os_type",
+    ] {
+      assert!(
+        authority
+          .resolve_access(command, LABEL, LABEL, &tauri::ipc::Origin::Local)
+          .is_none(),
+        "picker must not invoke {command}"
+      );
+      assert!(
+        authority
+          .resolve_access(command, "main", "main", &tauri::ipc::Origin::Local)
+          .is_some(),
+        "main must retain {command}"
+      );
+    }
+    // Event listeners and their cleanup must remain usable. GlobalStyle's OS
+    // getter reads plugin startup data without invoking an OS command.
+    for command in ["plugin:event|listen", "plugin:event|unlisten"] {
+      assert!(
+        authority
+          .resolve_access(command, LABEL, LABEL, &tauri::ipc::Origin::Local)
+          .is_some(),
+        "picker must retain {command}"
+      );
+    }
     for command in [
       "vault_get",
       "vault_load",
