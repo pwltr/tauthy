@@ -37,7 +37,8 @@ jobs:
         run: yarn install --immutable
 
       - name: Build Preview app
-        run: node node_modules/@tauri-apps/cli/tauri.js build --config src-tauri/tauri.preview.conf.json --no-bundle -- --locked
+        # The feature must match the Preview identifier; the app refuses to start otherwise.
+        run: node node_modules/@tauri-apps/cli/tauri.js build --features isolated-preview --config src-tauri/tauri.preview.conf.json --no-bundle -- --locked
 
       - name: Upload Windows Preview
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
