@@ -11,6 +11,7 @@ import {
   AppSettingsContext,
   ListOptionsContext,
   SortContext,
+  QuickPickerContext,
 } from '~/context'
 import ThemeModal from '~/components/modals/Theme'
 import LanguageModal from '~/components/modals/Language'
@@ -35,6 +36,7 @@ const Appearance = () => {
   const { minimizeOnCopy, showTrayIcon, setAppSettings } = useContext(AppSettingsContext)
   const { dense, groupByTwos, setListOptions } = useContext(ListOptionsContext)
   const { sortOption } = useContext(SortContext)
+  const quickPicker = useContext(QuickPickerContext)
   const [openThemeModal, setOpenThemeModal] = useState(false)
   const [openLanguageModal, setOpenLanguageModal] = useState(false)
   const [openSortModal, setOpenSortModal] = useState(false)
@@ -85,16 +87,6 @@ const Appearance = () => {
 
             <ListItem
               disablePadding
-              secondaryAction={<Switch checked={dense} />}
-              onClick={() => setListOptions({ dense: !dense, groupByTwos })}
-            >
-              <ListItemButton>
-                <ListItemText primary={t('appearance.compact')} />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem
-              disablePadding
               secondaryAction={<Switch checked={groupByTwos} />}
               onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
             >
@@ -112,15 +104,24 @@ const Appearance = () => {
 
           <ListSection>
             <ListSubheader>{t('appearance.usage')}</ListSubheader>
-            <ListItem
-              disablePadding
-              secondaryAction={<Switch checked={minimizeOnCopy} />}
-              onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
-            >
-              <ListItemButton>
-                <ListItemText primary={t('appearance.minimize')} />
-              </ListItemButton>
-            </ListItem>
+            {quickPicker.supported && (
+              <ListItem
+                disablePadding
+                secondaryAction={<Switch checked={quickPicker.enabled} />}
+                onClick={() => quickPicker.setEnabled(!quickPicker.enabled)}
+              >
+                <ListItemButton>
+                  <ListItemText
+                    primary={t('quickPicker.setting')}
+                    secondary={t(
+                      quickPicker.error
+                        ? 'quickPicker.shortcutUnavailable'
+                        : 'quickPicker.settingDescription',
+                    )}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
 
             <ListItem
               disablePadding
@@ -131,6 +132,19 @@ const Appearance = () => {
                 <ListItemText
                   primary={t('appearance.tray')}
                   secondary={t('appearance.trayDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={minimizeOnCopy} />}
+              onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
+            >
+              <ListItemButton>
+                <ListItemText
+                  primary={t('appearance.minimize')}
+                  secondary={t('appearance.minimizeDescription')}
                 />
               </ListItemButton>
             </ListItem>

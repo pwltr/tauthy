@@ -78,7 +78,12 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     .paste()
     .select_all()
     .build()?;
-  let view_menu = SubmenuBuilder::new(app, "View").item(&search).build()?;
+  let picker = MenuItem::with_id(app, "quick-copy", "Quick Copy…", true, None::<&str>)?;
+  let view_menu = SubmenuBuilder::new(app, "View")
+    .item(&search)
+    .separator()
+    .item(&picker)
+    .build()?;
   let menu = MenuBuilder::new(app)
     .items(&[&app_menu, &file_menu, &edit_menu, &view_menu])
     .build()?;
@@ -94,6 +99,10 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
   });
   app.on_menu_event(|app, event| {
     let action = event.id().as_ref();
+    if action == "quick-copy" {
+      crate::quick_picker::show(app);
+      return;
+    }
     if matches!(
       action,
       "search" | "create" | "import" | "export" | "settings" | "lock"

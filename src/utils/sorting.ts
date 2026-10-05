@@ -10,7 +10,7 @@ export type EntryUsageMap = Record<string, EntryUsage>
 type SortableEntry = {
   uuid: string
   name: string
-  issuer?: string
+  issuer?: string | null
 }
 
 const compareEntryLabels = <T extends SortableEntry>(

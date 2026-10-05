@@ -255,6 +255,8 @@ fn show_feedback(app: &AppHandle, message: String, icon: tauri::image::Image<'st
 }
 
 pub fn refresh_menu(app: &AppHandle) -> Result<(), String> {
+  #[cfg(target_os = "macos")]
+  crate::quick_picker::refresh(app);
   let state = app.state::<TrayMenuState>();
   let guard = state
     .0

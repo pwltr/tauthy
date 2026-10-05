@@ -1,6 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use data_encoding::BASE32_NOPAD;
+use zeroize::Zeroizing;
 
 const PERIOD_SECONDS: u64 = 30;
 const PERIOD_MILLISECONDS: u128 = PERIOD_SECONDS as u128 * 1_000;
@@ -10,27 +11,36 @@ const SKEW_MILLISECONDS: u128 = SKEW as u128 * 1_000;
 const INVALID_SECRET: &str = "could not generate totp; `secret` may be invalid.";
 
 fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
-  let normalized = argument
-    .chars()
-    .filter(|character| !character.is_ascii_whitespace())
-    .map(|character| character.to_ascii_uppercase())
-    .collect::<String>();
+  let normalized = Zeroizing::new(
+    argument
+      .chars()
+      .filter(|character| !character.is_ascii_whitespace())
+      .map(|character| character.to_ascii_uppercase())
+      .collect::<String>(),
+  );
   let secret = normalized.trim_end_matches('=');
   if secret.is_empty() {
     return Err(INVALID_SECRET.to_string());
   }
-  let secret = BASE32_NOPAD
-    .decode(secret.as_bytes())
+  let decoded_len = BASE32_NOPAD
+    .decode_len(secret.len())
     .map_err(|_| INVALID_SECRET.to_string())?;
+  // Own the output buffer before decoding so even partially decoded bytes are
+  // wiped when malformed input returns an error.
+  let mut decoded = Zeroizing::new(vec![0u8; decoded_len]);
+  let written = BASE32_NOPAD
+    .decode_mut(secret.as_bytes(), &mut decoded)
+    .map_err(|_| INVALID_SECRET.to_string())?;
+  decoded.truncate(written);
 
-  Ok(crate::otp::generate_totp_sha1(&secret, timestamp))
+  Ok(crate::otp::generate_totp_sha1(&decoded, timestamp))
 }
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratedTotps {
-  codes: Vec<Option<String>>,
-  expires_at_ms: u64,
+  pub(crate) codes: Vec<Option<String>>,
+  pub(crate) expires_at_ms: u64,
 }
 
 fn current_time() -> Result<Duration, String> {
@@ -51,19 +61,31 @@ fn next_expiration_ms(elapsed_ms: u128) -> u64 {
 
 #[tauri::command]
 pub fn generate_totp(argument: String) -> Result<String, String> {
+  let argument = Zeroizing::new(argument);
+  generate_totp_for(&argument)
+}
+
+pub(crate) fn generate_totp_for(argument: &str) -> Result<String, String> {
   if argument.is_empty() {
     return Err("`secret` was empty; it must be nonempty.".into());
   }
 
-  generate_totp_at(&argument, timestamp_with_skew(current_time()?))
+  generate_totp_at(argument, timestamp_with_skew(current_time()?))
 }
 
 #[tauri::command]
 pub fn generate_totps(arguments: Vec<String>) -> Result<GeneratedTotps, String> {
+  let arguments = Zeroizing::new(arguments);
+  generate_totps_for(arguments.iter().map(String::as_str))
+}
+
+pub(crate) fn generate_totps_for<'a>(
+  arguments: impl IntoIterator<Item = &'a str>,
+) -> Result<GeneratedTotps, String> {
   let current_time = current_time()?;
   let timestamp = timestamp_with_skew(current_time);
   let codes = arguments
-    .iter()
+    .into_iter()
     .map(|argument| generate_totp_at(argument, timestamp).ok())
     .collect();
 
@@ -105,6 +127,15 @@ mod tests {
   #[test]
   fn padding_without_a_secret_fails() {
     assert_eq!(generate_totp_at("====", 0), Err(INVALID_SECRET.into()));
+  }
+
+  #[test]
+  fn invalid_suffix_after_a_valid_secret_prefix_fails() {
+    // Exercise a decoder failure after part of the output has been written.
+    assert_eq!(
+      generate_totp_at("JBSWY3DPEHPK3PX!", 0),
+      Err(INVALID_SECRET.to_string())
+    );
   }
 
   #[test]

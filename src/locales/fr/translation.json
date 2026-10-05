@@ -1,4 +1,25 @@
 {
+  "quickPicker": {
+    "title": "Copie rapide",
+    "search": "Rechercher des comptes…",
+    "accounts": "Comptes",
+    "locked": "Votre coffre est verrouillé.",
+    "unlock": "Déverrouiller dans Tauthy",
+    "loading": "Chargement des comptes…",
+    "noResults": "Aucun compte correspondant",
+    "empty": "Ajoutez votre premier compte dans Tauthy.",
+    "unavailable": "Impossible de charger les comptes.",
+    "copyFailed": "Impossible de copier le code. Réessayez.",
+    "openMain": "Ouvrir Tauthy",
+    "hint": {
+      "select": "Sélectionner",
+      "copy": "Copier",
+      "close": "Fermer"
+    },
+    "setting": "Quick Picker",
+    "settingDescription": "Ouvrir avec ⌘⇧C.",
+    "shortcutUnavailable": "⌘⇧C est indisponible. Désactivez puis réactivez cette option, ou utilisez View → Quick Copy."
+  },
   "diagnostics": {
     "export": "Exporter les journaux",
     "description": "Enregistre les événements récents.",
@@ -145,12 +166,13 @@
       "recent": "Récemment utilisés"
     },
     "compact": "Compact",
-    "grouping": "Groupement de 2 chiffres",
+    "grouping": "Grouper les chiffres par paires",
     "editGroups": "Modifier les groupes",
     "usage": "Utilisation",
     "minimize": "Réduire à la copie",
-    "tray": "Afficher l’icône de barre des menus",
-    "trayDescription": "Copier rapidement des codes pendant que Tauthy est ouvert"
+    "minimizeDescription": "Réduire Tauthy après avoir copié un code.",
+    "tray": "Icône de barre des menus",
+    "trayDescription": "Copier des codes depuis la barre des menus."
   },
   "security": {
     "pageTitle": "Sécurité",

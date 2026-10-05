@@ -14,6 +14,7 @@ import { useLocalStorage, useMediaQuery } from '~/hooks'
 import AppRouter from '~/components/AppRouter'
 import AppDebugger from '~/components/AppDebugger'
 import { developerSettingsEnabled, subscribeDeveloperSettings } from '~/utils/developerSettings'
+import { useQuickPickerShortcut } from '~/hooks/useQuickPickerShortcut'
 import {
   AppBarTitleContext,
   ThemeContext,
@@ -22,6 +23,7 @@ import {
   SearchContext,
   SortContext,
   SortOption,
+  QuickPickerContext,
 } from '~/context'
 
 // init react-i18next
@@ -29,6 +31,7 @@ import '~/utils/i18n'
 import { installImportDiagnostics } from '~/utils/importDiagnostics'
 
 const App = () => {
+  const quickPicker = useQuickPickerShortcut()
   useEffect(installImportDiagnostics, [])
   const { t, i18n } = useTranslation()
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
@@ -144,7 +147,9 @@ const App = () => {
                   value={{ sortOption, setSortOption, customOrder, setCustomOrder, entryUsage }}
                 >
                   <>
-                    <AppRouter />
+                    <QuickPickerContext.Provider value={quickPicker}>
+                      <AppRouter />
+                    </QuickPickerContext.Provider>
                     <Toaster position="bottom-center" toastOptions={{ duration: 5000 }} />
 
                     {import.meta.env.DEV && showDeveloperToolbar && <AppDebugger />}

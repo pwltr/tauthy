@@ -1,4 +1,25 @@
 {
+  "quickPicker": {
+    "title": "Copia rápida",
+    "search": "Buscar cuentas…",
+    "accounts": "Cuentas",
+    "locked": "Tu bóveda está bloqueada.",
+    "unlock": "Desbloquear en Tauthy",
+    "loading": "Cargando cuentas…",
+    "noResults": "No hay cuentas coincidentes",
+    "empty": "Añade tu primera cuenta en Tauthy.",
+    "unavailable": "No se pudieron cargar las cuentas.",
+    "copyFailed": "No se pudo copiar el código. Inténtalo de nuevo.",
+    "openMain": "Abrir Tauthy",
+    "hint": {
+      "select": "Seleccionar",
+      "copy": "Copiar",
+      "close": "Cerrar"
+    },
+    "setting": "Quick Picker",
+    "settingDescription": "Abrir con ⌘⇧C.",
+    "shortcutUnavailable": "⌘⇧C no está disponible. Desactiva y activa esta opción, o usa View → Quick Copy."
+  },
   "diagnostics": {
     "export": "Exportar registros",
     "description": "Guarda los últimos eventos de la app.",
@@ -145,12 +166,13 @@
       "recent": "Uso reciente"
     },
     "compact": "Compacto",
-    "grouping": "Agrupar por 2 dígitos",
+    "grouping": "Agrupar dígitos en pares",
     "editGroups": "Editar grupos",
     "usage": "Uso",
     "minimize": "Minimizar después de copiar",
-    "tray": "Mostrar icono en la barra de menús",
-    "trayDescription": "Copia códigos rápidamente mientras Tauthy está abierto"
+    "minimizeDescription": "Minimizar Tauthy al copiar un código.",
+    "tray": "Icono de la barra de menús",
+    "trayDescription": "Copiar códigos desde la barra de menús."
   },
   "security": {
     "pageTitle": "Seguridad",

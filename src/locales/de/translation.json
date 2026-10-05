@@ -1,4 +1,25 @@
 {
+  "quickPicker": {
+    "title": "Schnell kopieren",
+    "search": "Konten suchen…",
+    "accounts": "Konten",
+    "locked": "Dein Tresor ist gesperrt.",
+    "unlock": "In Tauthy entsperren",
+    "loading": "Konten werden geladen…",
+    "noResults": "Keine passenden Konten",
+    "empty": "Füge dein erstes Konto in Tauthy hinzu.",
+    "unavailable": "Konten konnten nicht geladen werden.",
+    "copyFailed": "Code konnte nicht kopiert werden. Versuche es erneut.",
+    "openMain": "Tauthy öffnen",
+    "hint": {
+      "select": "Auswählen",
+      "copy": "Kopieren",
+      "close": "Schließen"
+    },
+    "setting": "Quick Picker",
+    "settingDescription": "Mit ⌘⇧C öffnen.",
+    "shortcutUnavailable": "⌘⇧C ist nicht verfügbar. Zum erneuten Versuch aus- und einschalten oder Ansicht → Quick Copy verwenden."
+  },
   "diagnostics": {
     "export": "Protokolle exportieren",
     "description": "Letzte App-Ereignisse speichern.",
@@ -145,12 +166,13 @@
       "recent": "Kürzlich verwendet"
     },
     "compact": "Kompakt",
-    "grouping": "Zweier-Gruppierung",
+    "grouping": "Ziffern paarweise gruppieren",
     "editGroups": "Gruppen bearbeiten",
     "usage": "Benutzung",
     "minimize": "Nach dem Kopieren minimieren",
-    "tray": "Menüleistensymbol anzeigen",
-    "trayDescription": "Codes schnell kopieren, solange Tauthy läuft"
+    "minimizeDescription": "Tauthy nach dem Kopieren eines Codes minimieren.",
+    "tray": "Menüleistensymbol",
+    "trayDescription": "Codes aus der Menüleiste kopieren."
   },
   "security": {
     "pageTitle": "Sicherheit",
