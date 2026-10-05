@@ -37,6 +37,12 @@ describe('pre-React startup background', () => {
     run(false)
     expect(document.documentElement.style.backgroundColor).toBe('rgb(255, 255, 255)')
   })
+  it('ignores an old dark cached background when light mode is selected', () => {
+    localStorage.setItem('theme', JSON.stringify('light'))
+    localStorage.setItem('startupTheme', JSON.stringify({ mode: 'light', background: '#232629' }))
+    run(false)
+    expect(document.documentElement.style.backgroundColor).toBe('rgb(255, 255, 255)')
+  })
   it('rejects malformed preferences and unsafe cached CSS', () => {
     localStorage.setItem('theme', 'broken')
     localStorage.setItem(

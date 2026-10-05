@@ -110,7 +110,9 @@ const App = () => {
   const startupRevealSent = useRef(false)
 
   useLayoutEffect(() => {
-    const background = theme.palette.background.default
+    // AppRouter fills the window with paper, so the pre-React background must
+    // match that visible surface rather than an underlying body color.
+    const background = theme.palette.background.paper
     document.documentElement.style.backgroundColor = background
     try {
       localStorage.setItem('startupTheme', JSON.stringify({ mode, background }))
@@ -126,12 +128,12 @@ const App = () => {
     // is never shown. Reveal only after React and the selected theme commit.
     const timer = window.setTimeout(() => {
       startupRevealSent.current = true
-      void invoke('startup_ready', { background: theme.palette.background.default }).catch(
+      void invoke('startup_ready', { background: theme.palette.background.paper }).catch(
         console.error,
       )
     }, 100)
     return () => window.clearTimeout(timer)
-  }, [theme.palette.background.default])
+  }, [theme.palette.background.paper])
 
   return (
     <ThemeProvider theme={theme}>

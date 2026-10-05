@@ -14,7 +14,7 @@ if (platform === 'macos') {
 
 if (platform === 'windows') {
   primary = '#191919'
-  secondary = '#e8e8e9'
+  secondary = '#f8f8f8'
 }
 
 export default {
@@ -33,7 +33,7 @@ export default {
         contrastText: '#ffffff',
       },
       background: {
-        default: platform === 'macos' ? '#ffffff' : '#232629',
+        default: platform === 'linux' ? '#232629' : '#ffffff',
         paper: '#ffffff',
       },
       text: {

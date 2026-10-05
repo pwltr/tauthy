@@ -25,13 +25,15 @@
               : 'light'
             : preference
         const background =
-          cached?.mode === mode && /^#[a-f0-9]{6}$/i.test(cached.background)
-            ? cached.background
-            : mode === 'black'
-              ? '#000000'
-              : mode === 'dark'
-                ? '#1e1e1e'
-                : '#ffffff'
+          mode === 'light'
+            ? '#ffffff'
+            : cached?.mode === mode && /^#[a-f0-9]{6}$/i.test(cached.background)
+              ? cached.background
+              : mode === 'black'
+                ? '#000000'
+                : mode === 'dark'
+                  ? '#1e1e1e'
+                  : '#ffffff'
         document.documentElement.style.backgroundColor = background
         document.documentElement.style.colorScheme = mode === 'light' ? 'light' : 'dark'
       })()
