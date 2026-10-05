@@ -3,7 +3,7 @@
 #[cfg(all(feature = "migration-test", feature = "isolated-preview"))]
 compile_error!("migration-test and isolated-preview cannot be enabled together");
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 
@@ -59,11 +59,11 @@ fn protect_window_content() -> bool {
   ))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 #[derive(Default)]
 struct StartupVisibility(AtomicBool);
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn startup_background(value: &str) -> Result<tauri::window::Color, String> {
   let hex = value
     .strip_prefix('#')
@@ -81,7 +81,7 @@ fn startup_background(value: &str) -> Result<tauri::window::Color, String> {
   ))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 #[tauri::command]
 fn startup_ready(
   window: tauri::WebviewWindow,
@@ -110,7 +110,7 @@ fn main() {
   #[cfg(not(feature = "file-vault"))]
   let builder = builder.manage(legacy_vault::VaultState::default());
 
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   let builder = builder.manage(StartupVisibility::default());
 
   #[cfg(target_os = "macos")]
@@ -134,7 +134,7 @@ fn main() {
   let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
   let builder = builder.invoke_handler(tauri::generate_handler![
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     startup_ready,
     #[cfg(target_os = "macos")]
     quick_picker::quick_picker_configure,
@@ -256,7 +256,7 @@ fn main() {
         .get_webview_window("main")
         .ok_or_else(|| std::io::Error::other("main window is unavailable"))?
         .set_content_protected(protect_window_content())?;
-      #[cfg(target_os = "macos")]
+      #[cfg(any(target_os = "macos", target_os = "windows"))]
       {
         let handle = app.handle().clone();
         std::thread::spawn(move || {
@@ -298,7 +298,7 @@ fn main() {
     });
 
   let mut context = tauri::generate_context!();
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   if let Some(window) = context
     .config_mut()
     .app
@@ -316,7 +316,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
   use super::protect_window_content;
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   use super::startup_background;
 
   #[test]
@@ -332,7 +332,7 @@ mod tests {
     }
   }
 
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   #[test]
   fn startup_background_accepts_only_hex_colors() {
     assert_eq!(
