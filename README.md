@@ -5,7 +5,7 @@
 </h1>
 
 <h3 align="center">
-A fast, private, local-first desktop authenticator that stays out of your way.
+A private desktop authenticator that keeps your codes within reach.
 </h3>
 
 <div align="center">
@@ -26,21 +26,14 @@ A fast, private, local-first desktop authenticator that stays out of your way.
 
 ## Features
 
-**Thoughtful defaults keep everyday authentication quick and uncomplicated.**
-
-- **Private and offline:** Your authentication secrets stay on your device, and codes work without
-  an internet connection.
+- **Private and offline:** Generate codes without an internet connection or cloud account.
 - **Secure local vault:** Add password protection and automatically lock Tauthy when it is idle.
-- **Ready when you need it:** Search, arrange, and recognize accounts at a glance, then copy a code
-  with one click.
-- **Quick Copy on macOS:** Press `⌘⇧C` from any app, search for an account, and press Enter to copy
-  its current code and return to your previous app. Use arrow keys to select and Escape to dismiss.
-  The shortcut can be disabled in Settings → Appearance; View → Quick Copy remains available.
-  Tauthy must be running, and a locked vault must be unlocked in the main window first.
-- **Easy migration:** Bring existing accounts with you, display transfer QR codes, and create
-  portable backups.
-- **At home on your desktop:** Runs on macOS, Windows, and Linux with automatic updates,
-  system-aware themes, four languages, and a true black mode.
+- **Quick Picker:** Quickly find and copy codes without leaving your current app.
+- **Encrypted sync:** Optionally sync encrypted accounts through a folder of your choice or Pubky.
+- **Easy migration:** Import accounts from other authenticators.
+- **Encrypted backups:** Create password-protected backups, with reminders to keep them current.
+- **Cross-platform:** Runs on macOS, Windows, and Linux, with automatic updates and system-aware
+  themes.
 
 ## Security & Privacy
 

@@ -48,7 +48,7 @@ vi.mock('~/utils', () => ({
 }))
 
 import EntryList from '~/components/EntryList'
-import { AppSettingsContext } from '~/context'
+import { AppSettingsContext, SearchContext } from '~/context'
 
 describe('single-result copy shortcut', () => {
   beforeEach(() => {
@@ -62,6 +62,26 @@ describe('single-result copy shortcut', () => {
     })
     mocks.menuGet.mockImplementation(async () => ({ setEnabled: mocks.menuSetEnabled }))
     mocks.confirm.mockResolvedValue(false)
+  })
+
+  it.each(['staem', 'stae'])('finds Steam for %s and copies the matching account', (searchTerm) => {
+    const { container } = render(
+      <MemoryRouter>
+        <SearchContext.Provider value={{ searchTerm, setSearch: vi.fn() }}>
+          <EntryList
+            entries={[
+              { uuid: 'steam', name: 'alice', issuer: 'Steam', secret: 'secret', token: '123456' },
+              { uuid: 'github', name: 'bob', issuer: 'GitHub', secret: 'secret', token: '654321' },
+            ]}
+          />
+        </SearchContext.Provider>
+      </MemoryRouter>,
+    )
+    const rows = container.querySelectorAll('[data-code-row]')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toHaveTextContent('Steam')
+    fireEvent.keyDown(window, { key: 'c', metaKey: true })
+    expect(mocks.copyToClipboard).toHaveBeenCalledWith('123456')
   })
 
   it('copies only from the list, never while typing', async () => {

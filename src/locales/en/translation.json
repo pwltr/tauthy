@@ -11,9 +11,13 @@
     "unavailable": "Could not load accounts.",
     "copyFailed": "Could not copy the code. Try again.",
     "openMain": "Open Tauthy",
-    "hint": "↑ ↓ Select   ↵ Copy   esc Close",
-    "setting": "Quick Copy shortcut",
-    "settingDescription": "⌘⇧C opens the account picker from any app.",
+    "hint": {
+      "select": "Select",
+      "copy": "Copy",
+      "close": "Close"
+    },
+    "setting": "Quick Picker",
+    "settingDescription": "Open with ⌘⇧C.",
     "shortcutUnavailable": "⌘⇧C is unavailable. Turn this off and on to retry, or use View → Quick Copy."
   },
   "diagnostics": {
@@ -162,12 +166,13 @@
       "recent": "Recently used"
     },
     "compact": "Compact",
-    "grouping": "2-digit grouping",
+    "grouping": "Group digits in pairs",
     "editGroups": "Edit groups",
     "usage": "Usage",
     "minimize": "Minimize on copy",
-    "tray": "Show menu bar icon",
-    "trayDescription": "Quickly copy codes while Tauthy is running"
+    "minimizeDescription": "Minimize Tauthy after copying a code.",
+    "tray": "Menu bar icon",
+    "trayDescription": "Copy codes from the menu bar."
   },
   "security": {
     "pageTitle": "Security",

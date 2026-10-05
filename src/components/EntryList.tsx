@@ -11,6 +11,7 @@ import MuiList from '@mui/material/List'
 import Grid from '@mui/material/Grid'
 
 import { copyToClipboard, recordEntryUsage, reorderList, sortEntries } from '~/utils'
+import { searchEntries } from '~/utils/search'
 import { AppSettingsContext, ListOptionsContext, SearchContext, SortContext } from '~/context'
 import QRCodeModal from '~/components/modals/QRCode'
 import EntryListItem from './EntryListItem'
@@ -44,13 +45,7 @@ const EntryList = ({ className, entries, header, onDelete }: ListProps) => {
 
   const sortedEntries = sortEntries(entries, sortOption, customOrder, entryUsage)
 
-  const filteredEntries = sortedEntries.filter((entry) => {
-    return (
-      entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.issuer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.group?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })
+  const filteredEntries = searchEntries(sortedEntries, searchTerm)
 
   useEffect(() => {
     const focusFirstRow = (event: KeyboardEvent) => {

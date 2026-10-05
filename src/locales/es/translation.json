@@ -11,9 +11,13 @@
     "unavailable": "No se pudieron cargar las cuentas.",
     "copyFailed": "No se pudo copiar el código. Inténtalo de nuevo.",
     "openMain": "Abrir Tauthy",
-    "hint": "↑ ↓ Seleccionar   ↵ Copiar   esc Cerrar",
-    "setting": "Atajo de copia rápida",
-    "settingDescription": "⌘⇧C abre el selector desde cualquier aplicación.",
+    "hint": {
+      "select": "Seleccionar",
+      "copy": "Copiar",
+      "close": "Cerrar"
+    },
+    "setting": "Quick Picker",
+    "settingDescription": "Abrir con ⌘⇧C.",
     "shortcutUnavailable": "⌘⇧C no está disponible. Desactiva y activa esta opción, o usa View → Quick Copy."
   },
   "diagnostics": {
@@ -162,12 +166,13 @@
       "recent": "Uso reciente"
     },
     "compact": "Compacto",
-    "grouping": "Agrupar por 2 dígitos",
+    "grouping": "Agrupar dígitos en pares",
     "editGroups": "Editar grupos",
     "usage": "Uso",
     "minimize": "Minimizar después de copiar",
-    "tray": "Mostrar icono en la barra de menús",
-    "trayDescription": "Copia códigos rápidamente mientras Tauthy está abierto"
+    "minimizeDescription": "Minimizar Tauthy al copiar un código.",
+    "tray": "Icono de la barra de menús",
+    "trayDescription": "Copiar códigos desde la barra de menús."
   },
   "security": {
     "pageTitle": "Seguridad",

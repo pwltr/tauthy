@@ -87,16 +87,6 @@ const Appearance = () => {
 
             <ListItem
               disablePadding
-              secondaryAction={<Switch checked={dense} />}
-              onClick={() => setListOptions({ dense: !dense, groupByTwos })}
-            >
-              <ListItemButton>
-                <ListItemText primary={t('appearance.compact')} />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem
-              disablePadding
               secondaryAction={<Switch checked={groupByTwos} />}
               onClick={() => setListOptions({ dense, groupByTwos: !groupByTwos })}
             >
@@ -132,15 +122,6 @@ const Appearance = () => {
                 </ListItemButton>
               </ListItem>
             )}
-            <ListItem
-              disablePadding
-              secondaryAction={<Switch checked={minimizeOnCopy} />}
-              onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
-            >
-              <ListItemButton>
-                <ListItemText primary={t('appearance.minimize')} />
-              </ListItemButton>
-            </ListItem>
 
             <ListItem
               disablePadding
@@ -151,6 +132,19 @@ const Appearance = () => {
                 <ListItemText
                   primary={t('appearance.tray')}
                   secondary={t('appearance.trayDescription')}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem
+              disablePadding
+              secondaryAction={<Switch checked={minimizeOnCopy} />}
+              onClick={() => setAppSettings({ minimizeOnCopy: !minimizeOnCopy, showTrayIcon })}
+            >
+              <ListItemButton>
+                <ListItemText
+                  primary={t('appearance.minimize')}
+                  secondary={t('appearance.minimizeDescription')}
                 />
               </ListItemButton>
             </ListItem>

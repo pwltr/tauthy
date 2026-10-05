@@ -11,9 +11,13 @@
     "unavailable": "Konten konnten nicht geladen werden.",
     "copyFailed": "Code konnte nicht kopiert werden. Versuche es erneut.",
     "openMain": "Tauthy öffnen",
-    "hint": "↑ ↓ Auswählen   ↵ Kopieren   esc Schließen",
-    "setting": "Kurzbefehl zum schnellen Kopieren",
-    "settingDescription": "⌘⇧C öffnet die Kontoauswahl aus jeder App.",
+    "hint": {
+      "select": "Auswählen",
+      "copy": "Kopieren",
+      "close": "Schließen"
+    },
+    "setting": "Quick Picker",
+    "settingDescription": "Mit ⌘⇧C öffnen.",
     "shortcutUnavailable": "⌘⇧C ist nicht verfügbar. Zum erneuten Versuch aus- und einschalten oder Ansicht → Quick Copy verwenden."
   },
   "diagnostics": {
@@ -162,12 +166,13 @@
       "recent": "Kürzlich verwendet"
     },
     "compact": "Kompakt",
-    "grouping": "Zweier-Gruppierung",
+    "grouping": "Ziffern paarweise gruppieren",
     "editGroups": "Gruppen bearbeiten",
     "usage": "Benutzung",
     "minimize": "Nach dem Kopieren minimieren",
-    "tray": "Menüleistensymbol anzeigen",
-    "trayDescription": "Codes schnell kopieren, solange Tauthy läuft"
+    "minimizeDescription": "Tauthy nach dem Kopieren eines Codes minimieren.",
+    "tray": "Menüleistensymbol",
+    "trayDescription": "Codes aus der Menüleiste kopieren."
   },
   "security": {
     "pageTitle": "Sicherheit",

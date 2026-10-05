@@ -1,7 +1,9 @@
 //! A macOS quick-copy window. Secrets never cross this window's IPC boundary.
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 
-use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication, NSWorkspace};
+use objc2_app_kit::{
+  NSApplicationActivationOptions, NSColor, NSRunningApplication, NSWindow, NSWorkspace,
+};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_clipboard_manager::ClipboardExt;
@@ -12,6 +14,8 @@ use crate::vault_access::{ApplicationVault, VaultAccess};
 
 const LABEL: &str = "quick-picker";
 const SHORTCUT: &str = "Command+Shift+C";
+// Match the panel's CSS radius so its border follows the native window mask.
+const CORNER_RADIUS: f64 = 16.0;
 
 #[derive(Default)]
 pub(crate) struct PickerState {
@@ -26,6 +30,7 @@ struct Account {
   name: String,
   issuer: Option<String>,
   group: Option<String>,
+  icon: Option<String>,
   secret: String,
 }
 
@@ -42,13 +47,25 @@ pub(crate) struct PickerEntry {
   name: String,
   issuer: Option<String>,
   group: Option<String>,
+  icon: Option<String>,
   code: Option<String>,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Snapshot {
   locked: bool,
-  entries: Vec<PickerEntry>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  entries: Option<Vec<PickerEntry>>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  codes: Option<Vec<PickerCode>>,
+  expires_at_ms: Option<u64>,
+}
+
+#[derive(Serialize)]
+struct PickerCode {
+  uuid: String,
+  code: Option<String>,
 }
 
 fn accounts(records: &dyn crate::vault_access::RecordAccess) -> Result<Vec<Account>, String> {
@@ -60,27 +77,54 @@ fn accounts(records: &dyn crate::vault_access::RecordAccess) -> Result<Vec<Accou
   serde_json::from_slice(&record).map_err(|_| "Unable to read accounts".into())
 }
 
-fn snapshot(vault: &impl VaultAccess) -> Result<Snapshot, String> {
+fn snapshot(vault: &impl VaultAccess, include_metadata: bool) -> Result<Snapshot, String> {
   let result = vault.with_records(|records| {
-    let entries = accounts(records)?
+    let accounts = accounts(records)?;
+    let generated =
+      crate::commands::generate_totps_for(accounts.iter().map(|entry| entry.secret.as_str()))?;
+    let expires_at_ms = Some(generated.expires_at_ms);
+    if !include_metadata {
+      return Ok(Snapshot {
+        locked: false,
+        entries: None,
+        codes: Some(
+          accounts
+            .iter()
+            .zip(generated.codes)
+            .map(|(entry, code)| PickerCode {
+              uuid: entry.uuid.clone(),
+              code,
+            })
+            .collect(),
+        ),
+        expires_at_ms,
+      });
+    }
+    let entries = accounts
       .iter()
-      .map(|entry| PickerEntry {
+      .zip(generated.codes)
+      .map(|(entry, code)| PickerEntry {
         uuid: entry.uuid.clone(),
         name: entry.name.clone(),
         issuer: entry.issuer.clone(),
         group: entry.group.clone(),
-        code: crate::commands::generate_totp(entry.secret.clone()).ok(),
+        icon: entry.icon.clone(),
+        code,
       })
       .collect();
     Ok(Snapshot {
       locked: false,
-      entries,
+      entries: Some(entries),
+      codes: None,
+      expires_at_ms,
     })
   });
   match result {
     Err(error) if error == "vault is locked" => Ok(Snapshot {
       locked: true,
-      entries: vec![],
+      entries: Some(vec![]),
+      codes: None,
+      expires_at_ms: None,
     }),
     result => result,
   }
@@ -132,6 +176,7 @@ pub(crate) fn setup(app: &mut tauri::App) -> tauri::Result<()> {
   .content_protected(crate::protect_window_content())
   .background_color(tauri::window::Color(30, 30, 30, 255))
   .build()?;
+  round_window(&window)?;
   let handle = app.handle().clone();
   window.on_window_event(move |event| match event {
     tauri::WindowEvent::Focused(false) => {
@@ -143,6 +188,25 @@ pub(crate) fn setup(app: &mut tauri::App) -> tauri::Result<()> {
     }
     _ => {}
   });
+  Ok(())
+}
+
+fn round_window(window: &WebviewWindow) -> tauri::Result<()> {
+  // Called from Tauri's setup hook on the main thread. Tauri owns this NSWindow
+  // for the lifetime of the webview window; the borrowed pointer is not retained.
+  let native = unsafe { &*window.ns_window()?.cast::<NSWindow>() };
+  native.setOpaque(false);
+  native.setBackgroundColor(Some(&NSColor::clearColor()));
+  if let Some(content) = native.contentView() {
+    content.setWantsLayer(true);
+    if let Some(layer) = content.layer() {
+      // Clip the entire webview, including its opaque backing, using public
+      // AppKit/Core Animation APIs rather than WebKit's private transparency API.
+      layer.setCornerRadius(CORNER_RADIUS);
+      layer.setMasksToBounds(true);
+    }
+  }
+  native.invalidateShadow();
   Ok(())
 }
 
@@ -272,9 +336,10 @@ pub(crate) fn quick_picker_ready(app: AppHandle, window: WebviewWindow) -> Resul
 pub(crate) fn quick_picker_snapshot(
   window: WebviewWindow,
   vault: State<'_, ApplicationVault>,
+  include_metadata: bool,
 ) -> Result<Snapshot, String> {
   require_window(&window, LABEL)?;
-  snapshot(vault.inner())
+  snapshot(vault.inner(), include_metadata)
 }
 
 #[tauri::command]
@@ -319,7 +384,7 @@ mod tests {
   impl RecordAccess for Vault {
     fn get_record(&self, _: &[u8]) -> Result<Option<Vec<u8>>, String> {
       Ok(Some(
-        br#"[{"uuid":"one","name":"alice","issuer":"GitHub","secret":"JBSWY3DPEHPK3PXP"}]"#
+        br#"[{"uuid":"one","name":"alice","issuer":"GitHub","icon":"PHN2Zz48L3N2Zz4=","secret":"JBSWY3DPEHPK3PXP"},{"uuid":"two","name":"bob","secret":"JBSWY3DPEHPK3PXP"}]"#
           .to_vec(),
       ))
     }
@@ -393,19 +458,39 @@ mod tests {
 
   #[test]
   fn snapshot_contains_codes_but_never_secrets() {
-    let snapshot = snapshot(&Vault { locked: false }).unwrap();
-    assert_eq!(snapshot.entries[0].code.as_ref().unwrap().len(), 6);
+    let snapshot = snapshot(&Vault { locked: false }, true).unwrap();
+    let entries = snapshot.entries.as_ref().unwrap();
+    assert_eq!(entries[0].code.as_ref().unwrap().len(), 6);
+    assert!(snapshot.expires_at_ms.is_some());
     let json = serde_json::to_string(&snapshot).unwrap();
+    assert_eq!(entries[0].icon.as_deref(), Some("PHN2Zz48L3N2Zz4="));
+    assert!(entries[1].icon.is_none());
     assert!(!json.contains("secret"));
     assert!(!json.contains("JBSWY3DPEHPK3PXP"));
   }
 
   #[test]
+  fn rollover_response_contains_only_ids_codes_and_expiration() {
+    let snapshot = snapshot(&Vault { locked: false }, false).unwrap();
+    let json = serde_json::to_value(&snapshot).unwrap();
+    assert!(json.get("entries").is_none());
+    assert!(snapshot.expires_at_ms.is_some());
+    let codes = snapshot.codes.unwrap();
+    assert_eq!(codes.len(), 2);
+    assert_eq!(codes[0].uuid, "one");
+    assert_eq!(codes[0].code.as_ref().unwrap().len(), 6);
+    assert_eq!(codes[0].code, codes[1].code);
+    assert!(json["codes"][0].get("icon").is_none());
+    assert!(json["codes"][0].get("name").is_none());
+  }
+
+  #[test]
   fn locked_vault_has_no_entries_and_cannot_copy() {
     let vault = Vault { locked: true };
-    let snapshot = snapshot(&vault).unwrap();
+    let snapshot = snapshot(&vault, false).unwrap();
     assert!(snapshot.locked);
-    assert!(snapshot.entries.is_empty());
+    assert!(snapshot.entries.unwrap().is_empty());
+    assert!(snapshot.codes.is_none());
     assert!(copy_code(&vault, "one", |_| panic!("must not write clipboard")).is_err());
   }
 

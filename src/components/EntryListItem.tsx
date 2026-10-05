@@ -14,6 +14,7 @@ import CopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
 
 import { ListEntry } from './Codes'
+import { formatCode } from '~/utils/formatCode'
 import { AppSettingsContext, ListOptionsContext } from '~/context'
 import { copyToClipboard, recordEntryUsage } from '~/utils'
 const appWindow = getCurrentWebviewWindow()
@@ -221,20 +222,7 @@ const EntryListItem = ({
               primary={
                 <Name>{`${item.issuer ?? ''} ${item.issuer ? `(${item.name})` : item.name}`}</Name>
               }
-              secondary={
-                <Token>
-                  {groupByTwos ? (
-                    <>
-                      {String(item.token).slice(0, 2)} {String(item.token).slice(2, 4)}{' '}
-                      {String(item.token).slice(4, 6)}
-                    </>
-                  ) : (
-                    <>
-                      {String(item.token).slice(0, 3)} {String(item.token).slice(3, 6)}
-                    </>
-                  )}
-                </Token>
-              }
+              secondary={<Token>{formatCode(item.token ?? '', groupByTwos)}</Token>}
             />
           </ListItemButton>
         </ListItem>

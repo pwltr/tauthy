@@ -29,8 +29,8 @@ fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratedTotps {
-  codes: Vec<Option<String>>,
-  expires_at_ms: u64,
+  pub(crate) codes: Vec<Option<String>>,
+  pub(crate) expires_at_ms: u64,
 }
 
 fn current_time() -> Result<Duration, String> {
@@ -60,10 +60,17 @@ pub fn generate_totp(argument: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn generate_totps(arguments: Vec<String>) -> Result<GeneratedTotps, String> {
+  let arguments = zeroize::Zeroizing::new(arguments);
+  generate_totps_for(arguments.iter().map(String::as_str))
+}
+
+pub(crate) fn generate_totps_for<'a>(
+  arguments: impl IntoIterator<Item = &'a str>,
+) -> Result<GeneratedTotps, String> {
   let current_time = current_time()?;
   let timestamp = timestamp_with_skew(current_time);
   let codes = arguments
-    .iter()
+    .into_iter()
     .map(|argument| generate_totp_at(argument, timestamp).ok())
     .collect();
 

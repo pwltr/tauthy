@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { useLayoutEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ThemeProvider, createTheme, styled } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -9,11 +7,11 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import GlobalStyle from '~/styles/global'
 import { getDesignTokens, resolvePaletteMode, type ThemePreference } from '~/styles/theme'
 import { useLocalStorage, useMediaQuery } from '~/hooks'
-import { sortEntries, type EntryUsageMap } from '~/utils/sorting'
+import { useQuickPicker } from '~/hooks/useQuickPicker'
+import { formatCode } from '~/utils/formatCode'
+import type { QuickPickerEntry as Entry } from '~/types/quickPicker'
+import logo from '../../assets/app-icons/icon-round-bordered.png'
 import '~/utils/i18n'
-
-type Entry = { uuid: string; name: string; issuer?: string; group?: string; code: string | null }
-type Snapshot = { locked: boolean; entries: Entry[] }
 
 const Panel = styled('main')(({ theme }) => ({
   height: '100vh',
@@ -22,9 +20,12 @@ const Panel = styled('main')(({ theme }) => ({
   background: theme.palette.background.paper,
   color: theme.palette.text.primary,
   border: `1px solid ${theme.palette.divider}`,
+  borderRadius: 16,
+  overflow: 'hidden',
   boxSizing: 'border-box',
   '& button, & input': { font: 'inherit' },
 }))
+
 const Search = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -42,7 +43,9 @@ const Search = styled('div')(({ theme }) => ({
   },
   '& input::placeholder': { color: theme.palette.text.secondary, opacity: 0.8 },
 }))
+
 const Results = styled('div')({ flex: 1, overflowY: 'auto', padding: 8, minHeight: 0 })
+
 const Row = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -54,17 +57,21 @@ const Row = styled('div')(({ theme }) => ({
   '&[aria-selected="true"]': { background: theme.palette.action.selected },
   '&[aria-disabled="true"]': { opacity: 0.5, cursor: 'default' },
 }))
+
 const Avatar = styled('span')(({ theme }) => ({
   width: 34,
   height: 34,
-  borderRadius: 8,
+  borderRadius: '50%',
   display: 'grid',
   placeItems: 'center',
   flexShrink: 0,
   fontWeight: 600,
   background: theme.palette.action.hover,
   color: theme.palette.text.secondary,
+  overflow: 'hidden',
+  '& img': { display: 'block', width: '100%', height: '100%', objectFit: 'contain' },
 }))
+
 const AccountLabel = styled('div')(({ theme }) => ({
   flex: 1,
   minWidth: 0,
@@ -85,12 +92,14 @@ const AccountLabel = styled('div')(({ theme }) => ({
     fontSize: 12,
   },
 }))
-const Code = styled('span')({
-  fontVariantNumeric: 'tabular-nums',
-  fontSize: 17,
-  letterSpacing: '0.04em',
+
+const Code = styled('span')(({ theme }) => ({
+  ...theme.typography.body2,
+  fontSize: 20,
+  fontWeight: 600,
   whiteSpace: 'nowrap',
-})
+}))
+
 const Empty = styled('div')(({ theme }) => ({
   height: '100%',
   display: 'flex',
@@ -110,21 +119,83 @@ const Empty = styled('div')(({ theme }) => ({
     color: theme.palette.text.primary,
   },
 }))
+
 const Footer = styled('footer')(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  gap: 16,
+  flexShrink: 0,
   padding: '10px 18px',
   borderTop: `1px solid ${theme.palette.divider}`,
   color: theme.palette.text.secondary,
   fontSize: 11,
-  '& button': { border: 0, background: 'none', padding: 0, color: 'inherit', cursor: 'pointer' },
+  '& button': {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    border: 0,
+    background: 'none',
+    padding: 0,
+    color: 'inherit',
+    cursor: 'pointer',
+  },
+  '& img': { display: 'block', borderRadius: '50%', flexShrink: 0 },
 }))
 
+const Hints = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '8px 16px',
+  minWidth: 0,
+})
+
+const Hint = styled('span')({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  whiteSpace: 'nowrap',
+})
+
+const Keys = styled('span')({ display: 'inline-flex', alignItems: 'center', gap: 3 })
+
+const Keycap = styled('kbd')(({ theme }) => ({
+  display: 'inline-block',
+  minWidth: 18,
+  padding: '0 4px',
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: 4,
+  background: theme.palette.action.hover,
+  fontFamily: 'inherit',
+  fontSize: 10,
+  lineHeight: '16px',
+  textAlign: 'center',
+  boxSizing: 'border-box',
+}))
+
+const AccountAvatar = ({ entry }: { entry: Entry }) => {
+  const [failedIcon, setFailedIcon] = useState<string | null>(null)
+  return (
+    <Avatar aria-hidden="true">
+      {entry.icon && entry.icon !== failedIcon ? (
+        <img
+          src={`data:image/svg+xml;base64,${entry.icon}`}
+          alt=""
+          onError={() => setFailedIcon(entry.icon ?? null)}
+        />
+      ) : (
+        (entry.issuer?.trim() || entry.name).slice(0, 1).toLocaleUpperCase()
+      )}
+    </Avatar>
+  )
+}
+
 const QuickPicker = () => {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [preference] = useLocalStorage<ThemePreference>('theme', 'system')
-  const [usage] = useLocalStorage<EntryUsageMap>('entryUsage', {})
   const dark = useMediaQuery('(prefers-color-scheme: dark)')
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const mode = resolvePaletteMode(preference, dark)
@@ -132,124 +203,27 @@ const QuickPicker = () => {
     () => createTheme(getDesignTokens(mode, reducedMotion)),
     [mode, reducedMotion],
   )
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
-  const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(0)
-  const [error, setError] = useState('')
-  const [visible, setVisible] = useState(false)
-  const input = useRef<HTMLInputElement>(null)
-  const active = useRef(false)
-  const generation = useRef(0)
-  const busy = useRef(false)
-
-  const refresh = useCallback(async () => {
-    if (!active.current) return
-    const request = ++generation.current
-    try {
-      const data = await invoke<Snapshot>('quick_picker_snapshot')
-      if (active.current && generation.current === request) {
-        setSnapshot(data)
-        setError((previous) => (previous === 'unavailable' ? '' : previous))
-      }
-    } catch {
-      if (active.current && generation.current === request) {
-        setSnapshot(null)
-        setError('unavailable')
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    let disposed = false
-    const removers: Array<() => void> = []
-    const subscribe = async (event: string, callback: () => void) => {
-      const remove = await listen(event, callback)
-      if (disposed) remove()
-      else removers.push(remove)
-    }
-    const opened = () => {
-      active.current = true
-      setVisible(true)
-      setSnapshot(null)
-      setQuery('')
-      setSelected(0)
-      setError('')
-      busy.current = false
-      void refresh()
-      input.current?.focus()
-    }
-    const closed = () => {
-      active.current = false
-      generation.current += 1
-      setVisible(false)
-      setSnapshot(null)
-      setQuery('')
-    }
-    void Promise.all([
-      subscribe('tauthy://picker-open', opened),
-      subscribe('tauthy://picker-close', closed),
-      subscribe('tauthy://picker-refresh', () => void refresh()),
-    ])
-      .then(() => {
-        if (!disposed) void invoke('quick_picker_ready')
-      })
-      .catch(console.error)
-    return () => {
-      disposed = true
-      active.current = false
-      generation.current += 1
-      removers.forEach((remove) => remove())
-    }
-  }, [refresh])
-
-  useEffect(() => {
-    if (!visible) return
-    const timer = window.setInterval(() => void refresh(), 1000)
-    return () => window.clearInterval(timer)
-  }, [visible, refresh])
-
-  useEffect(() => {
-    const languageChanged = (event: StorageEvent) => {
-      if (event.key === 'i18nextLng' && event.newValue) void i18n.changeLanguage(event.newValue)
-    }
-    window.addEventListener('storage', languageChanged)
-    return () => window.removeEventListener('storage', languageChanged)
-  }, [i18n])
+  const {
+    snapshot,
+    entries,
+    selection,
+    query,
+    error,
+    input,
+    changeQuery,
+    select,
+    moveSelection,
+    canCopySelection,
+    copy,
+    dismiss,
+    openMain,
+    groupByTwos,
+  } = useQuickPicker()
 
   useLayoutEffect(() => {
     document.documentElement.style.colorScheme = mode === 'light' ? 'light' : 'dark'
     document.documentElement.style.backgroundColor = theme.palette.background.paper
   }, [mode, theme])
-
-  const entries = useMemo(() => {
-    const terms = query.toLocaleLowerCase().trim().split(/\s+/)
-    const filtered = (snapshot?.entries ?? []).filter((entry) => {
-      const text = `${entry.issuer ?? ''} ${entry.name} ${entry.group ?? ''}`.toLocaleLowerCase()
-      return terms.every((term) => text.includes(term))
-    })
-    return sortEntries(filtered, 'recent', [], usage, i18n.language)
-  }, [snapshot, query, usage, i18n.language])
-  const selection = Math.min(selected, Math.max(entries.length - 1, 0))
-
-  useEffect(() => {
-    document.getElementById(`picker-option-${selection}`)?.scrollIntoView?.({ block: 'nearest' })
-  }, [selection, query])
-
-  const copy = async (entry: Entry | undefined) => {
-    if (!entry?.code || busy.current) return
-    busy.current = true
-    try {
-      await invoke('quick_picker_copy', { uuid: entry.uuid })
-    } catch {
-      if (active.current) {
-        setError('copyFailed')
-        void refresh()
-      }
-    } finally {
-      busy.current = false
-    }
-  }
-  const openMain = () => void invoke('quick_picker_open_main').catch(console.error)
 
   return (
     <ThemeProvider theme={theme}>
@@ -257,18 +231,33 @@ const QuickPicker = () => {
       <GlobalStyle />
       <Panel
         aria-label={t('quickPicker.title')}
+        onCopy={(event) => {
+          // macOS's native Edit → Copy menu can dispatch a clipboard event
+          // instead of a keydown. Keep actual text selections copyable.
+          if (event.defaultPrevented || !canCopySelection()) return
+          event.preventDefault()
+          event.stopPropagation()
+          void copy(entries[selection])
+        }}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') {
+          if (event.defaultPrevented) return
+          if (
+            event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === 'c' &&
+            canCopySelection()
+          ) {
             event.preventDefault()
-            void invoke('quick_picker_dismiss').catch(console.error)
+            event.stopPropagation()
+            if (!event.repeat) void copy(entries[selection])
+          } else if (event.key === 'Escape') {
+            event.preventDefault()
+            dismiss()
           } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault()
-            setSelected((index) =>
-              Math.max(
-                0,
-                Math.min(entries.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)),
-              ),
-            )
+            moveSelection(event.key === 'ArrowDown' ? 1 : -1)
           } else if (event.key === 'Enter' && event.target === input.current) {
             event.preventDefault()
             if (snapshot?.locked) openMain()
@@ -283,11 +272,7 @@ const QuickPicker = () => {
             autoFocus
             placeholder={t('quickPicker.search')}
             value={query}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setSelected(0)
-              setError('')
-            }}
+            onChange={(event) => changeQuery(event.target.value)}
             role="combobox"
             aria-label={t('quickPicker.search')}
             aria-autocomplete="list"
@@ -320,24 +305,51 @@ const QuickPicker = () => {
                 role="option"
                 aria-selected={selection === index}
                 aria-disabled={!entry.code}
-                onMouseMove={() => setSelected(index)}
+                onMouseMove={() => select(index)}
                 onClick={() => void copy(entry)}
               >
-                <Avatar>
-                  {(entry.issuer?.trim() || entry.name).slice(0, 1).toLocaleUpperCase()}
-                </Avatar>
+                <AccountAvatar entry={entry} />
                 <AccountLabel>
                   <strong>{entry.issuer?.trim() || entry.name}</strong>
                   <small>{entry.issuer?.trim() ? entry.name : entry.group}</small>
                 </AccountLabel>
-                <Code>{entry.code ? `${entry.code.slice(0, 3)} ${entry.code.slice(3)}` : '—'}</Code>
+                <Code>{entry.code ? formatCode(entry.code, groupByTwos) : '—'}</Code>
               </Row>
             ))
           )}
         </Results>
         <Footer>
-          <span role="status">{error ? t(`quickPicker.${error}`) : t('quickPicker.hint')}</span>
-          <button onClick={openMain}>{t('quickPicker.openMain')}</button>
+          <Hints role="status">
+            {error ? (
+              t(`quickPicker.${error}`)
+            ) : (
+              <>
+                <Hint>
+                  <Keys>
+                    <Keycap>↑</Keycap>
+                    <Keycap>↓</Keycap>
+                  </Keys>
+                  {t('quickPicker.hint.select')}
+                </Hint>
+                <Hint>
+                  <Keys>
+                    <Keycap>↵</Keycap>
+                    <span>/</span>
+                    <Keycap>⌘C</Keycap>
+                  </Keys>
+                  {t('quickPicker.hint.copy')}
+                </Hint>
+                <Hint>
+                  <Keycap>esc</Keycap>
+                  {t('quickPicker.hint.close')}
+                </Hint>
+              </>
+            )}
+          </Hints>
+          <button onClick={openMain}>
+            <img src={logo} width={18} height={18} alt="" aria-hidden="true" />
+            {t('quickPicker.openMain')}
+          </button>
         </Footer>
       </Panel>
     </ThemeProvider>
