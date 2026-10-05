@@ -13,7 +13,7 @@
       "maximizable": false,
       "fullscreen": false,
       "center": true,
-      "contentProtected": true,
+      "contentProtected": false,
       "hiddenTitle": true,
       "titleBarStyle": "Overlay",
       "acceptFirstMouse": true,

@@ -52,7 +52,11 @@ mod menu;
 mod quick_picker;
 
 fn protect_window_content() -> bool {
-  !cfg!(debug_assertions)
+  !cfg!(any(
+    debug_assertions,
+    feature = "migration-test",
+    feature = "isolated-preview"
+  ))
 }
 
 #[cfg(target_os = "macos")]
@@ -246,8 +250,8 @@ fn main() {
         app.manage(migration_test::ImportDiagnostics::new(&directory)?);
         app.manage(vault_commands::FileVaultState::new(directory));
       }
-      // Release builds keep account codes out of screenshots and screen sharing.
-      // Development builds remain capturable for visual QA.
+      // Production builds keep account codes out of screenshots and screen sharing.
+      // Development and isolated test builds remain capturable for visual QA.
       app
         .get_webview_window("main")
         .ok_or_else(|| std::io::Error::other("main window is unavailable"))?
@@ -317,7 +321,11 @@ mod tests {
 
   #[test]
   fn screen_capture_policy_matches_the_build() {
-    if cfg!(debug_assertions) {
+    if cfg!(any(
+      debug_assertions,
+      feature = "migration-test",
+      feature = "isolated-preview"
+    )) {
       assert!(!protect_window_content());
     } else {
       assert!(protect_window_content());
