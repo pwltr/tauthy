@@ -1,5 +1,7 @@
 ## What's new in 0.6.0
 
+- Import Google Authenticator transfer QR codes from image files or the clipboard,
+  including multi-code transfers, with an account review before saving.
 - Pubky sync: connect with Pubky Ring and sync encrypted accounts through
   your homeserver. A recovery code lets another device join.
 - New keyboard shortcuts, code-list navigation, native macOS menu commands, and
