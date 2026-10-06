@@ -27,7 +27,36 @@ import {
   parseOtpAuthUri,
   parseOtpAuthUriList,
   prepareImport,
+  prepareGoogleImport,
 } from '~/utils/codes'
+
+describe('Google Authenticator import preview', () => {
+  const account = { name: 'alice', issuer: 'Dropbox', secret: 'JBSWY3DP' }
+
+  beforeEach(() => {
+    invoke.mockReset().mockResolvedValue({ codes: ['123456'] })
+    mockVault.getVault.mockReset().mockResolvedValue([])
+    mockVault.save.mockReset()
+  })
+
+  it('validates codes and reviews duplicates before changing the vault', async () => {
+    const preview = await prepareGoogleImport([account])
+    expect(preview).toMatchObject({ format: 'google', newCount: 1, duplicateCount: 0 })
+    expect(mockVault.save).not.toHaveBeenCalled()
+    expect(await commitPreparedImport(preview)).toBe(1)
+    mockVault.getVault.mockResolvedValue(preview.entries)
+    const repeat = await prepareGoogleImport([account])
+    expect(repeat).toMatchObject({ newCount: 0, duplicateCount: 1 })
+    expect(await commitPreparedImport(repeat)).toBe(0)
+    expect(mockVault.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects invalid secrets before showing a preview', async () => {
+    invoke.mockResolvedValue({ codes: [null] })
+    await expect(prepareGoogleImport([account])).rejects.toThrow('importFailed')
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+})
 
 describe('andOTP plaintext imports', () => {
   const entry = {

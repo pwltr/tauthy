@@ -21,6 +21,7 @@ import authyIcon from '../../../assets/import-providers/authy.svg'
 import enteIcon from '../../../assets/import-providers/ente.svg'
 import bitwardenIcon from '../../../assets/import-providers/bitwarden.svg'
 import protonIcon from '../../../assets/import-providers/proton.svg'
+import googleIcon from '../../../assets/import-providers/google.svg'
 import tauthyIcon from '../../../assets/import-providers/tauthy.svg'
 
 const importFormats: ImportFormat[] = [
@@ -30,6 +31,7 @@ const importFormats: ImportFormat[] = [
   'authy',
   'bitwarden',
   'ente',
+  'google',
   'proton',
   'tauthy',
   'otpauth',
@@ -40,9 +42,15 @@ const providerIcons: Partial<Record<ImportFormat, string>> = {
   andotp: andOtpIcon,
   authy: authyIcon,
   ente: enteIcon,
+  google: googleIcon,
   bitwarden: bitwardenIcon,
   proton: protonIcon,
   tauthy: tauthyIcon,
+}
+const providerIconSizes: Partial<Record<ImportFormat, number>> = {
+  '2fas': 24,
+  authy: 24,
+  google: 26,
 }
 
 const knownImportErrors = [
@@ -77,10 +85,12 @@ const ImportModal = ({
   open,
   onClose,
   onReview,
+  onGoogle,
 }: {
   open: boolean
   onClose: () => void
   onReview: (preview: ImportPreview) => void
+  onGoogle: () => void
 }) => {
   const { t } = useTranslation()
   const formatName = (value: ImportFormat) =>
@@ -95,6 +105,10 @@ const ImportModal = ({
   const [isDecrypting, setIsDecrypting] = useState(false)
 
   const handleClick = (format: ImportFormat) => {
+    if (format === 'google') {
+      onGoogle()
+      return
+    }
     traceImport('pickerOpening')
     // Native pickers can return before React commits a state update. Keep the
     // selection synchronous so their change event never loses the format.
@@ -207,8 +221,8 @@ const ImportModal = ({
                           src={providerIcons[provider]}
                           alt=""
                           sx={{
-                            width: provider === '2fas' || provider === 'authy' ? 24 : 32,
-                            height: provider === '2fas' || provider === 'authy' ? 24 : 32,
+                            width: providerIconSizes[provider] ?? 32,
+                            height: providerIconSizes[provider] ?? 32,
                             objectFit: 'contain',
                           }}
                         />
