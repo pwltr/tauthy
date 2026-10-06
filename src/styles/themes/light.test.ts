@@ -36,10 +36,13 @@ describe('platform theme colors', () => {
     const { default: light } = await import('./light')
     const { default: dark } = await import('./dark')
 
-    expect(light.mui.palette.secondary.main).toBe('#e8e8e9')
+    expect(light.mui.palette.secondary.main).toBe('#f8f8f8')
     expect(light.mui.palette.secondary.contrastText).toBe(light.mui.palette.text.primary)
     expect(light.mui.palette.primary.main).toBe('#191919')
-    expect(dark.mui.palette.secondary.main).toBe('#2b2b2b')
+    expect(light.mui.palette.background.default).toBe('#ffffff')
+    expect(light.mui.palette.background.paper).toBe('#ffffff')
+    expect(dark.mui.palette.secondary.main).toBe('#2c2c2c')
+    expect(dark.mui.palette.background.default).toBe('#191919')
   })
 
   it('preserves Linux colors', async () => {

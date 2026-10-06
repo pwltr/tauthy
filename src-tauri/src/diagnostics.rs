@@ -19,6 +19,9 @@ fn valid_stage(stage: &str) -> bool {
   matches!(
     stage,
     "app.start"
+      | "app.window.cloak.error"
+      | "app.window.fallback"
+      | "app.window.ready"
       | "vault.init.start"
       | "vault.init.ok"
       | "vault.init.error"

@@ -224,7 +224,7 @@ const AppBar = () => {
       position="static"
       color="secondary"
       elevation={1}
-      enableColorOnDark={isMacOS}
+      enableColorOnDark
       sx={{ backgroundImage: 'none' }}
     >
       <Toolbar

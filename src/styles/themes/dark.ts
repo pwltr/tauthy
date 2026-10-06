@@ -12,8 +12,8 @@ if (platform === 'macos') {
 }
 
 if (platform === 'windows') {
-  secondary = '#2b2b2b'
-  background = '#202020'
+  secondary = '#2c2c2c'
+  background = '#191919'
 }
 
 export default {

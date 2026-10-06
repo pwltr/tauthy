@@ -3,7 +3,7 @@
 #[cfg(all(feature = "migration-test", feature = "isolated-preview"))]
 compile_error!("migration-test and isolated-preview cannot be enabled together");
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 
@@ -41,6 +41,9 @@ mod vault_runtime;
 #[allow(dead_code)]
 mod vault_transaction;
 
+#[cfg(target_os = "windows")]
+mod windows_startup;
+
 #[cfg(not(feature = "file-vault"))]
 use legacy_vault as application_commands;
 #[cfg(feature = "file-vault")]
@@ -52,14 +55,18 @@ mod menu;
 mod quick_picker;
 
 fn protect_window_content() -> bool {
-  !cfg!(debug_assertions)
+  !cfg!(any(
+    debug_assertions,
+    feature = "migration-test",
+    feature = "isolated-preview"
+  ))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 #[derive(Default)]
 struct StartupVisibility(AtomicBool);
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn startup_background(value: &str) -> Result<tauri::window::Color, String> {
   let hex = value
     .strip_prefix('#')
@@ -77,7 +84,7 @@ fn startup_background(value: &str) -> Result<tauri::window::Color, String> {
   ))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 #[tauri::command]
 fn startup_ready(
   window: tauri::WebviewWindow,
@@ -88,8 +95,15 @@ fn startup_ready(
   window
     .set_background_color(Some(color))
     .map_err(|error| error.to_string())?;
+  #[cfg(target_os = "macos")]
   window.show().map_err(|error| error.to_string())?;
+  #[cfg(target_os = "windows")]
+  windows_startup::reveal(&window)?;
   visibility.0.store(true, Ordering::Release);
+  let _ = window
+    .app_handle()
+    .state::<diagnostics::Diagnostics>()
+    .record("app.window.ready", None);
   Ok(())
 }
 
@@ -106,7 +120,7 @@ fn main() {
   #[cfg(not(feature = "file-vault"))]
   let builder = builder.manage(legacy_vault::VaultState::default());
 
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   let builder = builder.manage(StartupVisibility::default());
 
   #[cfg(target_os = "macos")]
@@ -130,7 +144,7 @@ fn main() {
   let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
   let builder = builder.invoke_handler(tauri::generate_handler![
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     startup_ready,
     #[cfg(target_os = "macos")]
     quick_picker::quick_picker_configure,
@@ -246,13 +260,27 @@ fn main() {
         app.manage(migration_test::ImportDiagnostics::new(&directory)?);
         app.manage(vault_commands::FileVaultState::new(directory));
       }
-      // Release builds keep account codes out of screenshots and screen sharing.
-      // Development builds remain capturable for visual QA.
+      // Production builds keep account codes out of screenshots and screen sharing.
+      // Development and isolated test builds remain capturable for visual QA.
       app
         .get_webview_window("main")
         .ok_or_else(|| std::io::Error::other("main window is unavailable"))?
         .set_content_protected(protect_window_content())?;
-      #[cfg(target_os = "macos")]
+      #[cfg(target_os = "windows")]
+      {
+        let window = app
+          .get_webview_window("main")
+          .ok_or_else(|| std::io::Error::other("main window is unavailable"))?;
+        // A hidden HWND can defer WebView2's first paint until show(). Keep it
+        // visible to the renderer but concealed by the Windows compositor.
+        if windows_startup::prepare(&window).is_err() {
+          // If cloaking is unavailable, retain the hidden-window fallback.
+          let _ = app
+            .state::<diagnostics::Diagnostics>()
+            .record("app.window.cloak.error", None);
+        }
+      }
+      #[cfg(any(target_os = "macos", target_os = "windows"))]
       {
         let handle = app.handle().clone();
         std::thread::spawn(move || {
@@ -264,7 +292,13 @@ fn main() {
           {
             // A frontend failure must not strand the only app window hidden.
             if let Some(window) = handle.get_webview_window("main") {
+              let _ = handle
+                .state::<diagnostics::Diagnostics>()
+                .record("app.window.fallback", None);
+              #[cfg(target_os = "macos")]
               let _ = window.show();
+              #[cfg(target_os = "windows")]
+              let _ = windows_startup::reveal(&window);
             }
           }
         });
@@ -294,7 +328,7 @@ fn main() {
     });
 
   let mut context = tauri::generate_context!();
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   if let Some(window) = context
     .config_mut()
     .app
@@ -303,6 +337,12 @@ fn main() {
     .find(|window| window.label == "main")
   {
     window.visible = false;
+    #[cfg(target_os = "windows")]
+    {
+      // Use an opaque backing surface while cloaked; startup_ready applies
+      // the selected theme before revealing it.
+      window.background_color = Some(tauri::window::Color(25, 25, 25, 255));
+    }
   }
   builder
     .run(context)
@@ -312,19 +352,23 @@ fn main() {
 #[cfg(test)]
 mod tests {
   use super::protect_window_content;
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   use super::startup_background;
 
   #[test]
   fn screen_capture_policy_matches_the_build() {
-    if cfg!(debug_assertions) {
+    if cfg!(any(
+      debug_assertions,
+      feature = "migration-test",
+      feature = "isolated-preview"
+    )) {
       assert!(!protect_window_content());
     } else {
       assert!(protect_window_content());
     }
   }
 
-  #[cfg(target_os = "macos")]
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
   #[test]
   fn startup_background_accepts_only_hex_colors() {
     assert_eq!(
