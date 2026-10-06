@@ -98,6 +98,15 @@ fn startup_ready(
 }
 
 fn main() {
+  #[cfg(target_os = "windows")]
+  {
+    // WebView2 can paint white before a later background-color update takes
+    // effect. Start with no browser background; startup_ready supplies the
+    // selected opaque color before revealing the host window.
+    // https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2controller.defaultbackgroundcolor
+    // Set this before plugins or WebView2 start any worker threads.
+    std::env::set_var("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "00000000");
+  }
   let builder = tauri::Builder::default();
 
   // Register this first so duplicate launches are stopped before any other
@@ -307,6 +316,12 @@ fn main() {
     .find(|window| window.label == "main")
   {
     window.visible = false;
+    #[cfg(target_os = "windows")]
+    {
+      // Also pass the initial color through WebView2's controller-creation
+      // options instead of relying on a post-creation property update.
+      window.background_color = Some(tauri::window::Color(0, 0, 0, 0));
+    }
   }
   builder
     .run(context)
