@@ -8,7 +8,7 @@ export function useStartupVisibility(background: string) {
   useEffect(() => {
     if (!['macos', 'windows'].includes(osType()) || revealSent.current) return
 
-    // Keep the native window hidden while the webview paints React's theme.
+    // Let the webview paint React's theme before revealing the native window.
     const timer = window.setTimeout(() => {
       revealSent.current = true
       void invoke('startup_ready', { background }).catch(console.error)

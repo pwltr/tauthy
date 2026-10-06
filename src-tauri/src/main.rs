@@ -41,6 +41,9 @@ mod vault_runtime;
 #[allow(dead_code)]
 mod vault_transaction;
 
+#[cfg(target_os = "windows")]
+mod windows_startup;
+
 #[cfg(not(feature = "file-vault"))]
 use legacy_vault as application_commands;
 #[cfg(feature = "file-vault")]
@@ -92,21 +95,19 @@ fn startup_ready(
   window
     .set_background_color(Some(color))
     .map_err(|error| error.to_string())?;
+  #[cfg(target_os = "macos")]
   window.show().map_err(|error| error.to_string())?;
+  #[cfg(target_os = "windows")]
+  windows_startup::reveal(&window)?;
   visibility.0.store(true, Ordering::Release);
+  let _ = window
+    .app_handle()
+    .state::<diagnostics::Diagnostics>()
+    .record("app.window.ready", None);
   Ok(())
 }
 
 fn main() {
-  #[cfg(target_os = "windows")]
-  {
-    // WebView2 can paint white before a later background-color update takes
-    // effect. Start with no browser background; startup_ready supplies the
-    // selected opaque color before revealing the host window.
-    // https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2controller.defaultbackgroundcolor
-    // Set this before plugins or WebView2 start any worker threads.
-    std::env::set_var("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "00000000");
-  }
   let builder = tauri::Builder::default();
 
   // Register this first so duplicate launches are stopped before any other
@@ -265,6 +266,20 @@ fn main() {
         .get_webview_window("main")
         .ok_or_else(|| std::io::Error::other("main window is unavailable"))?
         .set_content_protected(protect_window_content())?;
+      #[cfg(target_os = "windows")]
+      {
+        let window = app
+          .get_webview_window("main")
+          .ok_or_else(|| std::io::Error::other("main window is unavailable"))?;
+        // A hidden HWND can defer WebView2's first paint until show(). Keep it
+        // visible to the renderer but concealed by the Windows compositor.
+        if windows_startup::prepare(&window).is_err() {
+          // If cloaking is unavailable, retain the hidden-window fallback.
+          let _ = app
+            .state::<diagnostics::Diagnostics>()
+            .record("app.window.cloak.error", None);
+        }
+      }
       #[cfg(any(target_os = "macos", target_os = "windows"))]
       {
         let handle = app.handle().clone();
@@ -277,7 +292,13 @@ fn main() {
           {
             // A frontend failure must not strand the only app window hidden.
             if let Some(window) = handle.get_webview_window("main") {
+              let _ = handle
+                .state::<diagnostics::Diagnostics>()
+                .record("app.window.fallback", None);
+              #[cfg(target_os = "macos")]
               let _ = window.show();
+              #[cfg(target_os = "windows")]
+              let _ = windows_startup::reveal(&window);
             }
           }
         });
@@ -318,9 +339,9 @@ fn main() {
     window.visible = false;
     #[cfg(target_os = "windows")]
     {
-      // Also pass the initial color through WebView2's controller-creation
-      // options instead of relying on a post-creation property update.
-      window.background_color = Some(tauri::window::Color(0, 0, 0, 0));
+      // Use an opaque backing surface while cloaked; startup_ready applies
+      // the selected theme before revealing it.
+      window.background_color = Some(tauri::window::Color(25, 25, 25, 255));
     }
   }
   builder
