@@ -4,10 +4,13 @@
   including multi-code transfers, with an account review before saving.
 - Pubky sync: connect with Pubky Ring and sync encrypted accounts through
   your homeserver. A recovery code lets another device join.
+- macOS Quick Picker: find and copy a code from a shortcut-accessible window.
+- Typo-tolerant search helps you find accounts even with small spelling mistakes.
 - New keyboard shortcuts, code-list navigation, native macOS menu commands, and
   account right-click actions make common tasks quicker.
 - Backup status and reminders help you keep an up-to-date export.
 - Smoother startup and onboarding, with fewer theme flashes and UI polish.
+- Updated macOS app icon and an integrated title bar.
 - Export privacy-safe diagnostic logs from Settings when troubleshooting.
 
 ### Windows upgrade notice
