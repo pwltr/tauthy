@@ -4229,12 +4229,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"i18next@npm:^23.7.6":
-  version: 23.7.6
-  resolution: "i18next@npm:23.7.6"
-  dependencies:
-    "@babel/runtime": "npm:^7.23.2"
-  checksum: ae16654e08e10c38d4d17c6a28ae7cb4ac894f03bccfa7ae1637b6c6705937009d5f625f9cd0c3b664bec1acaa7116e5dda7a5e9fbbf41bf97260b49da2875e7
+"i18next@npm:^26.3.4":
+  version: 26.3.4
+  resolution: "i18next@npm:26.3.4"
+  peerDependencies:
+    typescript: ^5 || ^6
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 133ba9a5f76c1d57337f0dcc1b0ab0ff987714a1863813dcc95024531074c6d92603a19b0bac9c16a6b04c734742d8d098da0c222bef5a9562bdde231ea4b221
   languageName: node
   linkType: hard
 
@@ -6474,7 +6477,7 @@ __metadata:
     eslint-plugin-react: "npm:^7.33.2"
     eslint-plugin-react-hooks: "npm:^4.6.0"
     husky: "npm:^8.0.3"
-    i18next: "npm:^23.7.6"
+    i18next: "npm:^26.3.4"
     i18next-browser-languagedetector: "npm:^7.2.0"
     jsdom: "npm:^30.1.0"
     jsqr: "npm:1.4.0"
