@@ -31,7 +31,7 @@
     "@tauri-apps/plugin-process": "^2.4.0",
     "@tauri-apps/plugin-shell": "^2.4.0",
     "@tauri-apps/plugin-updater": "^2.13.1",
-    "i18next": "^23.7.6",
+    "i18next": "^26.3.4",
     "i18next-browser-languagedetector": "^7.2.0",
     "jsqr": "1.4.0",
     "qrcode.react": "^4.2.0",
