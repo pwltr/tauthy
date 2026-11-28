@@ -9,7 +9,9 @@ import { generateUUID } from '~/utils'
 import { traceImport } from '~/utils/importDiagnostics'
 import { recordBackupExport } from '~/utils/backupStatus'
 import type { GoogleAccount } from '~/utils/googleAuthenticator'
+import { customTotp, DEFAULT_TOTP, normalizeTotpSecret, parseTotpSettings } from '~/utils/totp'
 import type {
+  AccountChanges,
   FormData,
   VaultEntry,
   AegisDatabase,
@@ -48,6 +50,7 @@ const MAX_PROVIDER_JSON_FILE_SIZE = 16 * 1024 * 1024
 export type GeneratedTOTPs = {
   codes: Array<string | null>
   expiresAtMs: number
+  periodMs: number
 }
 
 type EncryptedImportAdapter = {
@@ -166,11 +169,13 @@ const decryptImport = async (json: unknown, format: ImportFormat, password: stri
 export const getTOTPRefreshDelay = (expiresAtMs: number, now = Date.now()) =>
   Math.max(expiresAtMs - now, 1)
 
-const supportedOtpSettings = (algorithm: unknown, digits: unknown, period: unknown) =>
-  typeof algorithm === 'string' &&
-  algorithm.toUpperCase() === 'SHA1' &&
-  digits === 6 &&
-  period === 30
+const importedTotp = (algorithm: unknown, digits: unknown, period: unknown) => {
+  const normalized =
+    typeof algorithm === 'string' ? algorithm.toUpperCase().replace(/^SHA-/, 'SHA') : algorithm
+  const settings = parseTotpSettings(normalized, digits, period)
+  if (!settings) throw Error('importUnsupportedOtp')
+  return customTotp(settings)
+}
 
 const decodeOtpLabel = (pathname: string) => {
   try {
@@ -180,8 +185,7 @@ const decodeOtpLabel = (pathname: string) => {
   }
 }
 
-const normalizedSecret = (secret: string) =>
-  secret.replace(/\s/g, '').toUpperCase().replace(/=+$/, '')
+const normalizedSecret = normalizeTotpSecret
 
 export const parseOtpAuthUri = (value: string): VaultEntry => {
   let uri: URL
@@ -205,20 +209,21 @@ export const parseOtpAuthUri = (value: string): VaultEntry => {
   const algorithm = uri.searchParams.get('algorithm') ?? 'SHA1'
   const digits = Number(uri.searchParams.get('digits') ?? 6)
   const period = Number(uri.searchParams.get('period') ?? 30)
-  if (!supportedOtpSettings(algorithm, digits, period)) {
-    throw Error('importUnsupportedOtp')
-  }
+  const settings = importedTotp(algorithm, digits, period)
 
   const separator = label.indexOf(':')
   const labelIssuer = separator >= 0 ? label.slice(0, separator).trim() : ''
   const account = separator >= 0 ? label.slice(separator + 1).trim() : label
   const issuer = uri.searchParams.get('issuer')?.trim() || labelIssuer
+  const group = uri.searchParams.get('group')?.trim()
 
   return {
     uuid: generateUUID(),
     name: account || label,
     issuer: issuer || undefined,
     secret,
+    ...(group && { group }),
+    ...settings,
   }
 }
 
@@ -243,12 +248,18 @@ const importEntryKey = (entry: VaultEntry) =>
     entry.name.trim().toLowerCase(),
     entry.group?.trim().toLowerCase() ?? '',
     entry.icon ?? '',
+    (entry.totp ?? DEFAULT_TOTP).algorithm,
+    (entry.totp ?? DEFAULT_TOTP).digits,
+    (entry.totp ?? DEFAULT_TOTP).period,
   ])
+
+const totpArguments = (entries: Pick<VaultEntry, 'secret' | 'totp'>[]) =>
+  entries.map(({ secret, totp }) => (totp ? { secret, totp } : secret))
 
 const validateOtpAuthEntries = async (entries: VaultEntry[]) => {
   try {
     const { codes } = await invoke<GeneratedTOTPs>('generate_totps', {
-      arguments: entries.map((entry) => entry.secret),
+      arguments: totpArguments(entries),
     })
     if (codes.length !== entries.length || codes.some((code) => code === null)) {
       throw Error('importFailed')
@@ -303,7 +314,18 @@ const twoFasServiceToUri = (service: TwoFasService) => {
   }
 
   if (otp.link?.trim()) {
-    return otp.link
+    let uri: URL
+    try {
+      uri = new URL(otp.link)
+    } catch {
+      throw Error('importFailed')
+    }
+    for (const key of ['algorithm', 'digits', 'period'] as const) {
+      if (!uri.searchParams.has(key) && otp[key] !== undefined) {
+        uri.searchParams.set(key, String(otp[key]))
+      }
+    }
+    return uri.toString()
   }
 
   const issuer = otp.issuer?.trim() || service.name?.trim()
@@ -339,15 +361,7 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
       // Older andOTP backups omit these fields and use the standard TOTP defaults.
       // Explicit nonstandard settings must never be silently changed.
       const type = entry.type === undefined ? 'TOTP' : entry.type
-      if (
-        typeof type !== 'string' ||
-        type.toUpperCase() !== 'TOTP' ||
-        !supportedOtpSettings(
-          entry.algorithm === undefined ? 'SHA1' : entry.algorithm,
-          entry.digits === undefined ? 6 : entry.digits,
-          entry.period === undefined ? 30 : entry.period,
-        )
-      ) {
+      if (typeof type !== 'string' || type.toUpperCase() !== 'TOTP') {
         throw Error('importUnsupportedOtp')
       }
       const secret = normalizedSecret(entry.secret)
@@ -362,7 +376,17 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
           name = name.slice(separator + 3).trim() || issuer
         }
       }
-      return { uuid: generateUUID(), name, issuer: issuer || undefined, secret }
+      return {
+        uuid: generateUUID(),
+        name,
+        issuer: issuer || undefined,
+        secret,
+        ...importedTotp(
+          entry.algorithm === undefined ? 'SHA1' : entry.algorithm,
+          entry.digits === undefined ? 6 : entry.digits,
+          entry.period === undefined ? 30 : entry.period,
+        ),
+      }
     })
   }
 
@@ -452,17 +476,8 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
         .filter((group) => typeof group?.uuid === 'string' && typeof group?.name === 'string')
         .map((group) => [group.uuid as string, group.name as string]),
     )
-    const containsUnsupportedEntries = entries.some(
-      (entry) =>
-        entry.type !== 'totp' ||
-        !supportedOtpSettings(entry.info?.algo, entry.info?.digits, entry.info?.period),
-    )
-
-    if (containsUnsupportedEntries) {
-      throw Error('importUnsupportedOtp')
-    }
-
     importedEntries = entries.map((entry) => {
+      if (entry.type !== 'totp' || !entry.info) throw Error('importUnsupportedOtp')
       const currentGroup = entry.groups?.map((group) => groupNames.get(group)).find(Boolean)
       return {
         uuid: entry.uuid,
@@ -471,6 +486,7 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
         group: currentGroup || entry.group,
         secret: entry.info.secret,
         icon: entry.icon,
+        ...importedTotp(entry.info.algo, entry.info.digits, entry.info.period),
       }
     })
   }
@@ -478,11 +494,13 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
   if (format === 'authy') {
     if (!Array.isArray(json)) throw Error('importFailed')
     const entries = json as AuthyEntry[]
-    importedEntries = entries.map((entry) => ({
-      uuid: generateUUID(),
-      name: entry.name,
-      secret: entry.secret,
-    }))
+    importedEntries = entries.map(({ name, secret, uri }) => {
+      if (typeof name !== 'string' || typeof secret !== 'string') throw Error('importFailed')
+      if (!uri) return { uuid: generateUUID(), name, secret }
+      const account = parseOtpAuthUri(uri)
+      if (normalizedSecret(account.secret) !== normalizedSecret(secret)) throw Error('importFailed')
+      return { ...account, name, secret }
+    })
   }
 
   if (format === 'tauthy') {
@@ -496,14 +514,15 @@ export const parseImportedEntries = (json: unknown, format: ImportFormat): Vault
   return importedEntries
 }
 
-export const generateTOTPs = async (secrets: string[]) => {
+export const generateTOTPs = async (entries: Pick<VaultEntry, 'secret' | 'totp'>[]) => {
   try {
-    return await invoke<GeneratedTOTPs>('generate_totps', { arguments: secrets })
+    return await invoke<GeneratedTOTPs>('generate_totps', { arguments: totpArguments(entries) })
   } catch (err) {
     console.error('error from backend:', err)
     return {
-      codes: secrets.map(() => null),
+      codes: entries.map(() => null),
       expiresAtMs: Date.now() + 1000,
+      periodMs: DEFAULT_TOTP.period * 1000,
     }
   }
 }
@@ -517,11 +536,20 @@ export const createCode = async (formData: FormData) => {
   await vault.updateEntries((entries) => ({ entries: [...entries, entry], result: undefined }))
 }
 
-export const editCode = (uuid: string, changes: Partial<FormData>) =>
+export const editCode = (uuid: string, { totp, ...changes }: AccountChanges) =>
   vault.updateEntries((entries) => {
     if (!entries.some((entry) => entry.uuid === uuid)) throw Error('Account no longer exists')
     return {
-      entries: entries.map((entry) => (entry.uuid === uuid ? { ...entry, ...changes } : entry)),
+      entries: entries.map((entry) => {
+        if (entry.uuid !== uuid) return entry
+        const updated = { ...entry, ...changes }
+        if (totp) {
+          const next = customTotp({ ...(entry.totp ?? DEFAULT_TOTP), ...totp }).totp
+          if (next) updated.totp = next
+          else delete updated.totp
+        }
+        return updated
+      }),
       result: undefined,
     }
   })

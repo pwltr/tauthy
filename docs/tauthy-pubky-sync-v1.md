@@ -28,6 +28,9 @@ Devices write only their own file after setup, so simultaneous edits do not over
 object. A failed or unavailable homeserver does not prevent a local account change. Sync retries
 on a later change or when the user chooses **Sync now**.
 
+Custom TOTP settings use the same account fields as [folder sync](./tauthy-sync-v1.md#decrypted-document).
+Update every connected Tauthy device before syncing an account with custom settings.
+
 ## Security and limits
 
 Pubky's `/priv` namespace requires authenticated reads with a matching capability.

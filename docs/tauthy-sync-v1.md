@@ -74,6 +74,12 @@ clock, and a list of records. Each record contains:
 - a revision consisting of a counter and random device ID;
 - either the complete account or a deletion tombstone.
 
+An account with custom TOTP settings includes a `totp` object with `algorithm`, `digits`,
+and `period`. The allowed values match the [backup format](./tauthy-backup-v1.md#otp-fields).
+Accounts without this object use SHA-1, 6 digits, and 30 seconds. Update every Tauthy device
+connected to the vault before syncing a custom account. Older clients reject records with
+custom settings, which pauses sync on those clients until they are updated.
+
 Tombstones are retained so a deletion made while another device is offline is not mistaken for a
 new account when that device returns.
 

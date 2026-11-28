@@ -81,6 +81,7 @@ struct TrayEntry {
   name: String,
   issuer: Option<String>,
   secret: String,
+  totp: Option<crate::otp::TotpSettings>,
 }
 
 fn account_label(account: &TrayEntry) -> String {
@@ -197,7 +198,8 @@ fn copy_account_code(app: &AppHandle, uuid: &str) -> Result<(), String> {
     .into_iter()
     .find(|entry| entry.uuid == uuid)
     .ok_or_else(|| "account not found".to_string())?;
-  let code = commands::generate_totp(account.secret)?;
+  let secret = zeroize::Zeroizing::new(account.secret);
+  let code = commands::generate_totp_for(&secret, account.totp.unwrap_or_default())?;
   app
     .clipboard()
     .write_text(code)
@@ -369,6 +371,7 @@ mod tests {
       name: "Personal".into(),
       issuer: Some("Example".into()),
       secret: "secret".into(),
+      totp: None,
     };
 
     assert_eq!(account_label(&account), "Example (Personal)");

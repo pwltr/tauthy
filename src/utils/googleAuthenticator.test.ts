@@ -78,7 +78,12 @@ describe('Google Authenticator transfer decoding', () => {
     ).toMatchObject({ batchIndex: 0, batchId: 0 })
   })
 
-  it.each([{ type: 1 }, { type: 0 }, { algorithm: 2 }, { algorithm: 3 }, { digits: 2 }])(
+  it('preserves the algorithm and eight digits in the transfer data', () => {
+    const part = parseGoogleMigrationUri(uri([account({ algorithm: 2, digits: 2 })]))
+    expect(part.accounts[0].totp).toEqual({ algorithm: 'SHA256', digits: 8, period: 30 })
+  })
+
+  it.each([{ type: 1 }, { type: 0 }, { algorithm: 4 }, { digits: 3 }])(
     'rejects unsupported OTP settings without changing them: %j',
     (settings) => {
       expect(() => parseGoogleMigrationUri(uri([account(settings)]))).toThrow(

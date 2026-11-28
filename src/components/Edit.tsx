@@ -17,7 +17,15 @@ import { AppBarTitleContext } from '~/context'
 import { editCode } from '~/utils'
 import { deleteAccountWithUndo } from '~/utils/accountDeletion'
 import IconsModal from '~/components/modals/Icons'
-import type { FormData, VaultEntry } from '~/types'
+import TotpFields from '~/components/TotpFields'
+import {
+  customTotp,
+  DEFAULT_TOTP,
+  normalizeTotpSecret,
+  parseTotpSettings,
+  sameTotpSettings,
+} from '~/utils/totp'
+import type { AccountChanges, FormData, VaultEntry } from '~/types'
 
 const IconWrapper = styled('div')`
   display: flex;
@@ -86,7 +94,11 @@ const Edit = () => {
     secret: '',
     icon: '',
   })
-  const isValid = Boolean(form.name && form.secret)
+  const isValid = Boolean(
+    form.name &&
+      form.secret &&
+      (!form.totp || parseTotpSettings(form.totp.algorithm, form.totp.digits, form.totp.period)),
+  )
 
   useEffect(() => {
     let active = true
@@ -101,6 +113,7 @@ const Edit = () => {
         group: entry?.group ?? '',
         secret: entry?.secret ?? '',
         icon: entry?.icon ?? '',
+        totp: entry?.totp,
       })
     })
     return () => {
@@ -124,19 +137,31 @@ const Edit = () => {
     inFlight.current = true
     setBusy(true)
     try {
-      const normalize = (secret: string) =>
-        secret.replace(/\s/g, '').toUpperCase().replace(/=+$/, '')
-      const changes: Partial<FormData> = {}
+      const changes: AccountChanges = {}
       for (const field of ['name', 'issuer', 'group', 'icon'] as const) {
         if (form[field] !== (initial[field] ?? '')) changes[field] = form[field]
       }
-      if (normalize(form.secret) !== normalize(initial.secret)) {
-        const accepted = await confirm(t('edit.secretConfirm'), {
-          title: t('edit.secretTitle'),
-          kind: 'warning',
-        })
+      const secretChanged = normalizeTotpSecret(form.secret) !== normalizeTotpSecret(initial.secret)
+      const settingsChanged = !sameTotpSettings(form.totp, initial.totp)
+      if (secretChanged || settingsChanged) {
+        const accepted = await confirm(
+          t(settingsChanged ? 'totp.changeConfirm' : 'edit.secretConfirm'),
+          {
+            title: t(settingsChanged ? 'totp.changeTitle' : 'edit.secretTitle'),
+            kind: 'warning',
+          },
+        )
         if (!accepted || original.current !== initial) return
-        changes.secret = form.secret
+        if (secretChanged) changes.secret = form.secret
+        if (settingsChanged) {
+          const before = initial.totp ?? DEFAULT_TOTP
+          const after = form.totp ?? DEFAULT_TOTP
+          changes.totp = {
+            ...(before.algorithm !== after.algorithm && { algorithm: after.algorithm }),
+            ...(before.digits !== after.digits && { digits: after.digits }),
+            ...(before.period !== after.period && { period: after.period }),
+          }
+        }
       }
       if (Object.keys(changes).length > 0) await editCode(id, changes)
       if (original.current === initial) navigate(-1)
@@ -171,7 +196,7 @@ const Edit = () => {
 
   return (
     <>
-      <Box sx={{ p: 4 }}>
+      <Box sx={{ p: 4, overflowY: 'auto', minHeight: 0 }}>
         <IconWrapper>
           <Icon onClick={() => !busy && setOpenIconsModal(true)}>
             {form.icon ? (
@@ -233,6 +258,14 @@ const Edit = () => {
               onChange={(event) => onChange('secret', event.target.value.replace(/\s/g, ''))}
             />
           </FormGroup>
+
+          <TotpFields
+            value={form.totp}
+            onChange={(settings) =>
+              setForm((current) => ({ ...current, totp: customTotp(settings).totp }))
+            }
+            disabled={busy}
+          />
 
           <Buttons>
             <Button

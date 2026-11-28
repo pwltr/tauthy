@@ -98,6 +98,22 @@ describe('account edit safeguards', () => {
     expect(mocks.editCode).toHaveBeenCalledExactlyOnceWith('faceit', { name: 'New name' })
   })
 
+  it('confirms a period change and saves the account settings', async () => {
+    mocks.confirm.mockResolvedValue(true)
+    await setup()
+    fireEvent.click(screen.getByRole('button', { name: 'totp.settings' }))
+    fireEvent.change(await screen.findByRole('spinbutton', { name: 'totp.period' }), {
+      target: { value: '60' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'edit.save' }))
+    await screen.findByText('Codes screen')
+    expect(mocks.confirm).toHaveBeenCalledWith('totp.changeConfirm', {
+      title: 'totp.changeTitle',
+      kind: 'warning',
+    })
+    expect(mocks.editCode).toHaveBeenCalledWith('faceit', { totp: { period: 60 } })
+  })
+
   it('shows save failure and keeps the editor open', async () => {
     mocks.editCode.mockRejectedValue(new Error('save failed'))
     await setup()

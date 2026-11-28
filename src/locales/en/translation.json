@@ -114,6 +114,15 @@
     "settings": "Settings",
     "about": "About"
   },
+  "totp": {
+    "settings": "Code settings",
+    "algorithm": "Algorithm",
+    "digits": "Digits",
+    "period": "Period (seconds)",
+    "invalidPeriod": "Enter a whole number from 1 to 3600.",
+    "changeTitle": "Change code settings?",
+    "changeConfirm": "These changes may stop this account’s codes from working. Save the new settings?"
+  },
   "create": {
     "pageTitle": "Add account",
     "name": "Name",
@@ -331,7 +340,7 @@
     "importTauthyDuplicateIds": "This backup contains duplicate account IDs and cannot be imported safely.",
     "importTauthyIdConflict": "An account in this backup conflicts with a different local account using the same ID.",
     "importIdConflict": "An account in this file has the same ID as a different local account.",
-    "importUnsupportedOtp": "This import contains OTP formats Tauthy does not support yet. Only 6-digit SHA-1 TOTP entries with a 30-second period can be imported.",
+    "importUnsupportedOtp": "This import contains unsupported OTP settings. Tauthy supports TOTP with SHA-1, SHA-256, or SHA-512, 6 to 8 digits, and periods of 1 to 3600 seconds.",
     "importGoogleInvalidQr": "No valid Google Authenticator transfer QR code was found.",
     "importGoogleInvalidImage": "This image could not be opened.",
     "importGoogleTooLarge": "This QR image is too large (maximum 10 MiB and 4096 pixels per side).",

@@ -1,16 +1,52 @@
 use ring::hmac;
+use serde::{Deserialize, Serialize};
 
-const TOTP_PERIOD_SECONDS: u64 = 30;
-const SIX_DIGIT_MODULUS: u32 = 1_000_000;
-
-/// Generates the six-digit, SHA-1 TOTP format used by existing Tauthy vaults.
-pub(crate) fn generate_totp_sha1(secret: &[u8], timestamp: u64) -> String {
-  let counter = timestamp / TOTP_PERIOD_SECONDS;
-  format!("{:06}", generate_hotp_sha1(secret, counter))
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum TotpAlgorithm {
+  #[default]
+  Sha1,
+  Sha256,
+  Sha512,
 }
 
-fn generate_hotp_sha1(secret: &[u8], counter: u64) -> u32 {
-  let key = hmac::Key::new(hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY, secret);
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TotpSettings {
+  pub algorithm: TotpAlgorithm,
+  pub digits: u8,
+  pub period: u32,
+}
+
+impl Default for TotpSettings {
+  fn default() -> Self {
+    Self {
+      algorithm: TotpAlgorithm::Sha1,
+      digits: 6,
+      period: 30,
+    }
+  }
+}
+
+impl TotpSettings {
+  pub(crate) fn is_valid(self) -> bool {
+    (6..=8).contains(&self.digits) && (1..=3600).contains(&self.period)
+  }
+
+  pub(crate) fn generate(self, secret: &[u8], timestamp: u64) -> String {
+    let algorithm = match self.algorithm {
+      TotpAlgorithm::Sha1 => hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY,
+      TotpAlgorithm::Sha256 => hmac::HMAC_SHA256,
+      TotpAlgorithm::Sha512 => hmac::HMAC_SHA512,
+    };
+    let counter = timestamp / u64::from(self.period);
+    let value = hotp(secret, counter, algorithm) % 10_u32.pow(self.digits.into());
+    format!("{value:0width$}", width = usize::from(self.digits))
+  }
+}
+
+fn hotp(secret: &[u8], counter: u64, algorithm: hmac::Algorithm) -> u32 {
+  let key = hmac::Key::new(algorithm, secret);
   let digest = hmac::sign(&key, &counter.to_be_bytes());
   let digest = digest.as_ref();
   let offset = (digest[digest.len() - 1] & 0x0f) as usize;
@@ -21,7 +57,7 @@ fn generate_hotp_sha1(secret: &[u8], counter: u64) -> u32 {
     digest[offset + 3],
   ]);
 
-  (truncated & 0x7fff_ffff) % SIX_DIGIT_MODULUS
+  truncated & 0x7fff_ffff
 }
 
 #[cfg(test)]
@@ -37,7 +73,14 @@ mod tests {
     ];
 
     for (counter, code) in expected.into_iter().enumerate() {
-      assert_eq!(generate_hotp_sha1(RFC_SECRET, counter as u64), code);
+      assert_eq!(
+        hotp(
+          RFC_SECRET,
+          counter as u64,
+          hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY
+        ) % 1_000_000,
+        code
+      );
     }
   }
 
@@ -53,7 +96,37 @@ mod tests {
     ];
 
     for (timestamp, code) in expected {
-      assert_eq!(generate_totp_sha1(RFC_SECRET, timestamp), code);
+      assert_eq!(
+        TotpSettings::default().generate(RFC_SECRET, timestamp),
+        code
+      );
+    }
+  }
+
+  #[test]
+  fn matches_rfc_6238_eight_digit_vectors() {
+    for (algorithm, secret, early, late) in [
+      (TotpAlgorithm::Sha1, RFC_SECRET, "94287082", "07081804"),
+      (
+        TotpAlgorithm::Sha256,
+        b"12345678901234567890123456789012".as_slice(),
+        "46119246",
+        "68084774",
+      ),
+      (
+        TotpAlgorithm::Sha512,
+        b"1234567890123456789012345678901234567890123456789012345678901234".as_slice(),
+        "90693936",
+        "25091201",
+      ),
+    ] {
+      let settings = TotpSettings {
+        algorithm,
+        digits: 8,
+        period: 30,
+      };
+      assert_eq!(settings.generate(secret, 59), early);
+      assert_eq!(settings.generate(secret, 1_111_111_109), late);
     }
   }
 }

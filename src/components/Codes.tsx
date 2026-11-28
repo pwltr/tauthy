@@ -49,15 +49,14 @@ const Codes = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [items, setItems] = useState<ListEntry[]>([])
-  const [refreshDelay, setRefreshDelay] = useState<number | null>(null)
-  const [progressDuration, setProgressDuration] = useState(30_000)
+  const [rollover, setRollover] = useState<{ expiresAtMs: number; periodMs: number } | null>(null)
   const [progressKey, setProgressKey] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const vaultRefresh = useRef(0)
 
   const generateTokens = useCallback(
     async (entries: ListEntry[], refresh: number) => {
-      const { codes, expiresAtMs } = await generateTOTPs(entries.map((item) => item.secret))
+      const { codes, expiresAtMs, periodMs } = await generateTOTPs(entries)
       if (refresh !== vaultRefresh.current) return
       const itemsWithTokens = entries.map((item, index) => {
         const token = codes[index] ?? ''
@@ -68,10 +67,8 @@ const Codes = () => {
         }
       })
 
-      const duration = getTOTPRefreshDelay(expiresAtMs)
       setItems(itemsWithTokens)
-      setRefreshDelay(duration)
-      setProgressDuration(duration)
+      setRollover({ expiresAtMs, periodMs })
       setProgressKey((key) => key + 1)
     },
     [t],
@@ -104,12 +101,15 @@ const Codes = () => {
   // Refresh at the exact rollover returned by the backend. A timeout is
   // rescheduled after every response so suspended apps cannot accumulate drift.
   useEffect(() => {
-    if (refreshDelay === null || items.length === 0) return
+    if (rollover === null || items.length === 0) return
 
     const refresh = vaultRefresh.current
-    const timeout = window.setTimeout(() => void generateTokens(items, refresh), refreshDelay)
+    const timeout = window.setTimeout(
+      () => void generateTokens(items, refresh),
+      getTOTPRefreshDelay(rollover.expiresAtMs),
+    )
     return () => window.clearTimeout(timeout)
-  }, [generateTokens, items, refreshDelay])
+  }, [generateTokens, items, rollover])
 
   if (isLoading) {
     return null
@@ -134,7 +134,13 @@ const Codes = () => {
 
       {items.length > 0 && (
         <>
-          <StyledProgressBar key={progressKey} durationMs={progressDuration} />
+          {rollover && (
+            <StyledProgressBar
+              key={progressKey}
+              durationMs={getTOTPRefreshDelay(rollover.expiresAtMs)}
+              periodMs={rollover.periodMs}
+            />
+          )}
           <StyledList
             entries={items}
             header={<BackupReminder />}

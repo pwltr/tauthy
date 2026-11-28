@@ -114,6 +114,15 @@
     "settings": "Einstellungen",
     "about": "Über"
   },
+  "totp": {
+    "settings": "Code-Einstellungen",
+    "algorithm": "Algorithmus",
+    "digits": "Stellen",
+    "period": "Intervall (Sekunden)",
+    "invalidPeriod": "Gib eine ganze Zahl zwischen 1 und 3600 ein.",
+    "changeTitle": "Code-Einstellungen ändern?",
+    "changeConfirm": "Durch diese Änderungen funktionieren die Codes dieses Kontos möglicherweise nicht mehr. Neue Einstellungen speichern?"
+  },
   "create": {
     "pageTitle": "Konto hinzufügen",
     "name": "Name",
@@ -331,7 +340,7 @@
     "importTauthyDuplicateIds": "Diese Sicherung enthält doppelte Konto-IDs und kann nicht sicher importiert werden.",
     "importTauthyIdConflict": "Ein Konto in dieser Sicherung steht im Konflikt mit einem anderen lokalen Konto mit derselben ID.",
     "importIdConflict": "Ein Konto in dieser Datei hat dieselbe ID wie ein anderes lokales Konto.",
-    "importUnsupportedOtp": "Dieser Import enthält OTP-Formate, die Tauthy noch nicht unterstützt. Es können nur 6-stellige SHA-1-TOTP-Einträge mit einem 30-Sekunden-Zeitraum importiert werden.",
+    "importUnsupportedOtp": "Dieser Import enthält nicht unterstützte OTP-Einstellungen. Tauthy unterstützt TOTP mit SHA-1, SHA-256 oder SHA-512, 6 bis 8 Stellen und Intervallen von 1 bis 3600 Sekunden.",
     "importGoogleInvalidQr": "Kein gültiger Google-Authenticator-Transfer-QR-Code gefunden.",
     "importGoogleInvalidImage": "Dieses Bild konnte nicht geöffnet werden.",
     "importGoogleTooLarge": "Dieses QR-Bild ist zu groß (maximal 10 MiB und 4096 Pixel je Seite).",

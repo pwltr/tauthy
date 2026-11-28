@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VaultEntry } from '~/types'
+import { createOtpAuthUri } from '~/utils/totp'
 
 const invoke = vi.hoisted(() => vi.fn())
 const mockVault = vi.hoisted(() => {
@@ -164,9 +165,9 @@ describe('andOTP plaintext imports', () => {
     { type: 'HOTP' },
     { type: 'STEAM' },
     { type: null },
-    { algorithm: 'SHA256' },
-    { digits: 8 },
-    { period: 60 },
+    { algorithm: 'MD5' },
+    { digits: 5 },
+    { period: 0 },
     { period: null },
   ])('rejects explicit unsupported settings: %j', (settings) => {
     expect(() => parseImportedEntries([{ ...entry, ...settings }], 'andotp')).toThrow(
@@ -326,7 +327,7 @@ describe('Bitwarden and Proton imports', () => {
   })
 
   it.each(['bitwarden', 'proton'] as const)('rejects unsupported OTP settings in %s', (format) => {
-    const unsupportedUri = `${uri}&algorithm=SHA256`
+    const unsupportedUri = `${uri}&algorithm=MD5`
     const backup =
       format === 'bitwarden'
         ? { encrypted: false, items: [{ name: 'Dropbox', login: { totp: unsupportedUri } }] }
@@ -641,11 +642,18 @@ describe('TOTP refresh timing', () => {
   })
 
   it('preserves codes and their shared expiry from the backend', async () => {
-    invoke.mockResolvedValue({ codes: ['123456', null], expiresAtMs: 28_000 })
+    const totp = { algorithm: 'SHA512', digits: 8, period: 20 } as const
+    invoke.mockResolvedValue({ codes: ['12345678', null], expiresAtMs: 18_000, periodMs: 20_000 })
 
-    await expect(generateTOTPs(['valid', 'invalid'])).resolves.toEqual({
-      codes: ['123456', null],
-      expiresAtMs: 28_000,
+    await expect(
+      generateTOTPs([{ secret: 'valid', totp }, { secret: 'invalid' }]),
+    ).resolves.toEqual({
+      codes: ['12345678', null],
+      expiresAtMs: 18_000,
+      periodMs: 20_000,
+    })
+    expect(invoke).toHaveBeenCalledWith('generate_totps', {
+      arguments: [{ secret: 'valid', totp }, 'invalid'],
     })
   })
 
@@ -654,7 +662,7 @@ describe('TOTP refresh timing', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     invoke.mockRejectedValueOnce(new Error('backend unavailable'))
 
-    const result = await generateTOTPs(['secret'])
+    const result = await generateTOTPs([{ secret: 'secret' }])
     consoleError.mockRestore()
 
     expect(result.codes).toEqual([null])
@@ -685,11 +693,54 @@ describe('otpauth URI parsing', () => {
 
   it.each([
     'otpauth://hotp/Example:alice?secret=ABC234&counter=1',
-    'otpauth://totp/Example:alice?secret=ABC234&algorithm=SHA256',
-    'otpauth://totp/Example:alice?secret=ABC234&digits=8',
-    'otpauth://totp/Example:alice?secret=ABC234&period=60',
+    'otpauth://totp/Example:alice?secret=ABC234&algorithm=MD5',
+    'otpauth://totp/Example:alice?secret=ABC234&digits=9',
+    'otpauth://totp/Example:alice?secret=ABC234&period=0',
+    'otpauth://totp/Example:alice?secret=ABC234&period=3601',
   ])('rejects unsupported OTP settings in %s', (uri) => {
     expect(() => parseOtpAuthUri(uri)).toThrowError('importUnsupportedOtp')
+  })
+
+  it('preserves custom settings when sharing a QR code and importing its URI', () => {
+    const account = {
+      uuid: 'one',
+      name: 'alice',
+      issuer: 'Example',
+      group: 'Work',
+      secret: 'ABC234',
+      totp: { algorithm: 'SHA512', digits: 7, period: 60 } as const,
+    }
+    expect(parseOtpAuthUri(createOtpAuthUri(account))).toEqual({
+      ...account,
+      uuid: expect.any(String),
+    })
+  })
+
+  it('imports an Aegis backup containing both default and custom TOTP accounts', () => {
+    const entries = [
+      {
+        uuid: 'one',
+        type: 'totp',
+        name: 'Default',
+        info: { secret: 'ABC234', algo: 'SHA1', digits: 6, period: 30 },
+      },
+      {
+        uuid: 'two',
+        type: 'totp',
+        name: 'Custom',
+        info: { secret: 'DEF567', algo: 'SHA-256', digits: 8, period: 60 },
+      },
+    ]
+    const imported = parseImportedEntries({ db: { entries } }, 'aegis')
+    expect(imported[0].totp).toBeUndefined()
+    expect(imported[1].totp).toEqual({ algorithm: 'SHA256', digits: 8, period: 60 })
+  })
+
+  it('preserves Authy settings supplied in the exported URI', () => {
+    const uri = 'otpauth://totp/Account?secret=ABC234&digits=7&period=20'
+    expect(
+      parseImportedEntries([{ name: 'Account', secret: 'ABC234', uri }], 'authy')[0].totp,
+    ).toEqual({ algorithm: 'SHA1', digits: 7, period: 20 })
   })
 
   it.each(['not a URI', 'otpauth://totp/Example', 'otpauth://totp/?secret=ABC234'])(

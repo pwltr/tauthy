@@ -67,15 +67,15 @@ external icon pack. The maximum accepted encoded size is 512 KiB.
 
 ## OTP fields
 
-Version 1 records all OTP parameters explicitly. Tauthy currently accepts only the following values:
+Version 1 records all OTP parameters explicitly.
 
 | Field | Value |
 | --- | --- |
 | `type` | `totp` |
 | `secret` | Non-empty Base32 secret. Tauthy accepts either case, whitespace, and optional padding. |
-| `algorithm` | `SHA1` |
-| `digits` | `6` |
-| `period` | `30` |
+| `algorithm` | `SHA1`, `SHA256`, or `SHA512`. |
+| `digits` | `6`, `7`, or `8`. |
+| `period` | Whole seconds from `1` through `3600`. |
 
 Importers should ignore unknown fields so compatible metadata can be added later. They must not
 silently reinterpret unsupported OTP settings. A breaking schema change will use a new top-level
@@ -83,8 +83,9 @@ silently reinterpret unsupported OTP settings. A breaking schema change will use
 
 ## Compatibility
 
-Tauthy continues to import its legacy unversioned top-level array format. New exports always use the
-versioned format documented here.
+Tauthy continues to import legacy unversioned top-level arrays. Entries without settings use
+SHA-1, 6 digits, and 30 seconds. New exports always use the versioned format documented here.
+Backups containing custom TOTP settings require an importer that supports those settings.
 
 Password-encrypted backups use a separate authenticated-encryption envelope whose decrypted payload
 is a complete `tauthy-backup` document. See

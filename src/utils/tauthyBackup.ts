@@ -1,4 +1,5 @@
 import type { TauthyBackupEntryV1, TauthyBackupV1, VaultEntry } from '~/types'
+import { customTotp, DEFAULT_TOTP, parseTotpSettings, sameTotpSettings } from '~/utils/totp'
 import { generateUUID } from '~/utils/helpers'
 
 export const TAUTHY_BACKUP_FORMAT = 'tauthy-backup'
@@ -49,7 +50,10 @@ const validateVaultEntry = (entry: unknown): entry is VaultEntry => {
     entry.secret.length > 0 &&
     isOptionalString(entry.issuer) &&
     isOptionalString(entry.group) &&
-    isOptionalString(entry.icon)
+    isOptionalString(entry.icon) &&
+    (entry.totp === undefined ||
+      (isRecord(entry.totp) &&
+        Boolean(parseTotpSettings(entry.totp.algorithm, entry.totp.digits, entry.totp.period))))
   )
 }
 
@@ -67,9 +71,7 @@ const validateBackupEntry = (entry: unknown): entry is TauthyBackupEntryV1 => {
     entry.otp.type === 'totp' &&
     typeof entry.otp.secret === 'string' &&
     entry.otp.secret.length > 0 &&
-    entry.otp.algorithm === 'SHA1' &&
-    entry.otp.digits === 6 &&
-    entry.otp.period === 30
+    Boolean(parseTotpSettings(entry.otp.algorithm, entry.otp.digits, entry.otp.period))
   )
 }
 
@@ -100,9 +102,7 @@ const backupEntry = (entry: VaultEntry): TauthyBackupEntryV1 => ({
   otp: {
     type: 'totp',
     secret: entry.secret,
-    algorithm: 'SHA1',
-    digits: 6,
-    period: 30,
+    ...(entry.totp ?? DEFAULT_TOTP),
   },
 })
 
@@ -126,6 +126,7 @@ export const parseTauthyBackup = (value: unknown): VaultEntry[] => {
       issuer: optionalValue(entry.issuer),
       group: optionalValue(entry.group),
       icon: optionalValue(entry.icon),
+      ...(entry.totp ? customTotp(entry.totp) : {}),
     }))
     return repairDuplicateIds(entries)
   }
@@ -155,6 +156,11 @@ export const parseTauthyBackup = (value: unknown): VaultEntry[] => {
     issuer: optionalValue(entry.issuer),
     group: optionalValue(entry.group),
     icon: entry.icon?.base64,
+    ...customTotp({
+      algorithm: entry.otp.algorithm,
+      digits: entry.otp.digits,
+      period: entry.otp.period,
+    }),
   }))
   assertUniqueIds(entries)
   return entries
@@ -164,6 +170,7 @@ const entriesEqual = (left: VaultEntry, right: VaultEntry) =>
   left.uuid === right.uuid &&
   left.name === right.name &&
   left.secret === right.secret &&
+  sameTotpSettings(left.totp, right.totp) &&
   optionalValue(left.issuer) === optionalValue(right.issuer) &&
   optionalValue(left.group) === optionalValue(right.group) &&
   optionalValue(left.icon) === optionalValue(right.icon)

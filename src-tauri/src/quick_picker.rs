@@ -32,6 +32,7 @@ struct Account {
   group: Option<String>,
   icon: Option<String>,
   secret: String,
+  totp: Option<crate::otp::TotpSettings>,
 }
 
 impl Drop for Account {
@@ -80,8 +81,11 @@ fn accounts(records: &dyn crate::vault_access::RecordAccess) -> Result<Vec<Accou
 fn snapshot(vault: &impl VaultAccess, include_metadata: bool) -> Result<Snapshot, String> {
   let result = vault.with_records(|records| {
     let accounts = accounts(records)?;
-    let generated =
-      crate::commands::generate_totps_for(accounts.iter().map(|entry| entry.secret.as_str()))?;
+    let generated = crate::commands::generate_totps_for(
+      accounts
+        .iter()
+        .map(|entry| (entry.secret.as_str(), entry.totp.unwrap_or_default())),
+    )?;
     let expires_at_ms = Some(generated.expires_at_ms);
     if !include_metadata {
       return Ok(Snapshot {
@@ -143,7 +147,10 @@ fn copy_code(
       .iter()
       .find(|entry| entry.uuid == uuid)
       .ok_or("Account not found")?;
-    write(crate::commands::generate_totp_for(&entry.secret)?)
+    write(crate::commands::generate_totp_for(
+      &entry.secret,
+      entry.totp.unwrap_or_default(),
+    )?)
   })
 }
 

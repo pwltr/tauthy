@@ -21,6 +21,7 @@ use tauri::{AppHandle, State};
 use zeroize::{Zeroize, Zeroizing};
 
 use crate::diagnostics::Diagnostics;
+use crate::otp::TotpSettings;
 use crate::vault_access::{ApplicationVault, RecordAccess, VaultAccess};
 
 pub(crate) const SYNC_STORE_NAME: &[u8] = b"sync-config-v1";
@@ -81,6 +82,8 @@ struct VaultEntry {
   group: Option<String>,
   #[serde(default, skip_serializing_if = "Option::is_none")]
   icon: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  totp: Option<TotpSettings>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -385,6 +388,7 @@ fn valid_entry(entry: &VaultEntry) -> bool {
     && entry.name.len() <= 16_384
     && !entry.secret.is_empty()
     && entry.secret.len() <= 16_384
+    && entry.totp.is_none_or(TotpSettings::is_valid)
     && entry
       .issuer
       .as_ref()
@@ -1783,6 +1787,7 @@ mod tests {
       issuer: Some("Example".into()),
       group: None,
       icon: None,
+      totp: None,
     }
   }
 
@@ -1858,7 +1863,16 @@ mod tests {
 
   #[test]
   fn encrypted_payload_round_trips_and_rejects_wrong_password() {
-    let payload = new_payload(vec![entry("one", "One")], "vault".into(), "device");
+    let mut custom = entry("two", "Two");
+    custom.totp = Some(TotpSettings {
+      algorithm: crate::otp::TotpAlgorithm::Sha256,
+      digits: 8,
+      period: 60,
+    });
+    let entries = vec![entry("one", "One"), custom];
+    let serialized = serde_json::to_value(&entries).unwrap();
+    assert!(serialized[0].get("totp").is_none());
+    let payload = new_payload(entries.clone(), "vault".into(), "device");
     let key = random_bytes::<KEY_SIZE>().unwrap();
     let wrapped = wrap_key(&key, b"correct horse battery staple").unwrap();
     let encrypted = envelope(&payload, &key, wrapped.clone()).unwrap();
@@ -1867,10 +1881,25 @@ mod tests {
       decrypt_payload(&encrypted, recovered_key.as_ref()).unwrap(),
       payload
     );
+    assert_eq!(active_entries(&payload), entries);
     assert_eq!(
       unwrap_key(&wrapped, b"incorrect password").unwrap_err(),
       ERR_AUTHENTICATION
     );
+  }
+
+  #[test]
+  fn changing_totp_settings_creates_a_sync_revision() {
+    let mut account = entry("one", "One");
+    let mut payload = new_payload(vec![account.clone()], "vault".into(), "device");
+    let before = payload.clock;
+    account.totp = Some(TotpSettings {
+      period: 60,
+      ..TotpSettings::default()
+    });
+    update_from_local(&mut payload, vec![account.clone()], "device");
+    assert!(payload.clock > before);
+    assert_eq!(active_entries(&payload), vec![account]);
   }
 
   #[test]
