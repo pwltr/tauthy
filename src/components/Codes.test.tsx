@@ -36,8 +36,8 @@ vi.mock('~/components/EntryList', () => ({
   ),
 }))
 vi.mock('~/components/ProgressBar', () => ({
-  default: ({ durationMs }: { durationMs: number }) => (
-    <div data-testid="progress" data-duration={durationMs} />
+  default: ({ durationMs, periodMs }: { durationMs: number; periodMs: number }) => (
+    <div data-testid="progress" data-duration={durationMs} data-period={periodMs} />
   ),
 }))
 vi.mock('react-i18next', () => ({
@@ -69,11 +69,46 @@ describe('code expiration timing', () => {
       { uuid: 'account', name: 'Account', issuer: 'Issuer', secret: 'secret' },
     ])
     mocks.generateTOTPs
-      .mockResolvedValueOnce({ codes: ['111111'], expiresAtMs: 28_000 })
-      .mockResolvedValueOnce({ codes: ['222222'], expiresAtMs: 58_000 })
+      .mockResolvedValueOnce({ codes: ['111111'], expiresAtMs: 28_000, periodMs: 30_000 })
+      .mockResolvedValueOnce({ codes: ['222222'], expiresAtMs: 58_000, periodMs: 30_000 })
   })
 
   afterEach(() => vi.useRealTimers())
+
+  it('uses the period of the next account to expire in a mixed vault', async () => {
+    mocks.getVault.mockResolvedValue([
+      {
+        uuid: 'one',
+        name: 'Custom',
+        secret: 'secret',
+        totp: { algorithm: 'SHA512', digits: 8, period: 25 },
+      },
+      { uuid: 'two', name: 'Default', secret: 'secret' },
+    ])
+    mocks.generateTOTPs
+      .mockReset()
+      .mockResolvedValueOnce({
+        codes: ['12345678', '222222'],
+        expiresAtMs: 23_000,
+        periodMs: 25_000,
+      })
+      .mockResolvedValueOnce({
+        codes: ['87654321', '222222'],
+        expiresAtMs: 28_000,
+        periodMs: 30_000,
+      })
+    render(
+      <MemoryRouter>
+        <Codes />
+      </MemoryRouter>,
+    )
+    await flushPromises()
+    expect(screen.getByTestId('progress')).toHaveAttribute('data-period', '25000')
+    expect(screen.getByTestId('progress')).toHaveAttribute('data-duration', '3000')
+    await act(() => vi.advanceTimersByTimeAsync(3000))
+    expect(screen.getByTestId('account-list')).toHaveTextContent('87654321')
+    expect(screen.getByTestId('progress')).toHaveAttribute('data-period', '30000')
+  })
 
   it('refreshes after a local Undo even without sync enabled', async () => {
     mocks.getVault.mockResolvedValue([])

@@ -1,4 +1,5 @@
 import type { VaultEntry } from '~/types'
+import { sameTotpSettings } from '~/utils/totp'
 
 export const BACKUP_STATUS_EVENT = 'tauthy:backup-status'
 export const VAULT_DATA_EVENT = 'tauthy:vault-data'
@@ -48,13 +49,14 @@ const write = (value: Metadata) => {
 
 export const backupFingerprint = async (entries: VaultEntry[]) => {
   const canonical = entries
-    .map(({ uuid, name, secret, issuer, group, icon }) => [
+    .map(({ uuid, name, secret, issuer, group, icon, totp }) => [
       uuid,
       name,
       secret,
       issuer ?? '',
       group ?? '',
       icon ?? '',
+      ...(totp && !sameTotpSettings(totp) ? [totp.algorithm, totp.digits, totp.period] : []),
     ])
     .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
   const digest = await crypto.subtle.digest(

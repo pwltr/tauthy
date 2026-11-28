@@ -14,6 +14,8 @@ import DescriptionIcon from '@mui/icons-material/Description'
 import { AppBarTitleContext } from '~/context'
 import { createCode } from '~/utils'
 import IconsModal from '~/components/modals/Icons'
+import TotpFields from '~/components/TotpFields'
+import { customTotp, parseTotpSettings } from '~/utils/totp'
 import type { FormData } from '~/types'
 
 const IconWrapper = styled('div')`
@@ -81,6 +83,9 @@ const Create = () => {
     secret: '',
     icon: '',
   })
+  const settingsValid =
+    !form.totp ||
+    Boolean(parseTotpSettings(form.totp.algorithm, form.totp.digits, form.totp.period))
 
   useEffect(() => {
     setAppBarTitle(t('create.pageTitle'))
@@ -108,6 +113,7 @@ const Create = () => {
     event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLElement>,
   ) => {
     event.preventDefault()
+    if (!isValid || !settingsValid) return
 
     try {
       await createCode(form)
@@ -135,7 +141,7 @@ const Create = () => {
 
   return (
     <>
-      <Box sx={{ p: 4 }}>
+      <Box sx={{ p: 4, overflowY: 'auto', minHeight: 0 }}>
         <IconWrapper>
           <Icon onClick={() => setOpenIconsModal(true)}>
             {getIcon()}
@@ -184,6 +190,13 @@ const Create = () => {
             />
           </FormGroup>
 
+          <TotpFields
+            value={form.totp}
+            onChange={(settings) =>
+              setForm((current) => ({ ...current, totp: customTotp(settings).totp }))
+            }
+          />
+
           <Buttons>
             <Button
               type="submit"
@@ -191,7 +204,7 @@ const Create = () => {
               color="primary"
               variant="contained"
               size="medium"
-              disabled={!isValid}
+              disabled={!isValid || !settingsValid}
               onClick={onSubmit}
             >
               {t('create.add')}

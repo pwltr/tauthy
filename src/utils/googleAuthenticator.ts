@@ -1,6 +1,8 @@
 import jsQR from 'jsqr'
+import type { TotpSettings } from '~/types'
+import { customTotp, DEFAULT_TOTP, parseTotpSettings } from '~/utils/totp'
 
-export type GoogleAccount = { name: string; issuer?: string; secret: string }
+export type GoogleAccount = { name: string; issuer?: string; secret: string; totp?: TotpSettings }
 export type GoogleTransferPart = {
   batchId: number
   batchSize: number
@@ -134,8 +136,12 @@ const parseAccount = (bytes: Uint8Array): GoogleAccount => {
     }
   }
 
-  // Google's unspecified algorithm/digit values mean the usual SHA-1/6.
-  if (type !== 2 || ![0, 1].includes(algorithm) || ![0, 1].includes(digits)) {
+  const settings = parseTotpSettings(
+    ['SHA1', 'SHA1', 'SHA256', 'SHA512'][algorithm],
+    [6, 6, 8][digits],
+    DEFAULT_TOTP.period,
+  )
+  if (type !== 2 || !settings) {
     throw Error('importUnsupportedOtp')
   }
   if (!secret?.length || secret.length > MAX_FIELD_BYTES || !name) {
@@ -147,7 +153,7 @@ const parseAccount = (bytes: Uint8Array): GoogleAccount => {
     if (!issuer) issuer = labelIssuer
     if (issuer === labelIssuer) name = name.slice(separator + 1).trim() || name
   }
-  return { name, issuer: issuer || undefined, secret: base32(secret) }
+  return { name, issuer: issuer || undefined, secret: base32(secret), ...customTotp(settings) }
 }
 
 export const parseGoogleMigrationUri = (value: string): GoogleTransferPart => {

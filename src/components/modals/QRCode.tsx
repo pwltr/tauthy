@@ -4,12 +4,7 @@ import { styled } from '@mui/material/styles'
 
 import Modal from '~/components/Modal'
 import { ListEntry } from '~/components/Codes'
-
-const getOtpUri = (name: string, secret: string, issuer = '', group = '') => {
-  // TODO: add period, icon
-  const params = new URLSearchParams({ secret, issuer, group })
-  return `otpauth://totp/${encodeURIComponent(name)}?${params.toString()}`
-}
+import { createOtpAuthUri } from '~/utils/totp'
 
 const Container = styled('div')`
   display: flex;
@@ -55,10 +50,7 @@ const QRCodeModal = ({
     <Modal open={open} onClose={onClose} title={t('modals.qrCode')}>
       <Container onClick={onClose}>
         <Code>
-          <QRCodeSVG
-            value={getOtpUri(entry.name, entry.secret, entry.issuer, entry.group)}
-            size={280}
-          />
+          <QRCodeSVG value={createOtpAuthUri(entry)} size={280} />
 
           {entry.icon && <Icon src={`data:image/svg+xml;base64,${entry.icon}`} alt="" />}
         </Code>

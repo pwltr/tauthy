@@ -64,6 +64,18 @@ describe('Tauthy backup format', () => {
     expect(parseTauthyBackup(createTauthyBackup(entries))).toEqual(entries)
   })
 
+  it('round-trips custom settings and treats a changed setting as a conflict', () => {
+    const custom: VaultEntry = {
+      ...entries[0],
+      totp: { algorithm: 'SHA256', digits: 8, period: 60 },
+    }
+    expect(parseTauthyBackup(createTauthyBackup([custom, entries[1]]))).toEqual([
+      custom,
+      entries[1],
+    ])
+    expect(() => mergeTauthyImport(entries, [custom])).toThrow('importTauthyIdConflict')
+  })
+
   it('continues to import legacy unversioned array backups', () => {
     expect(parseTauthyBackup(entries)).toEqual(entries)
   })

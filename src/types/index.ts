@@ -1,10 +1,19 @@
+export type TotpSettings = {
+  algorithm: 'SHA1' | 'SHA256' | 'SHA512'
+  digits: 6 | 7 | 8
+  period: number
+}
+
 export type FormData = {
   name: string
   issuer: string
   group: string
   secret: string
   icon: string
+  totp?: TotpSettings
 }
+
+export type AccountChanges = Partial<Omit<FormData, 'totp'>> & { totp?: Partial<TotpSettings> }
 
 export type VaultEntry = {
   uuid: string
@@ -13,6 +22,7 @@ export type VaultEntry = {
   issuer?: string
   group?: string
   icon?: string
+  totp?: TotpSettings
 }
 
 export type TauthyBackupEntryV1 = {
@@ -24,12 +34,9 @@ export type TauthyBackupEntryV1 = {
     mimeType: 'image/svg+xml'
     base64: string
   }
-  otp: {
+  otp: TotpSettings & {
     type: 'totp'
     secret: string
-    algorithm: 'SHA1'
-    digits: 6
-    period: 30
   }
 }
 
@@ -69,7 +76,7 @@ export type AuthyEntry = {
   name: string
   secret: string
   // contains type, name, secret, digits, period
-  uri: string
+  uri?: string
 }
 
 export type TwoFasOtp = {

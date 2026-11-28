@@ -1,16 +1,17 @@
 import { styled } from '@mui/material/styles'
+import { DEFAULT_TOTP } from '~/utils/totp'
 
-const TOTP_PERIOD_MS = 30_000
+const DEFAULT_PERIOD_MS = DEFAULT_TOTP.period * 1000
 
-export const getProgressAnimationDelayMs = (remainingMs: number) => {
-  const elapsedMs = Math.min(Math.max(TOTP_PERIOD_MS - remainingMs, 0), TOTP_PERIOD_MS)
+export const getProgressAnimationDelayMs = (remainingMs: number, periodMs = DEFAULT_PERIOD_MS) => {
+  const elapsedMs = Math.min(Math.max(periodMs - remainingMs, 0), periodMs)
   return elapsedMs === 0 ? 0 : -elapsedMs
 }
 
 const Wrapper = styled('div', {
-  shouldForwardProp: (prop: PropertyKey) => prop !== 'durationMs',
-})<{ durationMs: number }>(
-  ({ durationMs, theme }) => `
+  shouldForwardProp: (prop: PropertyKey) => prop !== 'durationMs' && prop !== 'periodMs',
+})<{ durationMs: number; periodMs: number }>(
+  ({ durationMs, periodMs, theme }) => `
     background: ${theme.palette.background.paper};
     display: flex;
     height: 4px;
@@ -22,8 +23,8 @@ const Wrapper = styled('div', {
       to {transform: scaleX(0);}
     }
 
-    animation: ${TOTP_PERIOD_MS}ms slide linear forwards;
-    animation-delay: ${getProgressAnimationDelayMs(durationMs)}ms;
+    animation: ${periodMs}ms slide linear forwards;
+    animation-delay: ${getProgressAnimationDelayMs(durationMs, periodMs)}ms;
 
     @media (prefers-reduced-motion: reduce) {
       display: none;
@@ -41,11 +42,12 @@ const Bar = styled('div')(
 type ProgressBarProps = {
   className?: string
   durationMs: number
+  periodMs?: number
 }
 
-const ProgressBar = ({ className, durationMs }: ProgressBarProps) => {
+const ProgressBar = ({ className, durationMs, periodMs = DEFAULT_PERIOD_MS }: ProgressBarProps) => {
   return (
-    <Wrapper className={className} durationMs={durationMs}>
+    <Wrapper className={className} durationMs={durationMs} periodMs={periodMs}>
       <Bar />
     </Wrapper>
   )

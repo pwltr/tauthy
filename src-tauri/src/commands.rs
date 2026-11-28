@@ -1,16 +1,21 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use data_encoding::BASE32_NOPAD;
-use zeroize::Zeroizing;
+use serde::Deserialize;
+use zeroize::{Zeroize, Zeroizing};
 
-const PERIOD_SECONDS: u64 = 30;
-const PERIOD_MILLISECONDS: u128 = PERIOD_SECONDS as u128 * 1_000;
-const SKEW: u64 = 2;
-const SKEW_MILLISECONDS: u128 = SKEW as u128 * 1_000;
+use crate::otp::TotpSettings;
 
 const INVALID_SECRET: &str = "could not generate totp; `secret` may be invalid.";
 
-fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
+fn generate_totp_with_settings(
+  argument: &str,
+  timestamp: u64,
+  settings: TotpSettings,
+) -> Result<String, String> {
+  if !settings.is_valid() {
+    return Err("Unsupported TOTP settings".into());
+  }
   let normalized = Zeroizing::new(
     argument
       .chars()
@@ -33,7 +38,7 @@ fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
     .map_err(|_| INVALID_SECRET.to_string())?;
   decoded.truncate(written);
 
-  Ok(crate::otp::generate_totp_sha1(&decoded, timestamp))
+  Ok(settings.generate(&decoded, timestamp))
 }
 
 #[derive(serde::Serialize)]
@@ -41,6 +46,7 @@ fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
 pub struct GeneratedTotps {
   pub(crate) codes: Vec<Option<String>>,
   pub(crate) expires_at_ms: u64,
+  pub(crate) period_ms: u32,
 }
 
 fn current_time() -> Result<Duration, String> {
@@ -49,55 +55,109 @@ fn current_time() -> Result<Duration, String> {
     .map_err(|_| "system time was before the Unix epoch.".to_string())
 }
 
-fn timestamp_with_skew(duration: Duration) -> u64 {
-  duration.as_secs().saturating_add(SKEW)
+fn skew_seconds(period: u32) -> u64 {
+  u64::from((period.saturating_sub(1) / 2).min(2))
 }
 
-fn next_expiration_ms(elapsed_ms: u128) -> u64 {
-  let adjusted_ms = elapsed_ms.saturating_add(SKEW_MILLISECONDS);
-  let next_boundary = (adjusted_ms / PERIOD_MILLISECONDS + 1) * PERIOD_MILLISECONDS;
-  next_boundary.saturating_sub(SKEW_MILLISECONDS) as u64
+fn timestamp_with_skew(duration: Duration, period: u32) -> u64 {
+  duration.as_secs().saturating_add(skew_seconds(period))
+}
+
+fn next_expiration_ms(elapsed_ms: u128, period: u32) -> u64 {
+  let period_ms = u128::from(period) * 1_000;
+  let skew_ms = u128::from(skew_seconds(period)) * 1_000;
+  let next_boundary = ((elapsed_ms + skew_ms) / period_ms + 1) * period_ms;
+  (next_boundary - skew_ms) as u64
 }
 
 #[tauri::command]
 pub fn generate_totp(argument: String) -> Result<String, String> {
   let argument = Zeroizing::new(argument);
-  generate_totp_for(&argument)
+  generate_totp_for(&argument, TotpSettings::default())
 }
 
-pub(crate) fn generate_totp_for(argument: &str) -> Result<String, String> {
+pub(crate) fn generate_totp_for(argument: &str, settings: TotpSettings) -> Result<String, String> {
   if argument.is_empty() {
     return Err("`secret` was empty; it must be nonempty.".into());
   }
 
-  generate_totp_at(argument, timestamp_with_skew(current_time()?))
+  generate_totp_with_settings(
+    argument,
+    timestamp_with_skew(current_time()?, settings.period),
+    settings,
+  )
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum TotpArgument {
+  Secret(String),
+  Account { secret: String, totp: TotpSettings },
+}
+
+impl Drop for TotpArgument {
+  fn drop(&mut self) {
+    match self {
+      Self::Secret(secret) | Self::Account { secret, .. } => secret.zeroize(),
+    }
+  }
 }
 
 #[tauri::command]
-pub fn generate_totps(arguments: Vec<String>) -> Result<GeneratedTotps, String> {
-  let arguments = Zeroizing::new(arguments);
-  generate_totps_for(arguments.iter().map(String::as_str))
+pub fn generate_totps(arguments: Vec<TotpArgument>) -> Result<GeneratedTotps, String> {
+  generate_totps_for(arguments.iter().map(|argument| match argument {
+    TotpArgument::Secret(secret) => (secret.as_str(), TotpSettings::default()),
+    TotpArgument::Account { secret, totp } => (secret.as_str(), *totp),
+  }))
 }
 
 pub(crate) fn generate_totps_for<'a>(
-  arguments: impl IntoIterator<Item = &'a str>,
+  arguments: impl IntoIterator<Item = (&'a str, TotpSettings)>,
 ) -> Result<GeneratedTotps, String> {
-  let current_time = current_time()?;
-  let timestamp = timestamp_with_skew(current_time);
+  Ok(generate_totps_at(arguments, current_time()?))
+}
+
+fn generate_totps_at<'a>(
+  arguments: impl IntoIterator<Item = (&'a str, TotpSettings)>,
+  now: Duration,
+) -> GeneratedTotps {
+  let mut next_refresh = None;
   let codes = arguments
     .into_iter()
-    .map(|argument| generate_totp_at(argument, timestamp).ok())
+    .map(|(secret, settings)| {
+      let code =
+        generate_totp_with_settings(secret, timestamp_with_skew(now, settings.period), settings)
+          .ok()?;
+      let next = (
+        next_expiration_ms(now.as_millis(), settings.period),
+        settings.period * 1_000,
+      );
+      next_refresh = Some(next_refresh.map_or(next, |previous| next.min(previous)));
+      Some(code)
+    })
     .collect();
 
-  Ok(GeneratedTotps {
+  let default_period = TotpSettings::default().period;
+  let (expires_at_ms, period_ms) = next_refresh.unwrap_or_else(|| {
+    (
+      next_expiration_ms(now.as_millis(), default_period),
+      default_period * 1_000,
+    )
+  });
+  GeneratedTotps {
     codes,
-    expires_at_ms: next_expiration_ms(current_time.as_millis()),
-  })
+    expires_at_ms,
+    period_ms,
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  fn generate_totp_at(argument: &str, timestamp: u64) -> Result<String, String> {
+    generate_totp_with_settings(argument, timestamp, TotpSettings::default())
+  }
 
   #[test]
   fn valid_argument_ok() {
@@ -167,8 +227,35 @@ mod tests {
 
   #[test]
   fn expiration_matches_the_skewed_totp_boundary() {
-    assert_eq!(next_expiration_ms(0), 28_000);
-    assert_eq!(next_expiration_ms(27_999), 28_000);
-    assert_eq!(next_expiration_ms(28_000), 58_000);
+    assert_eq!(next_expiration_ms(0, 30), 28_000);
+    assert_eq!(next_expiration_ms(27_999, 30), 28_000);
+    assert_eq!(next_expiration_ms(28_000, 30), 58_000);
+  }
+
+  #[test]
+  fn mixed_accounts_refresh_at_the_earliest_actual_rollover() {
+    let default = TotpSettings::default();
+    let custom = TotpSettings {
+      period: 20,
+      digits: 8,
+      ..default
+    };
+    let fast = TotpSettings {
+      period: 1,
+      ..default
+    };
+    let accounts = [
+      ("JBSWY3DPEHPK3PXP", default),
+      ("JBSWY3DPEHPK3PXP", custom),
+      ("bad!", fast),
+    ];
+    let first = generate_totps_at(accounts, Duration::from_millis(17_999));
+    assert_eq!((first.expires_at_ms, first.period_ms), (18_000, 20_000));
+    assert_eq!(first.codes[1].as_ref().unwrap().len(), 8);
+    assert_eq!(first.codes[2], None);
+    let next = generate_totps_at(accounts, Duration::from_millis(18_000));
+    assert_eq!((next.expires_at_ms, next.period_ms), (28_000, 30_000));
+    assert_eq!(first.codes[0], next.codes[0]);
+    assert_ne!(first.codes[1], next.codes[1]);
   }
 }
