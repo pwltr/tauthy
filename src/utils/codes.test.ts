@@ -1,7 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { VaultEntry } from '~/types'
 
 const invoke = vi.hoisted(() => vi.fn())
-const mockVault = vi.hoisted(() => ({ getVault: vi.fn(), save: vi.fn() }))
+const mockVault = vi.hoisted(() => {
+  const getVault = vi.fn<() => Promise<VaultEntry[]>>()
+  const save = vi.fn()
+  return {
+    getVault,
+    save,
+    async updateEntries<T>(
+      update: (entries: VaultEntry[]) => { entries: VaultEntry[]; result: T },
+    ) {
+      const current = await getVault()
+      const { entries, result } = update(current)
+      if (entries !== current) await save(JSON.stringify(entries))
+      return result
+    },
+  }
+})
 const saveFile = vi.hoisted(() => vi.fn())
 const writeTextFile = vi.hoisted(() => vi.fn())
 
@@ -28,7 +44,48 @@ import {
   parseOtpAuthUriList,
   prepareImport,
   prepareGoogleImport,
+  deleteCode,
+  restoreCode,
+  editCode,
 } from '~/utils/codes'
+
+describe('account deletion and restoration', () => {
+  const entry = { uuid: 'faceit', name: 'FaceIt', secret: 'JBSWY3DP', group: 'Games', icon: 'svg' }
+  beforeEach(() => {
+    mockVault.getVault.mockReset().mockResolvedValue([entry])
+    mockVault.save.mockReset().mockResolvedValue(undefined)
+  })
+  it('returns the complete deleted account only after a successful save', async () => {
+    expect(await deleteCode(entry.uuid)).toEqual(entry)
+    expect(mockVault.save).toHaveBeenCalledWith('[]')
+    mockVault.save.mockRejectedValue(new Error('locked'))
+    await expect(deleteCode(entry.uuid)).rejects.toThrow('locked')
+  })
+  it('restores all fields while preserving intervening changes', async () => {
+    const other = { uuid: 'other', name: 'New account', secret: 'GEZD' }
+    mockVault.getVault.mockResolvedValue([other])
+    await restoreCode(entry)
+    expect(mockVault.save).toHaveBeenCalledWith(JSON.stringify([other, entry]))
+  })
+  it('never overwrites an existing account with the same ID', async () => {
+    mockVault.getVault.mockResolvedValue([{ ...entry, name: 'Edited elsewhere' }])
+    await restoreCode(entry)
+    expect(mockVault.save).not.toHaveBeenCalled()
+  })
+  it('propagates edit failures instead of pretending the secret was saved', async () => {
+    mockVault.save.mockRejectedValue(new Error('locked'))
+    await expect(editCode(entry.uuid, { secret: 'GEZD' })).rejects.toThrow('locked')
+  })
+
+  it('preserves a newer secret when the editor sends a name change', async () => {
+    const synced = { ...entry, secret: 'GEZD' }
+    mockVault.getVault.mockResolvedValue([synced])
+    await editCode(entry.uuid, { name: 'Renamed' })
+    expect(mockVault.save).toHaveBeenCalledExactlyOnceWith(
+      JSON.stringify([{ ...synced, name: 'Renamed' }]),
+    )
+  })
+})
 
 describe('Google Authenticator import preview', () => {
   const account = { name: 'alice', issuer: 'Dropbox', secret: 'JBSWY3DP' }

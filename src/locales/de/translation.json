@@ -124,6 +124,12 @@
     "editIcon": "Icon ändern"
   },
   "edit": {
+    "deleted": "Konto gelöscht",
+    "undo": "Rückgängig",
+    "undoFailed": "Konto konnte nicht wiederhergestellt werden",
+    "secretTitle": "Geheimnis ändern?",
+    "secretConfirm": "Wenn du das Geheimnis änderst, funktionieren die Codes dieses Kontos möglicherweise nicht mehr. Neues Geheimnis speichern?",
+    "saveFailed": "Konto konnte nicht gespeichert werden",
     "pageTitle": "Konto bearbeiten",
     "name": "Name",
     "issuer": "Herausgeber (optional)",

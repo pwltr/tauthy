@@ -1,4 +1,6 @@
-import { useState, useEffect, useContext, startTransition } from 'react'
+import { useState, useEffect, useContext, useRef } from 'react'
+import { confirm } from '@tauri-apps/plugin-dialog'
+import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { styled } from '@mui/material/styles'
@@ -12,7 +14,8 @@ import DescriptionIcon from '@mui/icons-material/Description'
 
 import { vault } from '~/utils/storage'
 import { AppBarTitleContext } from '~/context'
-import { deleteCode, editCode } from '~/utils'
+import { editCode } from '~/utils'
+import { deleteAccountWithUndo } from '~/utils/accountDeletion'
 import IconsModal from '~/components/modals/Icons'
 import type { FormData, VaultEntry } from '~/types'
 
@@ -72,8 +75,10 @@ const Edit = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setAppBarTitle } = useContext(AppBarTitleContext)
-  const [isValid, setIsValid] = useState(true)
   const [openIconsModal, setOpenIconsModal] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const inFlight = useRef(false)
+  const original = useRef<VaultEntry | undefined>(undefined)
   const [form, setForm] = useState<FormData>({
     name: '',
     issuer: '',
@@ -81,62 +86,86 @@ const Edit = () => {
     secret: '',
     icon: '',
   })
-
-  const getEntry = async () => {
-    const currentVault = await vault.getVault()
-    const entry = currentVault.find((entry: VaultEntry) => entry.uuid === id)
-
-    setForm({
-      name: entry?.name ?? '',
-      issuer: entry?.issuer ?? '',
-      group: entry?.group ?? '',
-      secret: entry?.secret ?? '',
-      icon: entry?.icon ?? '',
-    })
-  }
+  const isValid = Boolean(form.name && form.secret)
 
   useEffect(() => {
+    let active = true
     setAppBarTitle(t('edit.pageTitle'))
-    getEntry()
-  }, [setAppBarTitle, t])
+    void vault.getVault().then((entries) => {
+      if (!active) return
+      const entry = entries.find((entry) => entry.uuid === id)
+      original.current = entry
+      setForm({
+        name: entry?.name ?? '',
+        issuer: entry?.issuer ?? '',
+        group: entry?.group ?? '',
+        secret: entry?.secret ?? '',
+        icon: entry?.icon ?? '',
+      })
+    })
+    return () => {
+      active = false
+      original.current = undefined
+    }
+  }, [id, setAppBarTitle, t])
 
   const onIconClick = (icon: string) => {
     setForm((formData) => ({ ...formData, icon }))
   }
 
   const onChange = (key: keyof FormData, value: string) => {
-    const formData = { ...form, [key]: value }
-    setForm(formData)
-
-    // validate non-urgently
-    startTransition(() => {
-      if (!formData.name || !formData.secret) {
-        setIsValid(false)
-      } else {
-        setIsValid(true)
-      }
-    })
+    setForm((formData) => ({ ...formData, [key]: value }))
   }
 
-  const onSubmit = async (
-    event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLElement>,
-  ) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
+    const initial = original.current
+    if (inFlight.current || !isValid || !initial || initial.uuid !== id) return
+    inFlight.current = true
+    setBusy(true)
     try {
-      await editCode(id, form)
-      navigate(-1)
-    } catch (err) {
-      console.error(err)
+      const normalize = (secret: string) =>
+        secret.replace(/\s/g, '').toUpperCase().replace(/=+$/, '')
+      const changes: Partial<FormData> = {}
+      for (const field of ['name', 'issuer', 'group', 'icon'] as const) {
+        if (form[field] !== (initial[field] ?? '')) changes[field] = form[field]
+      }
+      if (normalize(form.secret) !== normalize(initial.secret)) {
+        const accepted = await confirm(t('edit.secretConfirm'), {
+          title: t('edit.secretTitle'),
+          kind: 'warning',
+        })
+        if (!accepted || original.current !== initial) return
+        changes.secret = form.secret
+      }
+      if (Object.keys(changes).length > 0) await editCode(id, changes)
+      if (original.current === initial) navigate(-1)
+    } catch {
+      toast.error(t('edit.saveFailed'))
+    } finally {
+      inFlight.current = false
+      setBusy(false)
     }
   }
 
   const handleDelete = async () => {
+    const initial = original.current
+    if (inFlight.current || !initial || initial.uuid !== id) return
+    inFlight.current = true
+    setBusy(true)
     try {
-      await deleteCode(id)
-      navigate(-1)
-    } catch (err) {
-      console.error(err)
+      const accepted = await confirm(t('contextMenu.deleteConfirm', { name: initial.name }), {
+        title: t('contextMenu.delete'),
+        kind: 'warning',
+      })
+      if (!accepted || original.current !== initial) return
+      await deleteAccountWithUndo(id, t)
+      if (original.current === initial) navigate(-1)
+    } catch {
+      toast.error(t('contextMenu.deleteFailed'))
+    } finally {
+      inFlight.current = false
+      setBusy(false)
     }
   }
 
@@ -144,7 +173,7 @@ const Edit = () => {
     <>
       <Box sx={{ p: 4 }}>
         <IconWrapper>
-          <Icon onClick={() => setOpenIconsModal(true)}>
+          <Icon onClick={() => !busy && setOpenIconsModal(true)}>
             {form.icon ? (
               <ServiceIcon src={`data:image/svg+xml;base64,${form.icon}`} alt="" />
             ) : (
@@ -169,11 +198,13 @@ const Edit = () => {
               fullWidth
               margin="normal"
               autoComplete="off"
+              disabled={busy}
               onChange={(event) => onChange('name', event.target.value)}
             />
             <TextField
               value={form.issuer}
               label={t('edit.issuer')}
+              disabled={busy}
               variant="filled"
               size="small"
               fullWidth
@@ -183,6 +214,7 @@ const Edit = () => {
             <TextField
               value={form.group}
               label={t('edit.group')}
+              disabled={busy}
               variant="filled"
               size="small"
               fullWidth
@@ -192,6 +224,7 @@ const Edit = () => {
             <TextField
               value={form.secret}
               label={t('edit.secret')}
+              disabled={busy}
               variant="filled"
               size="small"
               fullWidth
@@ -205,9 +238,10 @@ const Edit = () => {
             <Button
               aria-label={t('edit.delete')}
               color="error"
-              variant="contained"
+              variant="text"
               size="medium"
               onClick={handleDelete}
+              disabled={busy}
             >
               {t('edit.delete')}
             </Button>
@@ -218,8 +252,7 @@ const Edit = () => {
               color="primary"
               variant="contained"
               size="medium"
-              disabled={!isValid}
-              onClick={onSubmit}
+              disabled={!isValid || busy}
             >
               {t('edit.save')}
             </Button>

@@ -452,6 +452,7 @@ mod tests {
       "vault_get",
       "vault_load",
       "vault_save",
+      "vault_save_if_current",
       "encrypt_tauthy_backup",
       "quick_picker_configure",
     ] {

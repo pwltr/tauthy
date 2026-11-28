@@ -214,6 +214,48 @@ describe('file-vault frontend dispatcher', () => {
     await expect(vault.checkVault()).rejects.toEqual({ code: 'vaultLocked' })
   })
 
+  it('retries Undo against the latest record when another deletion wins the first write', async () => {
+    const { deleteCode, restoreCode } = await import('./codes')
+    const previous = { uuid: 'previous', name: 'Previous', secret: 'MZXW6' }
+    const next = { uuid: 'next', name: 'Next', secret: 'MZXW6YTBOI' }
+    let stored = JSON.stringify([next])
+    mocks.invoke.mockImplementation(async (command, args) => {
+      if (command === 'vault_get') return stored
+      if (command === 'vault_save_if_current') {
+        if (args.expected !== stored) return false
+        stored = args.record
+        return true
+      }
+    })
+    await Promise.all([deleteCode(next.uuid), restoreCode(previous)])
+
+    expect(JSON.parse(stored)).toEqual([previous])
+    expect(
+      mocks.invoke.mock.calls.filter(([command]) => command === 'vault_save_if_current'),
+    ).toHaveLength(3)
+  })
+
+  it('stops a stale update when the vault session ends before the retry', async () => {
+    const { vault } = await import('./storage')
+    mocks.invoke.mockImplementation(async (command) => {
+      if (command === 'vault_get') return '[]'
+      if (command === 'vault_save_if_current') {
+        await vault.lock()
+        return false
+      }
+    })
+    await expect(
+      vault.updateEntries(() => ({
+        entries: [{ uuid: 'old', name: 'Old', secret: 'MZXW6' }],
+        result: undefined,
+      })),
+    ).rejects.toThrow('Vault changed')
+    expect(
+      mocks.invoke.mock.calls.filter(([command]) => command === 'vault_save_if_current'),
+    ).toHaveLength(1)
+    expect(mocks.sync).not.toHaveBeenCalled()
+  })
+
   it('deletes through the journaled backend only; does not remove files or recreate', async () => {
     const { vault } = await import('./storage')
     await vault.destroy()

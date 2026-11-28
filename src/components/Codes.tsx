@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { Trans, useTranslation } from 'react-i18next'
 import styled from 'styled-components'
@@ -7,7 +7,9 @@ import AddIcon from '@mui/icons-material/Add'
 import { Link, Typography } from '@mui/material'
 
 import { vault } from '~/utils/storage'
-import { deleteCode, generateTOTPs, getTOTPRefreshDelay, SYNC_COMPLETE_EVENT } from '~/utils'
+import { generateTOTPs, getTOTPRefreshDelay, SYNC_COMPLETE_EVENT } from '~/utils'
+import { deleteAccountWithUndo } from '~/utils/accountDeletion'
+import { VAULT_DATA_EVENT } from '~/utils/backupStatus'
 import ProgressBar from '~/components/ProgressBar'
 import EntryList from '~/components/EntryList'
 import BackupReminder from '~/components/BackupReminder'
@@ -51,10 +53,12 @@ const Codes = () => {
   const [progressDuration, setProgressDuration] = useState(30_000)
   const [progressKey, setProgressKey] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const vaultRefresh = useRef(0)
 
   const generateTokens = useCallback(
-    async (entries: ListEntry[]) => {
+    async (entries: ListEntry[], refresh: number) => {
       const { codes, expiresAtMs } = await generateTOTPs(entries.map((item) => item.secret))
+      if (refresh !== vaultRefresh.current) return
       const itemsWithTokens = entries.map((item, index) => {
         const token = codes[index] ?? ''
         return {
@@ -76,10 +80,12 @@ const Codes = () => {
   const getEntries = useCallback(async () => {
     // Keep the list mounted during background syncs so its scroll position
     // survives the vault refresh. The initial load already starts in this state.
+    const refresh = ++vaultRefresh.current
     const currentVault = await vault.getVault()
+    if (refresh !== vaultRefresh.current) return
     setItems(currentVault)
-    if (currentVault.length > 0) await generateTokens(currentVault)
     setIsLoading(false)
+    if (currentVault.length > 0) await generateTokens(currentVault, refresh)
   }, [generateTokens])
 
   // Load on mount and refresh if a background sync changes the local vault.
@@ -87,7 +93,12 @@ const Codes = () => {
     void getEntries()
     const refresh = () => void getEntries()
     window.addEventListener(SYNC_COMPLETE_EVENT, refresh)
-    return () => window.removeEventListener(SYNC_COMPLETE_EVENT, refresh)
+    window.addEventListener(VAULT_DATA_EVENT, refresh)
+    return () => {
+      vaultRefresh.current += 1
+      window.removeEventListener(SYNC_COMPLETE_EVENT, refresh)
+      window.removeEventListener(VAULT_DATA_EVENT, refresh)
+    }
   }, [getEntries])
 
   // Refresh at the exact rollover returned by the backend. A timeout is
@@ -95,7 +106,8 @@ const Codes = () => {
   useEffect(() => {
     if (refreshDelay === null || items.length === 0) return
 
-    const timeout = window.setTimeout(() => void generateTokens(items), refreshDelay)
+    const refresh = vaultRefresh.current
+    const timeout = window.setTimeout(() => void generateTokens(items, refresh), refreshDelay)
     return () => window.clearTimeout(timeout)
   }, [generateTokens, items, refreshDelay])
 
@@ -127,8 +139,7 @@ const Codes = () => {
             entries={items}
             header={<BackupReminder />}
             onDelete={async (uuid: string) => {
-              await deleteCode(uuid)
-              await getEntries()
+              await deleteAccountWithUndo(uuid, t)
             }}
           />
         </>
