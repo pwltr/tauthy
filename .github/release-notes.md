@@ -1,17 +1,15 @@
-## What's new in 0.6.0
+## What's new in 0.7.0
 
-- Import Google Authenticator transfer QR codes from image files or the clipboard,
-  including multi-code transfers, with an account review before saving.
-- Pubky sync: connect with Pubky Ring and sync encrypted accounts through
-  your homeserver. A recovery code lets another device join.
-- macOS Quick Picker: find and copy a code from a shortcut-accessible window.
-- Typo-tolerant search helps you find accounts even with small spelling mistakes.
-- New keyboard shortcuts, code-list navigation, native macOS menu commands, and
-  account right-click actions make common tasks quicker.
-- Backup status and reminders help you keep an up-to-date export.
-- Smoother startup and onboarding, with fewer theme flashes and UI polish.
-- Updated macOS app icon and an integrated title bar.
-- Export privacy-safe diagnostic logs from Settings when troubleshooting.
+- Automatic updates on Windows and Linux now use signed installers and AppImages
+  directly. The legacy updater ZIPs and AppImage archive have been retired.
+
+### Upgrading from Tauthy 0.2.8 or earlier
+
+This release uses Tauri 2 update packages. If you're still on Tauthy 0.2.8 or
+earlier, first export a backup, then download and install
+[Tauthy 0.6.0](https://github.com/pwltr/tauthy/releases/tag/v0.6.0) manually. Use
+the `.msi` installer on Windows. Open 0.6.0 and unlock your vault if prompted
+before using automatic updates again.
 
 ### Windows upgrade notice
 
@@ -25,7 +23,7 @@ If the update prompt keeps reappearing:
 1. Export a Tauthy backup.
 2. Close Tauthy and uninstall the older Tauthy installation from Windows
    Settings. If both the old and current versions are listed, uninstall both.
-3. Download and install the `.msi` package from this release.
+3. Install the v0.6.0 `.msi` package linked above.
 
 This is a one-time installer migration. Updates after 0.4.1 should install
 normally.
