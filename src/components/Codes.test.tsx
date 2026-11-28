@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('~/utils/storage', () => ({ vault: { getVault: mocks.getVault } }))
+vi.mock('~/utils/accountDeletion', () => ({ deleteAccountWithUndo: vi.fn() }))
 vi.mock('~/utils', () => ({
   SYNC_COMPLETE_EVENT: 'tauthy:sync-complete',
   generateTOTPs: mocks.generateTOTPs,
@@ -51,6 +52,7 @@ vi.mock('react-i18next', () => ({
 }))
 
 import Codes from '~/components/Codes'
+import { VAULT_DATA_EVENT } from '~/utils/backupStatus'
 
 const flushPromises = () =>
   act(async () => {
@@ -72,6 +74,43 @@ describe('code expiration timing', () => {
   })
 
   afterEach(() => vi.useRealTimers())
+
+  it('refreshes after a local Undo even without sync enabled', async () => {
+    mocks.getVault.mockResolvedValue([])
+    render(
+      <MemoryRouter>
+        <Codes />
+      </MemoryRouter>,
+    )
+    await flushPromises()
+    expect(screen.queryByTestId('account-list')).not.toBeInTheDocument()
+    mocks.getVault.mockResolvedValue([{ uuid: 'restored', name: 'FaceIt', secret: 'secret' }])
+    act(() => window.dispatchEvent(new Event(VAULT_DATA_EVENT)))
+    await flushPromises()
+    expect(screen.getByTestId('account-list')).toHaveTextContent('111111')
+  })
+
+  it('keeps a deleted account off the list when an older code request finishes late', async () => {
+    let finishCodes!: (result: { codes: string[]; expiresAtMs: number }) => void
+    mocks.generateTOTPs.mockReset().mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishCodes = resolve
+        }),
+    )
+    render(
+      <MemoryRouter>
+        <Codes />
+      </MemoryRouter>,
+    )
+    await flushPromises()
+    expect(mocks.generateTOTPs).toHaveBeenCalledOnce()
+    mocks.getVault.mockResolvedValue([])
+    act(() => window.dispatchEvent(new Event(VAULT_DATA_EVENT)))
+    await flushPromises()
+    await act(async () => finishCodes({ codes: ['111111'], expiresAtMs: 28_000 }))
+    expect(screen.queryByTestId('account-list')).not.toBeInTheDocument()
+  })
 
   it('starts with the actual remaining lifetime and refreshes at expiry', async () => {
     render(

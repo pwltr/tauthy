@@ -1804,6 +1804,27 @@ mod tests {
   }
 
   #[test]
+  fn undo_deletion_supersedes_the_synced_tombstone() {
+    let account = entry("faceit", "FaceIt");
+    let mut local = new_payload(vec![account.clone()], "vault".into(), "a");
+    update_from_local(&mut local, vec![], "a");
+    let deleted = local.clone();
+    let deletion_clock = deleted.clock;
+    assert!(active_entries(&deleted).is_empty());
+
+    update_from_local(&mut local, vec![account.clone()], "a");
+    assert!(local.clock > deletion_clock);
+    assert_eq!(
+      active_entries(&merge_payloads(local.clone(), deleted.clone()).unwrap()),
+      vec![account.clone()]
+    );
+    assert_eq!(
+      active_entries(&merge_payloads(deleted, local).unwrap()),
+      vec![account]
+    );
+  }
+
+  #[test]
   fn merge_keeps_independent_changes_and_propagates_deletions() {
     let base = new_payload(
       vec![entry("one", "One"), entry("two", "Two")],

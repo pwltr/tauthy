@@ -124,6 +124,12 @@
     "editIcon": "Edit icon"
   },
   "edit": {
+    "deleted": "Account deleted",
+    "undo": "Undo",
+    "undoFailed": "Could not restore account",
+    "secretTitle": "Change secret?",
+    "secretConfirm": "Changing the secret may stop this account’s codes from working. Save the new secret?",
+    "saveFailed": "Could not save account",
     "pageTitle": "Edit account",
     "name": "Name",
     "issuer": "Issuer (optional)",

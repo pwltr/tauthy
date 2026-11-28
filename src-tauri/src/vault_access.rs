@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use zeroize::Zeroizing;
 
 use crate::{
-  legacy_vault,
+  legacy_vault, tray,
   vault_file::Records,
   vault_runtime::{Runtime, Update},
 };
@@ -114,6 +114,46 @@ impl VaultAccess for Runtime {
 pub(crate) type ApplicationVault = crate::vault_commands::FileVaultState;
 #[cfg(not(feature = "file-vault"))]
 pub(crate) type ApplicationVault = legacy_vault::VaultState;
+
+fn save_accounts_if_current(
+  state: &impl VaultAccess,
+  expected: &str,
+  record: String,
+) -> Result<bool, String> {
+  let mut record = Zeroizing::new(record.into_bytes());
+  state.with_records(|vault| {
+    let current = Zeroizing::new(
+      vault
+        .get_record(b"vault")?
+        .ok_or_else(|| "vaultRecordMissing".to_string())?,
+    );
+    if current.as_slice() != expected.as_bytes() {
+      return Ok(false);
+    }
+    vault.save_records(vec![(b"vault", Some(std::mem::take(&mut *record)))])?;
+    Ok(true)
+  })
+}
+
+#[tauri::command]
+pub(crate) async fn vault_save_if_current(
+  app: tauri::AppHandle,
+  state: tauri::State<'_, ApplicationVault>,
+  expected: String,
+  record: String,
+) -> Result<bool, String> {
+  let state = state.inner().clone();
+  let expected = Zeroizing::new(expected);
+  let result = tauri::async_runtime::spawn_blocking(move || {
+    save_accounts_if_current(&state, &expected, record)
+  })
+  .await
+  .map_err(|_| "vaultTaskFailed".to_string())?;
+  if !matches!(result, Ok(false)) {
+    let _ = tray::refresh_menu(&app);
+  }
+  result
+}
 
 pub(crate) fn account_record(state: &impl VaultAccess) -> Result<Option<String>, String> {
   let result = state.with_records(|vault| {

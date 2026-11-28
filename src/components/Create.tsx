@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import FormGroup from '@mui/material/FormGroup'
@@ -111,8 +112,8 @@ const Create = () => {
     try {
       await createCode(form)
       navigate(-1)
-    } catch (err) {
-      console.error(err)
+    } catch {
+      toast.error(t('edit.saveFailed'))
     }
   }
 

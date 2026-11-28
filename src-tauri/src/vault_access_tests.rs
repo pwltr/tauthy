@@ -31,6 +31,33 @@ fn runtime(directory: &std::path::Path) -> Runtime {
 }
 
 #[test]
+fn conditional_save_preserves_an_intervening_sync_write() {
+  let directory = tempfile::tempdir().unwrap();
+  let runtime = runtime(directory.path());
+  let expected = account_record(&runtime).unwrap().unwrap();
+  runtime
+    .with_records(|vault| {
+      vault.save_records(vec![
+        (b"vault", Some(b"merged".to_vec())),
+        (b"sync-config-v1", Some(b"remote".to_vec())),
+      ])
+    })
+    .unwrap();
+
+  assert!(!save_accounts_if_current(&runtime, &expected, "stale update".into()).unwrap());
+  assert_eq!(account_record(&runtime).unwrap().as_deref(), Some("merged"));
+  assert!(save_accounts_if_current(&runtime, "merged", "rebased update".into()).unwrap());
+  assert_eq!(
+    account_record(&runtime).unwrap().as_deref(),
+    Some("rebased update")
+  );
+  assert_eq!(
+    runtime.get(b"sync-config-v1").unwrap(),
+    Some(b"remote".to_vec())
+  );
+}
+
+#[test]
 fn file_batch_reads_queued_updates_and_commits_all_records_together() {
   let directory = tempfile::tempdir().unwrap();
   let runtime = runtime(directory.path());

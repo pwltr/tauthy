@@ -124,6 +124,12 @@
     "editIcon": "Editar icono"
   },
   "edit": {
+    "deleted": "Cuenta eliminada",
+    "undo": "Deshacer",
+    "undoFailed": "No se pudo restaurar la cuenta",
+    "secretTitle": "¿Cambiar el secreto?",
+    "secretConfirm": "Cambiar el secreto puede hacer que los códigos de esta cuenta dejen de funcionar. ¿Guardar el nuevo secreto?",
+    "saveFailed": "No se pudo guardar la cuenta",
     "pageTitle": "Editar cuenta",
     "name": "Nombre",
     "issuer": "Emisor (opcional)",

@@ -124,6 +124,12 @@
     "editIcon": "Modifier l'icône"
   },
   "edit": {
+    "deleted": "Compte supprimé",
+    "undo": "Annuler",
+    "undoFailed": "Impossible de restaurer le compte",
+    "secretTitle": "Modifier le secret ?",
+    "secretConfirm": "Modifier le secret peut empêcher les codes de ce compte de fonctionner. Enregistrer le nouveau secret ?",
+    "saveFailed": "Impossible d’enregistrer le compte",
     "pageTitle": "Modifier le compte",
     "name": "Nom",
     "issuer": "Émetteur (facultatif)",

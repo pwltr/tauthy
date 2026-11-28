@@ -183,6 +183,7 @@ fn main() {
     application_commands::vault_change_password,
     application_commands::vault_get,
     application_commands::vault_save,
+    vault_access::vault_save_if_current,
     application_commands::vault_unload,
     vault_commands::vault_backend,
     application_commands::vault_status,

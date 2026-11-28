@@ -25,6 +25,7 @@ export interface VaultStatus {
 }
 
 export const VAULT_PROTECTION_EVENT = 'tauthy:vault-protection'
+export const VAULT_LOCK_EVENT = 'tauthy:vault-lock'
 
 const appName = import.meta.env.DEV ? 'tauthy-dev' : 'tauthy'
 const vaultName = 'vault.stronghold'
@@ -55,7 +56,8 @@ export const setupVault = async () => {
 
 export class Vault {
   private ready: Promise<void>
-  private cachedRecord?: string
+  private cachedRecord?: Promise<string>
+  private accountSession = 0
   private passwordProtected = false
 
   constructor(
@@ -121,7 +123,7 @@ export class Vault {
 
   async retryMigration(password: string) {
     await this.ready
-    this.cachedRecord = undefined
+    this.invalidateCache()
     await invoke('vault_migrate', { password })
     const status = await this.getStatus()
     this.setProtection(status.protectionHint === 'password')
@@ -133,11 +135,15 @@ export class Vault {
   }
 
   async checkVault() {
-    if (this.cachedRecord !== undefined) return this.cachedRecord
-
-    await this.ready
-    this.cachedRecord = await invoke<string>('vault_get')
-    return this.cachedRecord
+    if (this.cachedRecord) return this.cachedRecord
+    const read = this.ready.then(() => invoke<string>('vault_get'))
+    this.cachedRecord = read
+    try {
+      return await read
+    } catch (error) {
+      if (this.cachedRecord === read) this.invalidateCache()
+      throw error
+    }
   }
 
   async getVault() {
@@ -150,19 +156,58 @@ export class Vault {
     this.cachedRecord = undefined
   }
 
+  private endAccountSession() {
+    this.accountSession += 1
+    this.invalidateCache()
+    window.dispatchEvent(new Event(VAULT_LOCK_EVENT))
+  }
+
+  private accountsChanged() {
+    this.invalidateCache()
+    window.dispatchEvent(new Event(VAULT_DATA_EVENT))
+    // A failed sync must not turn a committed local edit into a failure.
+    void syncInBackground()
+  }
+
+  async updateEntries<T>(
+    update: (current: VaultEntry[]) => { entries: VaultEntry[]; result: T },
+  ): Promise<T> {
+    const session = this.accountSession
+    await this.ready
+    try {
+      // Sync and other edits may commit between our read and write. Reapply
+      // only the requested change when the backend rejects a stale snapshot.
+      for (let attempt = 0; attempt < 3 && session === this.accountSession; attempt += 1) {
+        const expected = await invoke<string>('vault_get')
+        if (session !== this.accountSession) break
+        const current: VaultEntry[] = JSON.parse(expected)
+        const { entries, result } = update(current)
+        if (entries === current) return result
+        const saved = await invoke<boolean>('vault_save_if_current', {
+          expected,
+          record: JSON.stringify(entries),
+        })
+        if (saved) {
+          if (session === this.accountSession) this.accountsChanged()
+          return result
+        }
+      }
+      throw Error('Vault changed before the account update could be saved')
+    } catch (error) {
+      this.invalidateCache()
+      throw error
+    }
+  }
+
   async save(record: string) {
     await this.ready
     try {
       await invoke('vault_save', { record })
     } catch (error) {
-      this.cachedRecord = undefined
+      this.invalidateCache()
       throw error
     }
-    this.cachedRecord = record
-    window.dispatchEvent(new Event(VAULT_DATA_EVENT))
-    // Sync is deliberately best-effort. A missing cloud folder or network
-    // failure must never turn a successful local vault edit into a failure.
-    void syncInBackground()
+    this.accountsChanged()
   }
 
   async reset() {
@@ -170,11 +215,12 @@ export class Vault {
   }
 
   async destroy() {
+    this.endAccountSession()
     await this.ready
     if (this.fileBackend) {
       await invoke('vault_delete', { confirmed: true })
       resetBackupStatus()
-      this.cachedRecord = undefined
+      this.invalidateCache()
       this.setProtection(false)
       return
     }
@@ -203,9 +249,10 @@ export class Vault {
   }
 
   async lock() {
+    this.endAccountSession()
     console.info('locking vault...')
     await invoke('vault_unload')
-    this.cachedRecord = undefined
+    this.invalidateCache()
     console.info('vault locked.')
   }
 
@@ -215,7 +262,7 @@ export class Vault {
       await this.ready
       const status = await this.getStatus()
       const command = status.lifecycle === 'legacy' ? 'vault_migrate' : 'vault_load'
-      this.cachedRecord = undefined
+      this.invalidateCache()
       await invoke(
         command,
         targetPassword === undefined ? { password } : { password, targetPassword },
@@ -224,14 +271,14 @@ export class Vault {
       this.setProtection(opened.protectionHint === 'password')
       return
     }
-    this.cachedRecord = undefined
+    this.invalidateCache()
     this.ready = this.load(password)
     await this.ready
   }
 
   async changePassword(password: string, currentPassword?: string) {
     await this.ready
-    this.cachedRecord = undefined
+    this.invalidateCache()
     await invoke(
       'vault_change_password',
       this.fileBackend
@@ -251,7 +298,7 @@ export class Vault {
   }) {
     await this.ready
     if (!this.fileBackend) throw { code: 'vaultUnsupportedEnvelope' }
-    this.cachedRecord = undefined
+    this.endAccountSession()
     await invoke('vault_import_foreign', {
       ...options,
       currentPassword: options.currentPassword || null,
@@ -259,6 +306,7 @@ export class Vault {
       confirmed: true,
       disconnectSync: true,
     })
+    this.invalidateCache()
     resetBackupStatus()
     window.dispatchEvent(new Event(VAULT_DATA_EVENT))
     const status = await this.getStatus()

@@ -25,6 +25,7 @@ commands.allow = [
   "vault_change_password",
   "vault_get",
   "vault_save",
+  "vault_save_if_current",
   "vault_unload",
   "vault_backend",
   "vault_status",

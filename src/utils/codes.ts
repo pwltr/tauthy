@@ -514,38 +514,30 @@ export const createCode = async (formData: FormData) => {
     uuid: generateUUID(),
   }
 
-  const currentVault = await vault.getVault()
-  const newVault = currentVault ? [...currentVault, entry] : [entry]
-
-  try {
-    await vault.save(JSON.stringify(newVault))
-  } catch (err) {
-    console.error(err)
-  }
+  await vault.updateEntries((entries) => ({ entries: [...entries, entry], result: undefined }))
 }
 
-export const editCode = async (uuid: string, formData: FormData) => {
-  const currentVault = await vault.getVault()
-  const entry = currentVault.find((entry: VaultEntry) => entry.uuid === uuid)
-  const filteredVault = currentVault.filter((entry: VaultEntry) => entry.uuid !== uuid)
-  if (!entry) throw Error(`No entry found for uuid ${uuid}`)
-  const newVault = [...filteredVault, { ...entry, ...formData }]
+export const editCode = (uuid: string, changes: Partial<FormData>) =>
+  vault.updateEntries((entries) => {
+    if (!entries.some((entry) => entry.uuid === uuid)) throw Error('Account no longer exists')
+    return {
+      entries: entries.map((entry) => (entry.uuid === uuid ? { ...entry, ...changes } : entry)),
+      result: undefined,
+    }
+  })
 
-  try {
-    await vault.save(JSON.stringify(newVault))
-  } catch (err) {
-    console.error(err)
-  }
-}
+export const deleteCode = (id: string) =>
+  vault.updateEntries((entries) => {
+    const entry = entries.find((entry) => entry.uuid === id)
+    if (!entry) throw Error('Account no longer exists')
+    return { entries: entries.filter((entry) => entry.uuid !== id), result: entry }
+  })
 
-export const deleteCode = async (id: string) => {
-  const currentVault = await vault.getVault()
-  if (!currentVault.some((entry: VaultEntry) => entry.uuid === id)) {
-    throw Error(`No entry found for uuid ${id}`)
-  }
-  const filteredVault = currentVault.filter((entry: VaultEntry) => entry.uuid !== id)
-  await vault.save(JSON.stringify(filteredVault))
-}
+export const restoreCode = (entry: VaultEntry) =>
+  vault.updateEntries((entries) => ({
+    entries: entries.some((current) => current.uuid === entry.uuid) ? entries : [...entries, entry],
+    result: undefined,
+  }))
 
 const parseImportFile = async (file: File, format: ImportFormat, password?: string) => {
   if (format === 'google') throw Error('importFailed')
@@ -640,13 +632,12 @@ export const prepareGoogleImport = async (accounts: GoogleAccount[]): Promise<Im
   )
 }
 
-export const commitPreparedImport = async (preview: ImportPreview) => {
-  const currentVault = await vault.getVault()
-  const { merged } = planImport(currentVault, preview.entries, preview.format)
-  const addedCount = merged.length - currentVault.length
-  if (addedCount > 0) await vault.save(JSON.stringify(merged))
-  return addedCount
-}
+export const commitPreparedImport = (preview: ImportPreview) =>
+  vault.updateEntries((entries) => {
+    const { merged } = planImport(entries, preview.entries, preview.format)
+    const addedCount = merged.length - entries.length
+    return { entries: addedCount > 0 ? merged : entries, result: addedCount }
+  })
 
 export const importFile = async (file: File, format: ImportFormat, password?: string) => {
   const preview = await prepareImport(file, format, password)
