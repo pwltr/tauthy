@@ -33,7 +33,7 @@
         "depends": []
       }
     },
-    "createUpdaterArtifacts": "v1Compatible"
+    "createUpdaterArtifacts": true
   },
   "build": {
     "beforeDevCommand": "yarn dev",

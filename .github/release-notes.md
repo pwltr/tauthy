@@ -13,6 +13,14 @@
 - Updated macOS app icon and an integrated title bar.
 - Export privacy-safe diagnostic logs from Settings when troubleshooting.
 
+### Upgrading from Tauthy 0.2.8 or earlier
+
+This release uses Tauri 2 update packages. If you're still on Tauthy 0.2.8 or
+earlier, first export a backup, then download and install
+[Tauthy 0.6.0](https://github.com/pwltr/tauthy/releases/tag/v0.6.0) manually. Use
+the `.msi` installer on Windows. Open 0.6.0 and unlock your vault to finish the
+migration before using automatic updates again.
+
 ### Windows upgrade notice
 
 Automatic updates from Tauthy 0.2.7 may repeatedly offer the update when the
